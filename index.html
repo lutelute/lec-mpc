@@ -168,6 +168,12 @@
         <span class="step-desc">クリックした位置へ飛んで<strong>水平ホバリング</strong>。入力が<strong>2 つ（推力・トルク）の多入力 MPC</strong>で、機体を傾けて移動しつつ姿勢・高度を同時に最適化。「突風」でも立て直します。</span>
         <span class="step-go">ドローンを開く →</span>
       </a>
+      <a class="step" href="demos/drone3d.html" style="border-color: var(--blue);">
+        <span class="step-num">▶ 動く · 3D</span>
+        <span class="step-title">3D ドローン（旋回上昇・着陸）</span>
+        <span class="step-desc">立体空間を飛行。<strong>螺旋を描いて旋回上昇</strong>し、<strong>降下率を抑えて軟着陸</strong>。MPC が<strong>未来軌道を先読み</strong>して曲線を滑らかに追従し、旋回では内側へバンク。等角投影で立体描画（影・軌跡つき）。</span>
+        <span class="step-go">3D ドローンを開く →</span>
+      </a>
     </div>
   </section>
 
@@ -345,6 +351,13 @@
         <span>
           <span class="file-name">drone.html</span>
           <span class="file-desc">動くデモ：2D ドローン（多入力 MPC・ホバリング＆飛行）</span>
+        </span>
+      </a>
+      <a class="file" href="demos/drone3d.html">
+        <span class="file-ico">▶</span>
+        <span>
+          <span class="file-name">drone3d.html</span>
+          <span class="file-desc">動くデモ：3D ドローン（旋回上昇・着陸・プレビュー MPC）</span>
         </span>
       </a>
       <a class="file" href="demos/mpc_receding_horizon.html">
