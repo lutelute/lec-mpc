@@ -81,6 +81,7 @@
           <button class="btn go" id="b-takeoff">離陸・ホバー</button>
           <button class="btn primary" id="b-spiral">旋回上昇 ↻↑</button>
           <button class="btn warn" id="b-land">着陸 ↓</button>
+          <button class="btn" id="b-auto" style="background:linear-gradient(90deg,var(--blue),var(--blue-deep));color:#fff;border-color:transparent;">▶ オート上映</button>
           <button class="btn" id="b-reset">リセット</button>
         </div>
         <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">旋回半径 R</span><span class="ctrl-val" id="v-rad">1.5 m</span></div><input type="range" id="s-rad" min="0.8" max="2.5" step="0.1" value="1.5"></div>
@@ -172,6 +173,9 @@
   const trailEl=el('polyline',{points:'',fill:'none',stroke:'var(--blue)','stroke-width':1.5,opacity:0.5});stage.appendChild(trailEl);
   // ドローン（動的に再描画）
   const droneG=el('g',{});stage.appendChild(droneG);
+  const d3defs=el('defs',{});d3defs.innerHTML='<filter id="dglow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';stage.insertBefore(d3defs,stage.firstChild);
+  trailEl.setAttribute('filter','url(#dglow)');trailEl.setAttribute('stroke','#5BA0E8');trailEl.setAttribute('stroke-width','2.4');trailEl.setAttribute('opacity','0.8');
+  droneG.setAttribute('filter','url(#dglow)');
   let trail=[];
 
   function attitude(){
@@ -213,15 +217,22 @@
     document.getElementById('explain').innerHTML=msg;
   }
 
-  let acc=0,prev=performance.now();
+  let acc=0,prev=performance.now(),autoShow=false,autoT=0,autoPhase='';
   function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;acc+=dtr;let guard=0;
     while(acc>=dt&&guard<10){const u=control(st);lastU=u;st=step(st,u);if(st[4]<0.02){st[4]=0.02;if(st[5]<0)st[5]=0;}K++;acc-=dt;guard++;}
+    if(autoShow){autoT+=dtr;const cyc=autoT%17;const ph=cyc<3.5?'takeoff':cyc<10?'spiral':'land';if(ph!==autoPhase){autoPhase=ph;autoMission(ph);}}
     render();requestAnimationFrame(loop);}
   requestAnimationFrame(loop);
 
   // ===== UI =====
   const v=id=>+document.getElementById(id).value;
-  document.getElementById('b-takeoff').addEventListener('click',()=>{mission={type:'hover',hx:st[0],hy:st[2],hz:1.5};});
+  function autoMission(ph){
+    if(ph==='takeoff'){mission={type:'hover',hx:st[0],hy:st[2],hz:1.5};}
+    else if(ph==='spiral'){const R=v('s-rad'),vz=v('s-vz');const ang0=Math.atan2(st[2],st[0]);const cx0=st[0]-R*Math.cos(ang0),cy0=st[2]-R*Math.sin(ang0);mission={type:'spiral',k0:K,cx0,cy0,phi0:ang0,R,w:0.7,vz,z0:Math.max(0.3,st[4]),zTop:Math.max(0.3,st[4])+2.5};}
+    else{mission={type:'land',k0:K,px:0,py:0,zStart:st[4],vd:v('s-vd')};}
+  }
+  document.getElementById('b-auto').addEventListener('click',e=>{autoShow=!autoShow;e.target.textContent=autoShow?'■ オート停止':'▶ オート上映';autoT=0;autoPhase='';});
+  document.getElementById('b-takeoff').addEventListener('click',()=>{autoShow=false;document.getElementById('b-auto').textContent='▶ オート上映';mission={type:'hover',hx:st[0],hy:st[2],hz:1.5};});
   document.getElementById('b-spiral').addEventListener('click',()=>{const R=v('s-rad'),vz=v('s-vz');
     // 現在位置を螺旋上の点に合わせて開始（中心は原点方向にオフセット）
     const ang0=Math.atan2(st[2],st[0]);const cx0=st[0]-R*Math.cos(ang0),cy0=st[2]-R*Math.sin(ang0);
