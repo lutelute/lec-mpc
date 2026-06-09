@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ロケット着陸 — 動力降下誘導を MPC で</title>
+<style>
+  :root{
+    --bg:#f6f4ee;--surface:#fff;--surface-2:#efece4;--text-1:#1a1a1a;--text-2:#5f5e5a;--text-3:#888780;
+    --border:rgba(0,0,0,0.10);--border-2:rgba(0,0,0,0.22);--info-bg:#E6F1FB;--info-text:#0C447C;
+    --blue:#378ADD;--blue-deep:#0C447C;--amber:#EF9F27;--red:#E24B4A;--green:#3DA35D;--radius:10px;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    --font-mono:"SF Mono","Menlo","Consolas",monospace;--text-primary:var(--text-1);--text-secondary:var(--text-2);--border-strong:var(--border-2);
+  }
+  @media (prefers-color-scheme:dark){:root{--bg:#161614;--surface:#1f1f1d;--surface-2:#2a2a27;--text-1:#f0eee8;--text-2:#b4b2a9;--text-3:#888780;--border:rgba(255,255,255,0.10);--border-2:rgba(255,255,255,0.22);--info-bg:#0C447C;--info-text:#B5D4F4;--blue:#5BA0E8;--blue-deep:#B5D4F4;}}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text-1);font-family:var(--font-sans);font-size:14px;line-height:1.5;}
+  .app{max-width:1180px;margin:0 auto;padding:16px 18px 28px;}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  h1{font-size:17px;font-weight:600;margin:0;} .subtitle{font-size:11px;color:var(--text-3);margin:0;}
+  svg{display:block;}
+  .lec-nav{display:flex;gap:14px;margin-bottom:10px;padding:2px 4px;font-size:11px;flex-wrap:wrap;align-items:center;}
+  .lec-nav a{color:var(--text-3);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:1px;}
+  .lec-nav a:hover{color:var(--text-1);border-bottom-color:var(--border-2);} .lec-nav a.home{color:var(--text-2);font-weight:500;} .lec-nav .sep{color:var(--text-3);opacity:0.5;}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
+  .kpi-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 14px;}
+  .kpi-card.accent{background:var(--info-bg);border-color:transparent;}
+  .kpi-label{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;font-weight:500;} .kpi-card.accent .kpi-label{color:var(--info-text);opacity:0.85;}
+  .kpi-val{font-size:19px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:5px;} .kpi-card.accent .kpi-val{color:var(--info-text);}
+  .main-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:10px;align-items:start;}
+  .panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;}
+  .panel-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap;}
+  .panel-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;} .panel-hint{font-size:10px;color:var(--text-3);}
+  .stage{border-radius:8px;background:linear-gradient(#0c1a2e,#24364f 60%,#3a4a63);}
+  .btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+  .btn{font-size:12px;padding:8px 12px;background:transparent;border:0.5px solid var(--border-2);border-radius:7px;cursor:pointer;color:var(--text-2);font-family:inherit;transition:all .1s;}
+  .btn:hover{background:var(--surface-2);color:var(--text-1);} .btn:active{transform:scale(0.97);}
+  .btn.go{background:var(--green);color:#fff;border-color:transparent;}
+  .ctrl{margin:10px 0;} .ctrl-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .ctrl-name{font-size:12px;color:var(--text-2);} .ctrl-val{font-size:12px;color:var(--text-1);font-weight:500;font-variant-numeric:tabular-nums;}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;}
+  input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-moz-range-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--blue);border-radius:50%;margin-top:-5.5px;cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;background:var(--blue);border:none;border-radius:50%;cursor:pointer;}
+  .explain{font-size:12.5px;color:var(--text-2);line-height:1.7;} .explain b{color:var(--text-1);}
+  .footer{font-size:10px;color:var(--text-3);text-align:center;margin-top:14px;line-height:1.7;}
+  @media (max-width:980px){.main-grid{grid-template-columns:1fr;}.kpi{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="lec-nav">
+    <a class="home" href="../index.html">← 教材トップ</a><span class="sep">·</span>
+    <a href="../content/lecture-notes.html">講義ノート</a>
+    <a href="../content/mpc-applications.html">応用ショーケース</a>
+    <a href="drone3d.html">3D ドローン</a><a href="drone.html">2D ドローン</a>
+    <span class="sep">·</span><span style="color:var(--text-3)">動くデモ — ロケット着陸</span>
+  </nav>
+  <header>
+    <h1>ロケット着陸 — 動力降下誘導</h1>
+    <p class="subtitle">高所から落下する機体を MPC が誘導し、推力を絞りながら<strong>直立・低速でパッドに軟着陸</strong> · SpaceX 的な凸最適化誘導の縮図</p>
+  </header>
+
+  <section class="kpi">
+    <div class="kpi-card"><div class="kpi-label">高度</div><div class="kpi-val" id="k-alt">5.5 m</div></div>
+    <div class="kpi-card"><div class="kpi-label">降下速度</div><div class="kpi-val" id="k-vy">0.0 m/s</div></div>
+    <div class="kpi-card accent"><div class="kpi-label">推力（最大比）</div><div class="kpi-val" id="k-th">70%</div></div>
+    <div class="kpi-card"><div class="kpi-label">機体の傾き</div><div class="kpi-val" id="k-tilt">0°</div></div>
+  </section>
+
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-hdr"><div class="panel-title">降下ステージ（実時間）</div><div class="panel-hint">「降下開始」で着陸誘導 / 「リセット」で再投入</div></div>
+      <svg id="stage" class="stage" viewBox="0 0 760 470" style="width:100%;" role="img"></svg>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">操作</div></div>
+        <div class="btn-row">
+          <button class="btn go" id="b-start">降下開始</button>
+          <button class="btn" id="b-reset">リセット（再投入）</button>
+        </div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">目標降下率</span><span class="ctrl-val" id="v-vd">0.7 m/s</span></div><input type="range" id="s-vd" min="0.4" max="1.5" step="0.05" value="0.7"></div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">初期の横ずれ</span><span class="ctrl-val" id="v-off">2.0 m</span></div><input type="range" id="s-off" min="-3" max="3" step="0.2" value="2"></div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">推力の上限 T<sub>max</sub></span><span class="ctrl-val" id="v-tmax">2.2 ×mg</span></div><input type="range" id="s-tmax" min="1.5" max="3" step="0.1" value="2.2"></div>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">いま何が起きているか</div></div>
+        <p class="explain" id="explain"></p>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">仕組み</div></div>
+        <p class="explain" style="font-size:12px;">
+          状態は位置・速度・姿勢の 6 次元、入力は<strong>推力と推力偏向（ジンバル）の 2 つ</strong>。MPC は<strong>降下基準軌道を先読み（プレビュー）</strong>し、推力を <math><mrow><msub><mi>T</mi><mi>min</mi></msub><mo>≤</mo><mi>T</mi><mo>≤</mo><msub><mi>T</mi><mi>max</mi></msub></mrow></math>（エンジンは完全には切れない）の範囲で配分して、姿勢をほぼ直立に保ったまま降下率を落とします。
+          実機のロケット着陸は<a href="../content/mpc-applications.html">凸最適化に基づく誘導</a>で、MPC と同じ「制約付き最適化を実時間で解く」枠組みです。
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    平面ロケット（推力方向＝機体軸, ジンバルで姿勢制御）· 多入力 状態コスト MPC（降下基準をプレビュー追従, 推力 T∈[T<sub>min</sub>,T<sub>max</sub>] クランプ）· 非線形 RK4<br>
+    横ずれ・降下率・推力上限を変えて、軟着陸できる/できない境界を試せます。
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const I=n=>Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
+  const zeros=(r,c)=>Array.from({length:r},()=>new Array(c).fill(0));
+  function mm(A,B){const n=A.length,m=B[0].length,p=B.length,C=zeros(n,m);for(let i=0;i<n;i++)for(let k=0;k<p;k++){const a=A[i][k];if(!a)continue;for(let j=0;j<m;j++)C[i][j]+=a*B[k][j];}return C;}
+  const tp=A=>A[0].map((_,j)=>A.map(r=>r[j]));
+  function inv(A){const n=A.length;const M=A.map((r,i)=>r.concat(I(n)[i]));for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)M[p][c]+=1e-9;[M[c],M[p]]=[M[p],M[c]];const d=M[c][c];for(let j=0;j<2*n;j++)M[c][j]/=d;for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];for(let j=0;j<2*n;j++)M[r][j]-=f*M[c][j];}}return M.map(r=>r.slice(n));}
+  function expm(A){const n=A.length;let nr=0;for(const r of A)for(const v of r)nr+=v*v;nr=Math.sqrt(nr);let s=Math.max(0,Math.ceil(Math.log2(nr+1e-9)));const As=A.map(r=>r.map(v=>v/Math.pow(2,s)));let t=I(n),sum=I(n);for(let k=1;k<=22;k++){t=mm(t,As).map(r=>r.map(v=>v/k));sum=sum.map((r,i)=>r.map((v,j)=>v+t[i][j]));}for(let i=0;i<s;i++)sum=mm(sum,sum);return sum;}
+  function c2d(Ac,Bc,dt){const n=Ac.length,m=Bc[0].length;const M=zeros(n+m,n+m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)M[i][j]=Ac[i][j]*dt;for(let j=0;j<m;j++)M[i][n+j]=Bc[i][j]*dt;}const E=expm(M);const Ad=zeros(n,n),Bd=zeros(n,m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)Ad[i][j]=E[i][j];for(let j=0;j<m;j++)Bd[i][j]=E[i][n+j];}return{Ad,Bd};}
+
+  const m=1.0,J=0.08,g=9.81;
+  function deriv(s,u){const[x,xd,y,yd,th,thd]=s;const T=m*g+u[0];return[xd,(T/m)*Math.sin(th),yd,(T/m)*Math.cos(th)-g,thd,u[1]/J];}
+  function rk4(s,u,dt){const k1=deriv(s,u);const s2=s.map((v,i)=>v+0.5*dt*k1[i]);const k2=deriv(s2,u);const s3=s.map((v,i)=>v+0.5*dt*k2[i]);const k3=deriv(s3,u);const s4=s.map((v,i)=>v+dt*k3[i]);const k4=deriv(s4,u);return s.map((v,i)=>v+dt/6*(k1[i]+2*k2[i]+2*k3[i]+k4[i]));}
+  const dt=0.05,Np=40,Nc=12,Qd=[8,2,10,3,12,0.5],Rd=[0.03,0.3];
+  let Grows,Sx;
+  (function(){const eps=1e-6,Ac=zeros(6,6),Bc=zeros(6,2);
+    for(let j=0;j<6;j++){const sp=[0,0,0,0,0,0];sp[j]=eps;const sm=[0,0,0,0,0,0];sm[j]=-eps;const fp=deriv(sp,[0,0]),fm=deriv(sm,[0,0]);for(let i=0;i<6;i++)Ac[i][j]=(fp[i]-fm[i])/(2*eps);}
+    for(let q=0;q<2;q++){const up=[0,0];up[q]=eps;const um=[0,0];um[q]=-eps;const fp=deriv([0,0,0,0,0,0],up),fm=deriv([0,0,0,0,0,0],um);for(let i=0;i<6;i++)Bc[i][q]=(fp[i]-fm[i])/(2*eps);}
+    const{Ad,Bd}=c2d(Ac,Bc,dt);const n=6,nu=2;const Apow=[I(n)];for(let i=1;i<=Np;i++)Apow.push(mm(Apow[i-1],Ad));
+    Sx=zeros(Np*n,n);const Su=zeros(Np*n,Nc*nu);
+    for(let i=1;i<=Np;i++){const Ai=Apow[i];for(let r=0;r<n;r++)for(let c=0;c<n;c++)Sx[(i-1)*n+r][c]=Ai[r][c];for(let j=0;j<Nc;j++){if(j>i-1)break;const AB=mm(Apow[i-1-j],Bd);for(let r=0;r<n;r++)for(let q=0;q<nu;q++)Su[(i-1)*n+r][j*nu+q]=AB[r][q];}}
+    const SuT=tp(Su);const SuTQ=SuT.map(row=>row.map((v,k)=>v*Qd[k%n]));const H=mm(SuTQ,Su);for(let i=0;i<Nc*nu;i++)H[i][i]+=Rd[i%nu];
+    const G=mm(inv(H),SuTQ);Grows=G.slice(0,nu);})();
+
+  // ミッション
+  let K=0,K0=0,x0=2,y0=5.5,vdesc=0.7,Tmax=2.2*m*g,descending=false,landed=false,lastT=m*g;
+  const Tmin=0.35*m*g;
+  function ref(k){const t=Math.max(0,(k-K0))*dt;const ex=Math.exp(-t/1.6);const xr=x0*ex,xdr=-x0/1.6*ex;const yr=Math.max(0,y0-vdesc*t);const ydr=yr>0?-vdesc:0;return[xr,xdr,yr,ydr,0,0];}
+  function ctrl(s){if(!descending){ // 投入前は単に推力でホバー保持(降下待ち)
+      const u=[0,0];const Kp=4,Kd=3;u[0]=Kp*(y0-s[2])-Kd*s[3]+0*1;u[1]=-(6*s[4]+2*s[5])-(2*s[0]+2*s[1]);
+      let T=m*g+u[0];T=Math.max(Tmin,Math.min(Tmax,T));u[0]=T-m*g;u[1]=Math.max(-0.8,Math.min(0.8,u[1]));return u;}
+    const n=6,nu=2;const diff=new Array(Np*n);
+    for(let i=0;i<Np;i++){const xr=ref(K+i+1);for(let r=0;r<n;r++){let v=0;for(let c=0;c<n;c++)v+=Sx[i*n+r][c]*s[c];diff[i*n+r]=xr[r]-v;}}
+    const u=[0,0];for(let q=0;q<nu;q++){let v=0;for(let i=0;i<Np*n;i++)v+=Grows[q][i]*diff[i];u[q]=v;}
+    let T=m*g+u[0];T=Math.max(Tmin,Math.min(Tmax,T));u[0]=T-m*g;u[1]=Math.max(-0.8,Math.min(0.8,u[1]));return u;}
+
+  let st=[2,0,5.5,0,0,0];
+  const NS='http://www.w3.org/2000/svg';const stage=document.getElementById('stage');
+  const W=760,H=470,groundY=430,cx=380,sX=70,sY=72;
+  const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  // 地面・パッド
+  stage.appendChild(el('rect',{x:0,y:groundY,width:W,height:H-groundY,fill:'#2a2320'}));
+  stage.appendChild(el('rect',{x:cx-46,y:groundY-5,width:92,height:8,rx:2,fill:'#555',stroke:'#888','stroke-width':0.5}));
+  for(let i=-1;i<=1;i+=2)stage.appendChild(el('line',{x1:cx+i*30,y1:groundY-5,x2:cx+i*30,y2:groundY,stroke:'#888','stroke-width':1}));
+  const padT=el('text',{x:cx,y:groundY+18,'text-anchor':'middle','font-size':10,fill:'#9ab'});padT.textContent='LANDING PAD';stage.appendChild(padT);
+  // 軌跡
+  const trailEl=el('polyline',{points:'',fill:'none',stroke:'#7fb0e8','stroke-width':1.2,opacity:0.6,'stroke-dasharray':'3,3'});stage.appendChild(trailEl);
+  // ロケット群
+  const rg=el('g',{});
+  const flame=el('polygon',{points:'',fill:'#ffb347',opacity:0.95});
+  const flame2=el('polygon',{points:'',fill:'#ff7733',opacity:0.9});
+  const body=el('rect',{x:-9,y:-58,width:18,height:58,rx:3,fill:'#e8e8ea',stroke:'#b8b8bc','stroke-width':0.5});
+  const nose=el('polygon',{points:'-9,-58 9,-58 0,-74',fill:'#cfd2d6'});
+  const legL=el('line',{x1:-7,y1:-4,x2:-16,y2:6,stroke:'#9a9a9e','stroke-width':2.5});
+  const legR=el('line',{x1:7,y1:-4,x2:16,y2:6,stroke:'#9a9a9e','stroke-width':2.5});
+  const band=el('rect',{x:-9,y:-30,width:18,height:5,fill:'var(--blue)'});
+  rg.appendChild(flame);rg.appendChild(flame2);rg.appendChild(body);rg.appendChild(band);rg.appendChild(nose);rg.appendChild(legL);rg.appendChild(legR);
+  stage.appendChild(rg);
+  let trail=[];
+
+  function render(){
+    const px=cx+st[0]*sX, py=groundY-st[2]*sY;
+    const deg=st[4]*180/Math.PI;
+    rg.setAttribute('transform',`translate(${px},${py}) rotate(${deg})`);
+    // 炎（推力比でlength, 機体下から）
+    const frac=(lastT-Tmin)/(Tmax-Tmin);const fl=8+frac*46*(0.85+0.3*Math.random());
+    flame.setAttribute('points',`-6,0 6,0 0,${fl}`);
+    flame2.setAttribute('points',`-3.5,0 3.5,0 0,${fl*0.6}`);
+    // 影/軌跡
+    if(descending&&!landed){trail.push({x:px,y:py});if(trail.length>120)trail.shift();}
+    trailEl.setAttribute('points',trail.map(p=>`${p.x},${p.y}`).join(' '));
+    const pct=Math.round((lastT/(2.2*m*g))*100);
+    document.getElementById('k-alt').textContent=st[2].toFixed(2)+' m';
+    document.getElementById('k-vy').textContent=(-st[3]).toFixed(2)+' m/s';
+    document.getElementById('k-th').textContent=Math.round(lastT/Tmax*100)+'%';
+    document.getElementById('k-tilt').textContent=(st[4]*180/Math.PI).toFixed(0)+'°';
+    let msg;
+    if(landed){const soft=Math.abs(st[3])<1.0&&Math.abs(st[0])<0.4&&Math.abs(st[4])<0.2;
+      msg=soft?`<b style="color:var(--green)">軟着陸成功！</b> 直立・低速でパッドに着地しました。`:`<b style="color:var(--red)">着陸失敗（ハードランディング）。</b> 降下率や推力上限を見直してみてください。`;}
+    else if(descending)msg=`<b>動力降下中</b>（高度 ${st[2].toFixed(2)}m, 降下 ${(-st[3]).toFixed(2)}m/s）。MPC が推力を ${Tmin.toFixed(1)}〜${Tmax.toFixed(1)}N の範囲で配分し、姿勢を立てたまま降下率を落としています。`;
+    else msg=`高度 ${st[2].toFixed(1)}m で待機中。「降下開始」で MPC 着陸誘導を開始します。`;
+    document.getElementById('explain').innerHTML=msg;
+  }
+
+  let acc=0,prev=performance.now();
+  function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;acc+=dtr;let guard=0;
+    while(acc>=dt&&guard<10){if(!landed){const u=ctrl(st);lastT=m*g+u[0];for(let i=0;i<3;i++)st=rk4(st,u,dt/3);K++;
+      if(descending&&st[2]<=0.04){st[2]=0;st[3]=Math.min(0,st[3]);landed=true;}}acc-=dt;guard++;}
+    render();requestAnimationFrame(loop);}
+  requestAnimationFrame(loop);
+
+  const v=id=>+document.getElementById(id).value;
+  function resetState(){descending=false;landed=false;x0=v('s-off');y0=5.5;st=[x0,0,y0,0,0,0];lastT=m*g;trail=[];}
+  document.getElementById('b-start').addEventListener('click',()=>{if(landed)resetState();vdesc=v('s-vd');Tmax=v('s-tmax')*m*g;x0=st[0];y0=st[2];K0=K;descending=true;});
+  document.getElementById('b-reset').addEventListener('click',resetState);
+  document.getElementById('s-vd').addEventListener('input',e=>document.getElementById('v-vd').textContent=(+e.target.value).toFixed(2)+' m/s');
+  document.getElementById('s-off').addEventListener('input',e=>{document.getElementById('v-off').textContent=(+e.target.value).toFixed(1)+' m';if(!descending){x0=+e.target.value;st[0]=x0;}});
+  document.getElementById('s-tmax').addEventListener('input',e=>document.getElementById('v-tmax').textContent=(+e.target.value).toFixed(1)+' ×mg');
+  resetState();
+})();
+</script>
+</body>
+</html>
