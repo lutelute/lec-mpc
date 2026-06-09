@@ -19,6 +19,7 @@
 ## ✨ 特徴
 
 - 🎬 **動くデモ（リアルタイム・アニメーション）** — 倒立振子が実際にバランスし、台車がトラックを走る。外乱で蹴っても MPC が先読みで立て直す。非線形 cart-pole を実時間制御
+- ✨ **SNS 映え：ショーリール & 縦動画対応** — [動く制御の見本市](https://lutelute.github.io/lec-mpc/showreel.html) に自動再生デモを集約（発光・噴射炎パーティクル・コメット軌跡）。各デモは「▶ オート上映」で無操作ループ、`?reel` で **9:16 縦画面**（TikTok/Instagram 録画向け）
 - 🎮 **触って学ぶデモ** — 予測軌道・最適入力列・receding horizon をスライダーとボタンで体験。制約付き MPC は QP をブラウザ内で実時間求解
 - 📐 **数式は MathML・図は SVG** — 単一 HTML で完結、ライブラリ・CDN 不要
 - 🌗 **ライト/ダークモード自動対応** — OS 設定に追従
@@ -36,6 +37,7 @@
 | # | 教材 | 役割 |
 |---|---|---|
 | 🏠 | **[教材トップ（ポータル）](https://lutelute.github.io/lec-mpc/)** | 学習フロー・教科書対応表・全導線 |
+| 🎬 | **[ショーリール（動く制御の見本市）▶](https://lutelute.github.io/lec-mpc/showreel.html)** | 自動再生デモを並べた SNS 映えギャラリー（縦動画リールモードあり） |
 | ▶ | **[動く：倒立振子を立てる ▶](https://lutelute.github.io/lec-mpc/demos/cartpole.html)** | MPC が不安定な振子をバランスさせて走る。外乱から先読みで復帰（非線形・実時間） |
 | ▶ | **[動く：台車レース MPC vs PID ▶](https://lutelute.github.io/lec-mpc/demos/track_race.html)** | 2 台が同時発進。壁（位置の上限）を MPC は守り PID は突っ込む |
 | ▶ | **[動く：天井クレーン アンチスウェイ ▶](https://lutelute.github.io/lec-mpc/demos/crane.html)** | 吊り荷を揺らさず運ぶ。MPC が振れを予測し残留スイングをほぼ 0 に |

@@ -247,7 +247,19 @@
   document.getElementById('s-rad').addEventListener('input',e=>document.getElementById('v-rad').textContent=(+e.target.value).toFixed(1)+' m');
   document.getElementById('s-vz').addEventListener('input',e=>document.getElementById('v-vz').textContent=(+e.target.value).toFixed(2)+' m/s');
   document.getElementById('s-vd').addEventListener('input',e=>document.getElementById('v-vd').textContent=(+e.target.value).toFixed(2)+' m/s');
-  if(location.search.indexOf('show')>=0){const b=document.getElementById('b-auto');if(b)b.click();}
+  function enterReel(){
+    const stl=document.createElement('style');
+    stl.textContent='body.reel{overflow:hidden;}.reel-ov{position:fixed;inset:0;background:radial-gradient(120% 80% at 50% 0%,#143b6b,#0a1b30 60%,#060d18);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px;z-index:9999;}.reel-ov .reel-title{color:#eaf2fb;font-weight:700;font-size:23px;line-height:1.2;text-align:center;letter-spacing:-0.01em;}.reel-ov #stage{width:100%;max-width:560px;border-radius:16px;box-shadow:0 22px 64px rgba(0,0,0,0.5);}.reel-tag{color:#9fb3c8;font-size:12px;}';
+    document.head.appendChild(stl);document.body.classList.add('reel');
+    const ov=document.createElement('div');ov.className='reel-ov';
+    const ti=document.createElement('div');ti.className='reel-title';ti.textContent=(document.title.split('—')[0]||'MPC').trim();
+    const tg=document.createElement('div');tg.className='reel-tag';tg.textContent='Model Predictive Control · 自動再生';
+    const sg=document.getElementById('stage');ov.appendChild(ti);ov.appendChild(sg);ov.appendChild(tg);document.body.appendChild(ov);
+    const app=document.querySelector('.app');if(app)app.style.display='none';
+    const b=document.getElementById('b-auto');if(b)b.click();
+  }
+  if(location.search.indexOf('reel')>=0)enterReel();
+  else if(location.search.indexOf('show')>=0){const b=document.getElementById('b-auto');if(b)b.click();}
 })();
 </script>
 </body>
