@@ -54,6 +54,26 @@
   .tag { font-size: 11px; padding: 4px 10px; border-radius: 20px; background: var(--surface-2); color: var(--text-2); border: 0.5px solid var(--border); }
   .tag.accent { background: var(--info-bg); color: var(--info-text); border-color: transparent; }
 
+  /* 映えヒーロー */
+  .hero.cine { position: relative; overflow: hidden; border: none; padding: 0;
+    background: linear-gradient(135deg, #0c447c 0%, #2566a8 55%, #378ADD 100%); color: #fff; border-radius: 14px; box-shadow: 0 10px 30px rgba(12,68,124,0.25); }
+  @media (prefers-color-scheme: dark) { .hero.cine { background: linear-gradient(135deg, #08213c, #123257 60%, #1b56a0); } }
+  .hero-grid { display: grid; grid-template-columns: 1.08fr 0.92fr; align-items: stretch; }
+  .hero-text { padding: 30px 30px 26px; }
+  .hero.cine .eyebrow { color: rgba(255,255,255,0.72); }
+  .h1-grad { font-size: 30px; font-weight: 700; line-height: 1.22; margin: 0 0 12px; letter-spacing: -0.01em;
+    background: linear-gradient(90deg, #ffffff, #cfe8ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero.cine .lead { color: rgba(255,255,255,0.92); max-width: none; margin: 0 0 4px; }
+  .cta-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 8px; }
+  .cta { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 10px 17px; border-radius: 9px; text-decoration: none; transition: transform 0.08s, box-shadow 0.12s; }
+  .cta:hover { transform: translateY(-1px); }
+  .cta.primary { background: #fff; color: var(--blue-deep); box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
+  .cta.ghost { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.32); }
+  .hero.cine .meta-row .tag { background: rgba(255,255,255,0.14); color: #fff; border-color: transparent; }
+  .hero-anim { position: relative; min-height: 250px; }
+  .hero-anim svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  @media (max-width: 760px) { .hero-grid { grid-template-columns: 1fr; } .hero-anim { min-height: 190px; order: -1; } .h1-grad { font-size: 25px; } }
+
   /* section */
   section { margin-top: 26px; }
   .sec-hdr { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
@@ -113,22 +133,27 @@
 <body>
 <div class="app">
 
-  <div class="hero">
-    <p class="eyebrow">制御工学 補助教材 · インタラクティブ</p>
-    <h1>モデル予測制御 (MPC) を「動かして」理解する</h1>
-    <p class="lead">
-      制御理論の教科書で <strong>PID 制御・状態空間・最適制御 (LQR)</strong> までを学んだ人を対象に、
-      モデル予測制御 (Model Predictive Control) を
-      <strong>予測 → 最適化 → 受け取り (receding horizon)</strong> の流れに沿って体験する教材です。
-      「未来をモデルで予測し、コストが最小になる入力列を毎ステップ解き直し、その先頭だけを実際に打つ」という
-      MPC の中心アイデアを、<strong>倒立振子が実際にバランスし、台車がトラックを走る</strong>リアルタイム・アニメーションで体感します。
-      制約を陽に扱える点が古典制御との決定的な違いです。まず「動かして体感」してから、ブロック線図・MPC vs PID・安定性・理論へと進んでください。
-    </p>
-    <div class="meta-row">
-      <span class="tag accent">前提: 古典制御（PID）＋状態空間・LQR の基礎</span>
-      <span class="tag">所要 70–110 分</span>
-      <span class="tag">依存ライブラリなし（HTML を開くだけ）</span>
-      <span class="tag">日本語</span>
+  <div class="hero cine">
+    <div class="hero-grid">
+      <div class="hero-text">
+        <p class="eyebrow">制御工学 補助教材 · インタラクティブ</p>
+        <h1 class="h1-grad">モデル予測制御を、<br>動かして直感する。</h1>
+        <p class="lead">
+          未来をモデルで予測し、コスト最小の入力を毎ステップ解いて<strong>先頭だけ打つ</strong>——MPC の核心を、
+          倒立振子・クレーン・ドローン・ロケット着陸が<strong>実際に動く</strong>アニメで体感。
+          ブロック線図・制約・安定性・PID 比較まで、制御の各方面から。
+        </p>
+        <div class="cta-row">
+          <a class="cta primary" href="demos/cartpole.html">▶ 動くデモを体験</a>
+          <a class="cta ghost" href="content/lecture-notes.html">理論を学ぶ</a>
+        </div>
+        <div class="meta-row">
+          <span class="tag">依存ライブラリなし</span>
+          <span class="tag">7 つの動くデモ</span>
+          <span class="tag">日本語</span>
+        </div>
+      </div>
+      <div class="hero-anim"><svg id="hero-svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" role="img" aria-label="MPC が未来を予測して滑らかに追従するアニメーション"></svg></div>
     </div>
   </div>
 
@@ -452,5 +477,30 @@
   </div>
 
 </div>
+
+<script>
+(function(){
+  const svg=document.getElementById('hero-svg');if(!svg)return;
+  const NS='http://www.w3.org/2000/svg';
+  svg.innerHTML='<defs><filter id="hg" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><radialGradient id="rg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#8fd0ff"/></radialGradient></defs>';
+  const W=400,H=300,cx=W/2,cy=H/2+6,ax=146,ay=92;
+  const path=t=>({x:cx+ax*Math.sin(t),y:cy+ay*Math.sin(2*t)}); // 図形8(リサージュ)
+  let g='';for(let i=0;i<=8;i++){const x=30+i*(W-60)/8;g+=`<line x1="${x}" y1="14" x2="${x}" y2="${H-14}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;}for(let i=0;i<=6;i++){const y=14+i*(H-28)/6;g+=`<line x1="30" y1="${y}" x2="${W-30}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;}
+  const gridEl=document.createElementNS(NS,'g');gridEl.innerHTML=g;svg.appendChild(gridEl);
+  let pp='';for(let t=0;t<=6.30;t+=0.04){const p=path(t);pp+=`${p.x.toFixed(1)},${p.y.toFixed(1)} `;}
+  const pathEl=document.createElementNS(NS,'polyline');pathEl.setAttribute('points',pp);pathEl.setAttribute('fill','none');pathEl.setAttribute('stroke','rgba(255,255,255,0.16)');pathEl.setAttribute('stroke-width','1.5');svg.appendChild(pathEl);
+  const dyn=document.createElementNS(NS,'g');svg.appendChild(dyn);
+  let t0=0,prev=performance.now();
+  function frame(now){const dt=Math.min(0.05,(now-prev)/1000);prev=now;t0+=dt*0.85;
+    let s='';
+    for(let k=18;k>=1;k--){const p=path(t0-k*0.05);const a=1-k/19;s+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(1.6+a*3).toFixed(1)}" fill="#bfe3ff" opacity="${(a*0.45).toFixed(2)}"/>`;}
+    for(let k=1;k<=9;k++){const p=path(t0+k*0.13);const a=1-k/10;s+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(2.4+a*1.8).toFixed(1)}" fill="#ffd47a" opacity="${(a*0.8).toFixed(2)}" filter="url(#hg)"/>`;}
+    const tg=path(t0+1.18);s+=`<g opacity="0.6"><circle cx="${tg.x.toFixed(1)}" cy="${tg.y.toFixed(1)}" r="6.5" fill="none" stroke="#fff" stroke-width="1.4"/><line x1="${(tg.x-10).toFixed(1)}" y1="${tg.y.toFixed(1)}" x2="${(tg.x+10).toFixed(1)}" y2="${tg.y.toFixed(1)}" stroke="#fff" stroke-width="1"/><line x1="${tg.x.toFixed(1)}" y1="${(tg.y-10).toFixed(1)}" x2="${tg.x.toFixed(1)}" y2="${(tg.y+10).toFixed(1)}" stroke="#fff" stroke-width="1"/></g>`;
+    const a=path(t0);s+=`<circle cx="${a.x.toFixed(1)}" cy="${a.y.toFixed(1)}" r="8.5" fill="url(#rg)" filter="url(#hg)"/>`;
+    dyn.innerHTML=s;requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
 </body>
 </html>
