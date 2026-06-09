@@ -96,6 +96,7 @@
       <div class="panel">
         <div class="panel-hdr"><div class="panel-title">操作</div></div>
         <div class="btn-row">
+          <button class="btn" id="b-auto" style="background:linear-gradient(90deg,var(--blue),var(--blue-deep));color:#fff;border-color:transparent;">▶ オート上映</button>
           <button class="btn warn" id="b-kick">外乱（蹴る）</button>
           <button class="btn" id="b-pause">一時停止</button>
           <button class="btn" id="b-reset">リセット</button>
@@ -182,7 +183,11 @@
   const forceLine=el('line',{x1:0,y1:trackY-16,x2:0,y2:trackY-16,stroke:'var(--green)','stroke-width':4,'stroke-linecap':'round'});const forceHead=el('path',{d:'',fill:'var(--green)'});stage.appendChild(forceLine);stage.appendChild(forceHead);
   const cart=el('rect',{x:-34,y:-20,width:68,height:38,rx:6,fill:'var(--blue)'});const wheel1=el('circle',{cx:-20,cy:18,r:7,fill:'var(--blue-deep)'}),wheel2=el('circle',{cx:20,cy:18,r:7,fill:'var(--blue-deep)'});const cartG=el('g',{});cartG.appendChild(cart);cartG.appendChild(wheel1);cartG.appendChild(wheel2);
   const pivot=el('circle',{cx:0,cy:0,r:4,fill:'var(--text-1)'});const pole=el('line',{x1:0,y1:0,x2:0,y2:0,stroke:'var(--text-1)','stroke-width':6,'stroke-linecap':'round'});const bob=el('circle',{cx:0,cy:0,r:13,fill:'var(--amber)',stroke:'var(--surface)','stroke-width':2});
+  const defs=el('defs',{});defs.innerHTML='<filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';stage.insertBefore(defs,stage.firstChild);
+  const trailG=el('g',{});stage.appendChild(trailG);  // 軌跡は機体の下（この後に機体を append）
   stage.appendChild(cartG);stage.appendChild(pole);stage.appendChild(bob);stage.appendChild(pivot);
+  pole.setAttribute('filter','url(#glow)');bob.setAttribute('filter','url(#glow)');
+  const bobTrail=[];
 
   function drawStage(){
     const px=cx+st[0]*scale;cartG.setAttribute('transform',`translate(${px},${trackY-18})`);
@@ -190,6 +195,8 @@
     const plen=2*L*scale;const bx=px+plen*Math.sin(st[2]),by=(trackY-36)-plen*Math.cos(st[2]);
     pole.setAttribute('x1',px);pole.setAttribute('y1',trackY-36);pole.setAttribute('x2',bx);pole.setAttribute('y2',by);bob.setAttribute('cx',bx);bob.setAttribute('cy',by);
     bob.setAttribute('fill',Math.abs(st[2])>0.6?'var(--red)':'var(--amber)');
+    bobTrail.push({x:bx,y:by});if(bobTrail.length>26)bobTrail.shift();
+    let ts='';for(let i=0;i<bobTrail.length;i++){const a=i/bobTrail.length;ts+=`<circle cx="${bobTrail[i].x.toFixed(1)}" cy="${bobTrail[i].y.toFixed(1)}" r="${(2+a*9).toFixed(1)}" fill="${Math.abs(st[2])>0.6?'var(--red)':'var(--amber)'}" opacity="${(a*0.26).toFixed(3)}"/>`;}trailG.innerHTML=ts;
     tgtG.setAttribute('transform',`translate(${cx+target*scale},0)`);
     const fy=trackY-14,flen=Math.max(-60,Math.min(60,lastF*3.5));forceLine.setAttribute('x1',px);forceLine.setAttribute('y1',fy);forceLine.setAttribute('x2',px+flen);forceLine.setAttribute('y2',fy);
     if(Math.abs(flen)>4){const d=Math.sign(flen);forceHead.setAttribute('d',`M${px+flen},${fy} L${px+flen-d*7},${fy-4} L${px+flen-d*7},${fy+4} Z`);}else forceHead.setAttribute('d','');
@@ -246,8 +253,9 @@
     $('explain').innerHTML=msg;
   }
 
-  let acc=0,prev=performance.now(),frame=0;
+  let acc=0,prev=performance.now(),frame=0,auto=false,autoAcc=0;
   function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;
+    if(auto&&running){autoAcc+=dtr;if(autoAcc>3.0){autoAcc=0;if(Math.random()<0.6){st[3]+=(Math.random()<0.5?-1:1)*(1.3+Math.random()*0.8);}else{target=Math.round((Math.random()*3-1.5)*10)/10;}}}
     if(running){acc+=dtr;let guard=0;while(acc>=ctrlDt&&guard<10){const F=force();lastF=F;const sub=4;for(let i=0;i<sub;i++)st=rk4(st,F,ctrlDt/sub);acc-=ctrlDt;guard++;
       thHist.push(st[2]*180/Math.PI);FHist.push(F);xHist.push(st[0]);if(thHist.length>HIST){thHist.shift();FHist.shift();xHist.shift();}}}
     drawStage();if((frame++ %2)===0)drawStrip();refreshReadouts();requestAnimationFrame(loop);}
@@ -258,7 +266,8 @@
   stage.addEventListener('pointerdown',e=>{target=Math.round(clientToX(e.clientX)*100)/100;});
   $('b-kick').addEventListener('click',()=>{const mag=[0,1.5,2.5,3.5][+v('s-dist')];st[3]+=(Math.random()<0.5?-1:1)*mag;});
   $('b-pause').addEventListener('click',e=>{running=!running;e.target.textContent=running?'一時停止':'再開';prev=performance.now();});
-  $('b-reset').addEventListener('click',()=>{st=[0,0,0,0];target=0;lastF=0;thHist.length=0;FHist.length=0;xHist.length=0;});
+  $('b-reset').addEventListener('click',()=>{st=[0,0,0,0];target=0;lastF=0;thHist.length=0;FHist.length=0;xHist.length=0;bobTrail.length=0;});
+  $('b-auto').addEventListener('click',e=>{auto=!auto;e.target.textContent=auto?'■ オート停止':'▶ オート上映';if(auto){running=true;$('b-pause').textContent='一時停止';autoAcc=2.4;}});
   function bindGain(id,vid,fmt){const e=$(id),o=$(vid);e.addEventListener('input',()=>{o.textContent=fmt(+e.value);rebuildGain();});o.textContent=fmt(+e.value);}
   bindGain('s-qth','v-qth',x=>x.toFixed(0));bindGain('s-qx','v-qx',x=>x.toFixed(0));
   bindGain('s-r','v-r',x=>Math.pow(10,x).toFixed(3));bindGain('s-np','v-np',x=>x.toFixed(0));bindGain('s-nc','v-nc',x=>x.toFixed(0));
