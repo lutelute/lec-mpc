@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MPC ショーリール — 動く制御の見本市</title>
+<style>
+  :root{
+    --fg:#eaf2fb;--fg2:#9fb3c8;--accent:#5BA0E8;--gold:#ffd47a;--radius:14px;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% -10%, #143b6b 0%, #0a1b30 55%, #060d18 100%);color:var(--fg);font-family:var(--font-sans);min-height:100vh;}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px;}
+  .nav{font-size:12px;margin-bottom:18px;} .nav a{color:var(--fg2);text-decoration:none;border-bottom:1px solid transparent;} .nav a:hover{color:#fff;border-bottom-color:rgba(255,255,255,0.3);}
+  .hero{text-align:center;padding:18px 10px 26px;}
+  .eyebrow{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--fg2);margin:0 0 10px;}
+  h1{font-size:38px;font-weight:800;letter-spacing:-0.02em;margin:0 0 12px;line-height:1.1;
+     background:linear-gradient(90deg,#ffffff,#bfe3ff 50%,var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .lead{font-size:15px;color:var(--fg2);max-width:62ch;margin:0 auto;line-height:1.7;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:18px;margin-top:26px;}
+  .card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.10);border-radius:var(--radius);overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.35);transition:transform .15s,border-color .15s;}
+  .card:hover{transform:translateY(-3px);border-color:rgba(91,160,232,0.5);}
+  .card-hd{display:flex;align-items:baseline;justify-content:space-between;padding:13px 16px 9px;gap:8px;flex-wrap:wrap;}
+  .card-hd h2{font-size:15px;font-weight:700;margin:0;}
+  .card-hd .tag{font-size:10px;color:#0a1b30;background:var(--gold);padding:2px 8px;border-radius:10px;font-weight:700;}
+  .card-hd .desc{font-size:12px;color:var(--fg2);width:100%;margin-top:2px;}
+  .frame{position:relative;width:100%;height:480px;border:0;border-top:1px solid rgba(255,255,255,0.08);background:#0c1422;}
+  .frame iframe{width:100%;height:100%;border:0;display:block;}
+  .open{display:block;text-align:center;font-size:12px;padding:10px;color:var(--accent);text-decoration:none;background:rgba(255,255,255,0.02);border-top:1px solid rgba(255,255,255,0.06);}
+  .open:hover{color:#fff;background:rgba(91,160,232,0.12);}
+  .more{text-align:center;margin-top:34px;}
+  .more a{display:inline-block;margin:5px;font-size:13px;color:var(--fg);text-decoration:none;padding:9px 16px;border:1px solid rgba(255,255,255,0.18);border-radius:9px;background:rgba(255,255,255,0.04);}
+  .more a:hover{border-color:var(--accent);background:rgba(91,160,232,0.14);}
+  .more a.primary{background:#fff;color:#0a1b30;font-weight:700;border-color:transparent;}
+  .foot{text-align:center;color:var(--fg2);font-size:11px;margin-top:36px;line-height:1.8;}
+  .tip{text-align:center;font-size:12px;color:var(--fg2);margin-top:14px;}
+  @media (max-width:520px){h1{font-size:28px;} .grid{grid-template-columns:1fr;} .frame{height:520px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav"><a href="index.html">← 教材トップ</a></div>
+  <div class="hero">
+    <p class="eyebrow">Model Predictive Control · Showreel</p>
+    <h1>動く制御の見本市</h1>
+    <p class="lead">MPC がリアルタイムに物理を操る様子を、無操作で繰り返す自動再生で。倒立振子はカオスから立ち直り、ロケットは炎を噴いて軟着陸、ドローンは螺旋を描いて飛ぶ——全部ブラウザの中で、いま動いています。</p>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-hd"><h2>倒立振子バランス</h2><span class="tag">AUTO</span><span class="desc">不安定な振子を MPC が立て続ける。外乱で蹴られても優雅に復帰。</span></div>
+      <div class="frame"><iframe src="demos/cartpole.html?show=1" loading="lazy" title="倒立振子"></iframe></div>
+      <a class="open" href="demos/cartpole.html">フル画面で開く →</a>
+    </div>
+    <div class="card">
+      <div class="card-hd"><h2>ロケット着陸</h2><span class="tag">AUTO</span><span class="desc">炎を噴いて降下→直立軟着陸→再投入を自動で繰り返す。</span></div>
+      <div class="frame"><iframe src="demos/rocket.html?show=1" loading="lazy" title="ロケット着陸"></iframe></div>
+      <a class="open" href="demos/rocket.html">フル画面で開く →</a>
+    </div>
+    <div class="card">
+      <div class="card-hd"><h2>3D ドローン飛行</h2><span class="tag">AUTO</span><span class="desc">離陸→螺旋で旋回上昇→軟着陸を立体空間で自動巡回。</span></div>
+      <div class="frame"><iframe src="demos/drone3d.html?show=1" loading="lazy" title="3Dドローン"></iframe></div>
+      <a class="open" href="demos/drone3d.html">フル画面で開く →</a>
+    </div>
+    <div class="card">
+      <div class="card-hd"><h2>台車レース MPC vs PID</h2><span class="tag">体験</span><span class="desc">「スタート」で 2 台が同時発進。壁を MPC は守り PID は突っ込む。</span></div>
+      <div class="frame"><iframe src="demos/track_race.html" loading="lazy" title="台車レース"></iframe></div>
+      <a class="open" href="demos/track_race.html">フル画面で開く →</a>
+    </div>
+  </div>
+
+  <p class="tip">💡 各デモは「▶ オート上映」で無操作ループになります。画面録画して SNS にどうぞ。</p>
+
+  <div class="more">
+    <a class="primary" href="index.html">全教材を見る</a>
+    <a href="demos/crane.html">天井クレーン</a>
+    <a href="demos/acc.html">車間制御 ACC</a>
+    <a href="demos/drone.html">2D ドローン</a>
+    <a href="demos/mpc_vs_pid.html">制御として見る</a>
+    <a href="content/lecture-notes.html">講義ノート</a>
+  </div>
+
+  <div class="foot">
+    モデル予測制御 (MPC) インタラクティブ教材 · ショーリール<br>
+    すべて単一 HTML・外部依存なし・検証済みの制御で実時間動作
+  </div>
+</div>
+</body>
+</html>

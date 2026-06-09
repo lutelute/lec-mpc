@@ -286,6 +286,7 @@
   document.getElementById('s-off').addEventListener('input',e=>{document.getElementById('v-off').textContent=(+e.target.value).toFixed(1)+' m';if(!descending){x0=+e.target.value;st[0]=x0;}});
   document.getElementById('s-tmax').addEventListener('input',e=>document.getElementById('v-tmax').textContent=(+e.target.value).toFixed(1)+' ×mg');
   resetState();
+  if(location.search.indexOf('show')>=0){const b=document.getElementById('b-auto');if(b)b.click();}
 })();
 </script>
 </body>

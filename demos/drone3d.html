@@ -247,6 +247,7 @@
   document.getElementById('s-rad').addEventListener('input',e=>document.getElementById('v-rad').textContent=(+e.target.value).toFixed(1)+' m');
   document.getElementById('s-vz').addEventListener('input',e=>document.getElementById('v-vz').textContent=(+e.target.value).toFixed(2)+' m/s');
   document.getElementById('s-vd').addEventListener('input',e=>document.getElementById('v-vd').textContent=(+e.target.value).toFixed(2)+' m/s');
+  if(location.search.indexOf('show')>=0){const b=document.getElementById('b-auto');if(b)b.click();}
 })();
 </script>
 </body>

@@ -275,6 +275,7 @@
   $('s-len').addEventListener('input',e=>{L=+e.target.value;$('v-len').textContent=L.toFixed(2)+' m';rebuildGain();});
   $('s-dist').addEventListener('input',e=>$('v-dist').textContent=['','弱','中','強'][+e.target.value]);
   rebuildGain();
+  if(location.search.indexOf('show')>=0){const b=$('b-auto');if(b)b.click();}
 })();
 </script>
 </body>
