@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天井クレーン アンチスウェイ — 揺らさず運ぶ MPC</title>
+<style>
+  :root{
+    --bg:#f6f4ee;--surface:#fff;--surface-2:#efece4;--text-1:#1a1a1a;--text-2:#5f5e5a;--text-3:#888780;
+    --border:rgba(0,0,0,0.10);--border-2:rgba(0,0,0,0.22);--info-bg:#E6F1FB;--info-text:#0C447C;
+    --blue:#378ADD;--blue-deep:#0C447C;--amber:#EF9F27;--red:#E24B4A;--green:#3DA35D;--radius:10px;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    --font-mono:"SF Mono","Menlo","Consolas",monospace;--text-primary:var(--text-1);--text-secondary:var(--text-2);--border-strong:var(--border-2);
+  }
+  @media (prefers-color-scheme:dark){:root{--bg:#161614;--surface:#1f1f1d;--surface-2:#2a2a27;--text-1:#f0eee8;--text-2:#b4b2a9;--text-3:#888780;--border:rgba(255,255,255,0.10);--border-2:rgba(255,255,255,0.22);--info-bg:#0C447C;--info-text:#B5D4F4;--blue:#5BA0E8;--blue-deep:#B5D4F4;}}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text-1);font-family:var(--font-sans);font-size:14px;line-height:1.5;}
+  .app{max-width:1180px;margin:0 auto;padding:16px 18px 28px;}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  h1{font-size:17px;font-weight:600;margin:0;} .subtitle{font-size:11px;color:var(--text-3);margin:0;}
+  svg{display:block;}
+  .lec-nav{display:flex;gap:14px;margin-bottom:10px;padding:2px 4px;font-size:11px;flex-wrap:wrap;align-items:center;}
+  .lec-nav a{color:var(--text-3);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:1px;}
+  .lec-nav a:hover{color:var(--text-1);border-bottom-color:var(--border-2);} .lec-nav a.home{color:var(--text-2);font-weight:500;} .lec-nav .sep{color:var(--text-3);opacity:0.5;}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
+  .kpi-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 14px;}
+  .kpi-card.accent{background:var(--info-bg);border-color:transparent;}
+  .kpi-label{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;font-weight:500;}
+  .kpi-card.accent .kpi-label{color:var(--info-text);opacity:0.85;}
+  .kpi-val{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:5px;} .kpi-card.accent .kpi-val{color:var(--info-text);}
+  .main-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:10px;align-items:start;}
+  .panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;}
+  .panel-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap;}
+  .panel-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;} .panel-hint{font-size:10px;color:var(--text-3);}
+  .stage{border-radius:8px;cursor:crosshair;background:linear-gradient(var(--surface),var(--surface-2));}
+  .btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .btn{font-size:12px;padding:8px 13px;background:transparent;border:0.5px solid var(--border-2);border-radius:7px;cursor:pointer;color:var(--text-2);font-family:inherit;transition:all .1s;}
+  .btn:hover{background:var(--surface-2);color:var(--text-1);} .btn:active{transform:scale(0.97);}
+  .btn.warn{background:var(--amber);color:#3a2600;border-color:transparent;}
+  .chk-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-1);margin:8px 0;font-weight:500;}
+  .chk-row input{width:15px;height:15px;accent-color:var(--blue);}
+  .ctrl{margin:11px 0;} .ctrl-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .ctrl-name{font-size:12px;color:var(--text-2);} .ctrl-val{font-size:12px;color:var(--text-1);font-weight:500;font-variant-numeric:tabular-nums;}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;}
+  input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-moz-range-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--blue);border-radius:50%;margin-top:-5.5px;cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;background:var(--blue);border:none;border-radius:50%;cursor:pointer;}
+  .explain{font-size:12.5px;color:var(--text-2);line-height:1.7;} .explain b{color:var(--text-1);}
+  .footer{font-size:10px;color:var(--text-3);text-align:center;margin-top:14px;line-height:1.7;}
+  @media (max-width:980px){.main-grid{grid-template-columns:1fr;}.kpi{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="lec-nav">
+    <a class="home" href="../index.html">← 教材トップ</a><span class="sep">·</span>
+    <a href="../content/lecture-notes.html">講義ノート</a>
+    <a href="cartpole.html">倒立振子</a><a href="track_race.html">台車レース</a><a href="acc.html">車間制御 ACC</a>
+    <span class="sep">·</span><span style="color:var(--text-3)">動くデモ — 天井クレーン</span>
+  </nav>
+  <header>
+    <h1>天井クレーン — 揺らさず運ぶ（アンチスウェイ）</h1>
+    <p class="subtitle">積み荷を吊ったトロリーを目標へ · MPC は振れを先読みして<strong>残留スイングをほぼゼロ</strong>に · 「揺れ抑制」OFF で違いを体感</p>
+  </header>
+
+  <section class="kpi">
+    <div class="kpi-card"><div class="kpi-label">トロリー位置 x</div><div class="kpi-val" id="k-x">0.00 m</div></div>
+    <div class="kpi-card"><div class="kpi-label">振れ角 φ</div><div class="kpi-val" id="k-ph">0.0°</div></div>
+    <div class="kpi-card accent"><div class="kpi-label">制御力 F</div><div class="kpi-val" id="k-f">0.0 N</div></div>
+    <div class="kpi-card"><div class="kpi-label">モード</div><div class="kpi-val" id="k-md" style="font-size:14px;">MPC 揺れ抑制</div></div>
+  </section>
+
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-hdr"><div class="panel-title">ステージ（実時間）</div><div class="panel-hint">天井レールをクリック → 目標へ運搬 / 「揺らす」で外乱</div></div>
+      <svg id="stage" class="stage" viewBox="0 0 760 360" style="width:100%;" role="img"></svg>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">操作</div></div>
+        <div class="chk-row"><input type="checkbox" id="c-mpc" checked><label for="c-mpc">揺れ抑制（MPC）を有効化</label></div>
+        <div class="btn-row">
+          <button class="btn warn" id="b-kick">揺らす（外乱）</button>
+          <button class="btn" id="b-reset">リセット</button>
+        </div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">ロープ長 L</span><span class="ctrl-val" id="v-len">0.60 m</span></div><input type="range" id="s-len" min="0.3" max="1.2" step="0.05" value="0.6"></div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">力の上限 F<sub>max</sub></span><span class="ctrl-val" id="v-fmax">8 N</span></div><input type="range" id="s-fmax" min="3" max="20" step="1" value="8"></div>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">いま何が起きているか</div></div>
+        <p class="explain" id="explain"></p>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">仕組み</div></div>
+        <p class="explain" style="font-size:12px;">
+          状態 <math><mrow><mi>x</mi><mo>=</mo><mo>[</mo><mtext>位置</mtext><mo>,</mo><mtext>速度</mtext><mo>,</mo><mi>φ</mi><mo>,</mo><mover><mi>φ</mi><mo>˙</mo></mover><mo>]</mo></mrow></math>（φ＝吊り角）。
+          MPC のコストは<strong>位置誤差だけでなく振れ角 φ も罰する</strong>ので、加速と減速のタイミングを予測し、目標で振れが消えるよう運ぶ（最適な入力整形）。
+          OFF にすると位置だけ見る PD になり、積み荷が大きく揺れます。
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    2D 天井クレーン（トロリー質量1, 積み荷0.3, 可変ロープ長, g=9.81）· 数値線形化→離散化→状態コスト MPC（φ を重く罰）· 非線形 RK4 で実時間描画<br>
+    MPC は振れを予測して残留スイングをほぼ 0 に。OFF（PD）と切り替えてアンチスウェイの効果を比べてください。
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const I=n=>Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
+  const zeros=(r,c)=>Array.from({length:r},()=>new Array(c).fill(0));
+  function mm(A,B){const n=A.length,m=B[0].length,p=B.length,C=zeros(n,m);for(let i=0;i<n;i++)for(let k=0;k<p;k++){const a=A[i][k];if(!a)continue;for(let j=0;j<m;j++)C[i][j]+=a*B[k][j];}return C;}
+  const tp=A=>A[0].map((_,j)=>A.map(r=>r[j]));const add=(A,B)=>A.map((r,i)=>r.map((v,j)=>v+B[i][j]));const sc=(A,s)=>A.map(r=>r.map(v=>v*s));
+  function inv(A){const n=A.length;const M=A.map((r,i)=>r.concat(I(n)[i]));for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)M[p][c]+=1e-9;[M[c],M[p]]=[M[p],M[c]];const d=M[c][c];for(let j=0;j<2*n;j++)M[c][j]/=d;for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];for(let j=0;j<2*n;j++)M[r][j]-=f*M[c][j];}}return M.map(r=>r.slice(n));}
+  function expm(A){const n=A.length;let nr=0;for(const r of A)for(const v of r)nr+=v*v;nr=Math.sqrt(nr);let s=Math.max(0,Math.ceil(Math.log2(nr+1e-9)));const As=sc(A,1/Math.pow(2,s));let t=I(n),sum=I(n);for(let k=1;k<=20;k++){t=sc(mm(t,As),1/k);sum=add(sum,t);}for(let i=0;i<s;i++)sum=mm(sum,sum);return sum;}
+  function c2d(Ac,Bc,dt){const n=Ac.length,m=Bc[0].length;const M=zeros(n+m,n+m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)M[i][j]=Ac[i][j]*dt;for(let j=0;j<m;j++)M[i][n+j]=Bc[i][j]*dt;}const E=expm(M);const Ad=zeros(n,n),Bd=zeros(n,m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)Ad[i][j]=E[i][j];for(let j=0;j<m;j++)Bd[i][j]=E[i][n+j];}return{Ad,Bd};}
+
+  const Mt=1.0,mp=0.3,g=9.81;let L=0.6;
+  function deriv(s,u){const[x,xd,ph,phd]=s;const sp=Math.sin(ph),cp=Math.cos(ph);const den=Mt+mp*sp*sp;
+    const xdd=(u+mp*L*phd*phd*sp+mp*g*sp*cp)/den;
+    const phdd=(-(Mt+mp)*g*sp-cp*(u+mp*L*phd*phd*sp))/(L*den);return[xd,xdd,phd,phdd];}
+  function rk4(s,u,dt){const k1=deriv(s,u);const s2=s.map((v,i)=>v+0.5*dt*k1[i]);const k2=deriv(s2,u);const s3=s.map((v,i)=>v+0.5*dt*k2[i]);const k3=deriv(s3,u);const s4=s.map((v,i)=>v+dt*k3[i]);const k4=deriv(s4,u);return s.map((v,i)=>v+dt/6*(k1[i]+2*k2[i]+2*k3[i]+k4[i]));}
+
+  const ctrlDt=0.05,Np=40,Nc=12,Qd=[10,1,40,4],Rw=0.05;
+  let Kfb=[0,0,0,0],Kr=0;
+  function rebuildGain(){const eps=1e-6,Ac=zeros(4,4),Bc=zeros(4,1);for(let j=0;j<4;j++){const sp=[0,0,0,0];sp[j]=eps;const sm=[0,0,0,0];sm[j]=-eps;const fp=deriv(sp,0),fm=deriv(sm,0);for(let i=0;i<4;i++)Ac[i][j]=(fp[i]-fm[i])/(2*eps);}const fp=deriv([0,0,0,0],eps),fm=deriv([0,0,0,0],-eps);for(let i=0;i<4;i++)Bc[i][0]=(fp[i]-fm[i])/(2*eps);
+    const{Ad,Bd}=c2d(Ac,Bc,ctrlDt);const Apow=[I(4)];for(let i=1;i<=Np;i++)Apow.push(mm(Apow[i-1],Ad));
+    const Sx=zeros(Np*4,4),Su=zeros(Np*4,Nc);for(let i=1;i<=Np;i++){const Ai=Apow[i];for(let r=0;r<4;r++)for(let c=0;c<4;c++)Sx[(i-1)*4+r][c]=Ai[r][c];for(let j=0;j<Nc;j++){if(j>i-1)break;const AB=mm(Apow[i-1-j],Bd);for(let r=0;r<4;r++)Su[(i-1)*4+r][j]=AB[r][0];}}
+    const SuT=tp(Su);const SuTQ=SuT.map(row=>row.map((v,k)=>v*Qd[k%4]));const H=mm(SuTQ,Su);for(let i=0;i<Nc;i++)H[i][i]+=Rw;
+    const Gain=mm(inv(H),SuTQ);const K1=Gain[0];Kfb=[0,0,0,0];Kr=0;for(let i=0;i<Np*4;i++){for(let c=0;c<4;c++)Kfb[c]+=K1[i]*Sx[i][c];if(i%4===0)Kr+=K1[i];}}
+  rebuildGain();
+
+  let st=[0,0,0,0],target=0,Fmax=8,useMPC=true,lastF=0;
+  function force(){let u;if(useMPC){u=Kr*target;for(let c=0;c<4;c++)u-=Kfb[c]*st[c];}else{u=3.0*(target-st[0])-2.0*st[1];}return Math.max(-Fmax,Math.min(Fmax,u));}
+
+  const NS='http://www.w3.org/2000/svg';const stage=document.getElementById('stage');
+  const W=760,H=360,railY=70,scale=110,cx=W/2,TH=2.6;
+  const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  // 天井レール
+  stage.appendChild(el('rect',{x:40,y:railY-10,width:W-80,height:10,fill:'var(--surface-2)',stroke:'var(--border-2)','stroke-width':0.5}));
+  stage.appendChild(el('line',{x1:40,y1:railY,x2:W-40,y2:railY,stroke:'var(--border-strong)','stroke-width':2}));
+  for(let xm=-2;xm<=2;xm++){const px=cx+xm*scale;if(px<40||px>W-40)continue;const t=el('text',{x:px,y:railY-14,'text-anchor':'middle','font-size':10,fill:'var(--text-secondary)'});t.textContent=xm+'m';stage.appendChild(t);}
+  // 目標
+  const tgt=el('g',{});const tl=el('line',{x1:0,y1:railY,x2:0,y2:H-26,stroke:'var(--red)','stroke-width':1.5,'stroke-dasharray':'5,4'});const tt=el('text',{x:3,y:H-14,'font-size':10,fill:'var(--red)'});tt.textContent='目標';tgt.appendChild(tl);tgt.appendChild(tt);stage.appendChild(tgt);
+  // 力矢印
+  const fLine=el('line',{x1:0,y1:railY-30,x2:0,y2:railY-30,stroke:'var(--green)','stroke-width':4,'stroke-linecap':'round'});const fHead=el('path',{d:'',fill:'var(--green)'});stage.appendChild(fLine);stage.appendChild(fHead);
+  // トロリー+ロープ+荷
+  const cable=el('line',{x1:0,y1:0,x2:0,y2:0,stroke:'var(--text-2)','stroke-width':2});
+  const trolley=el('rect',{x:-30,y:-14,width:60,height:24,rx:4,fill:'var(--blue)'});
+  const load=el('rect',{x:-16,y:-16,width:32,height:32,rx:4,fill:'var(--amber)',stroke:'var(--surface)','stroke-width':2});
+  stage.appendChild(cable);const trG=el('g',{});trG.appendChild(trolley);stage.appendChild(trG);const ldG=el('g',{});ldG.appendChild(load);stage.appendChild(ldG);
+
+  function render(){
+    const px=cx+st[0]*scale;
+    trG.setAttribute('transform',`translate(${px},${railY})`);
+    const plen=L*scale*1.5;const bx=px+plen*Math.sin(st[2]),by=railY+plen*Math.cos(st[2]);
+    cable.setAttribute('x1',px);cable.setAttribute('y1',railY);cable.setAttribute('x2',bx);cable.setAttribute('y2',by);
+    ldG.setAttribute('transform',`translate(${bx},${by})`);
+    load.setAttribute('fill',Math.abs(st[2])>0.35?'var(--red)':'var(--amber)');
+    tgt.setAttribute('transform',`translate(${cx+target*scale},0)`);
+    const fy=railY-30,flen=Math.max(-55,Math.min(55,lastF*4));fLine.setAttribute('x1',px);fLine.setAttribute('y1',fy);fLine.setAttribute('x2',px+flen);fLine.setAttribute('y2',fy);
+    if(Math.abs(flen)>4){const d=Math.sign(flen);fHead.setAttribute('d',`M${px+flen},${fy} L${px+flen-d*7},${fy-4} L${px+flen-d*7},${fy+4} Z`);}else fHead.setAttribute('d','');
+    document.getElementById('k-x').textContent=st[0].toFixed(2)+' m';
+    document.getElementById('k-ph').textContent=(st[2]*180/Math.PI).toFixed(1)+'°';
+    document.getElementById('k-f').textContent=lastF.toFixed(1)+' N';
+    document.getElementById('k-md').textContent=useMPC?'MPC 揺れ抑制':'PD（位置のみ）';
+    const sw=Math.abs(st[2]*180/Math.PI);
+    let msg;
+    if(Math.abs(target-st[0])>0.1)msg=useMPC?`目標へ<b>運搬中</b>。MPC は到着時に振れが消えるよう加減速を整形しています。`:`<b>位置だけ</b>追う PD で運搬中。積み荷の揺れは無視されます。`;
+    else if(sw>3)msg=useMPC?`到着。残り振れを<b>能動的に抑制中</b>。`:`到着したが<b style="color:var(--red)">積み荷が ${sw.toFixed(0)}° 揺れている</b>（PD は揺れを抑えない）。「揺れ抑制」を ON にして比べてみてください。`;
+    else msg=`<b>静止・直下。</b>天井レールをクリックで目標移動、「揺らす」で外乱を与えられます。`;
+    document.getElementById('explain').innerHTML=msg;
+  }
+
+  let acc=0,prev=performance.now();
+  function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;acc+=dtr;let guard=0;
+    while(acc>=ctrlDt&&guard<10){const F=force();lastF=F;for(let i=0;i<4;i++)st=rk4(st,F,ctrlDt/4);acc-=ctrlDt;guard++;}
+    render();requestAnimationFrame(loop);}
+  requestAnimationFrame(loop);
+
+  function clientToX(cxp){const r=stage.getBoundingClientRect();const vx=(cxp-r.left)*(W/r.width);return Math.max(-TH,Math.min(TH,(vx-cx)/scale));}
+  stage.addEventListener('pointerdown',e=>{target=Math.round(clientToX(e.clientX)*100)/100;});
+  document.getElementById('c-mpc').addEventListener('change',e=>{useMPC=e.target.checked;});
+  document.getElementById('b-kick').addEventListener('click',()=>{st[3]+=(Math.random()<0.5?-1:1)*2.5;});
+  document.getElementById('b-reset').addEventListener('click',()=>{st=[0,0,0,0];target=0;lastF=0;});
+  document.getElementById('s-len').addEventListener('input',e=>{L=+e.target.value;document.getElementById('v-len').textContent=L.toFixed(2)+' m';rebuildGain();});
+  document.getElementById('s-fmax').addEventListener('input',e=>{Fmax=+e.target.value;document.getElementById('v-fmax').textContent=Fmax+' N';});
+})();
+</script>
+</body>
+</html>

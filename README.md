@@ -38,6 +38,8 @@
 | 🏠 | **[教材トップ（ポータル）](https://lutelute.github.io/lec-mpc/)** | 学習フロー・教科書対応表・全導線 |
 | ▶ | **[動く：倒立振子を立てる ▶](https://lutelute.github.io/lec-mpc/demos/cartpole.html)** | MPC が不安定な振子をバランスさせて走る。外乱から先読みで復帰（非線形・実時間） |
 | ▶ | **[動く：台車レース MPC vs PID ▶](https://lutelute.github.io/lec-mpc/demos/track_race.html)** | 2 台が同時発進。壁（位置の上限）を MPC は守り PID は突っ込む |
+| ▶ | **[動く：天井クレーン アンチスウェイ ▶](https://lutelute.github.io/lec-mpc/demos/crane.html)** | 吊り荷を揺らさず運ぶ。MPC が振れを予測し残留スイングをほぼ 0 に |
+| ▶ | **[動く：車間制御 ACC ▶](https://lutelute.github.io/lec-mpc/demos/acc.html)** | 前車に追従し車間を保持。急ブレーキに先回りして追突回避（加減速制限） |
 | 1 | **[Step 1：受け取りホライズン デモ ▶](https://lutelute.github.io/lec-mpc/demos/mpc_receding_horizon.html)** | 無制約 MPC。予測・最適化・先頭だけ適用して再計算 |
 | 2 | **[Step 2：制約付き MPC デモ ▶](https://lutelute.github.io/lec-mpc/demos/mpc_constrained.html)** | 入力飽和・出力天井を QP（Hildreth 法）で処理 |
 | 3 | **[Step 3：MPC を制御として見る ▶](https://lutelute.github.io/lec-mpc/demos/mpc_vs_pid.html)** | ブロック線図・MPC vs PID 並走・閉ループ極(z平面)・ステップ応答指標を 4 プラントで比較 |
@@ -68,6 +70,8 @@ lec-mpc/
 ├── demos/                    … 触って動かす体験デモ
 │   ├── cartpole.html               … 動く：倒立振子を MPC で立てる（非線形・実時間アニメ）
 │   ├── track_race.html             … 動く：台車レース MPC vs PID（力上限・壁の制約）
+│   ├── crane.html                  … 動く：天井クレーン アンチスウェイ（揺らさず運ぶ）
+│   ├── acc.html                    … 動く：車間制御 ACC（前車追従・追突回避）
 │   ├── mpc_receding_horizon.html   … Step 1（無制約・受け取り）
 │   ├── mpc_constrained.html        … Step 2（制約付き・QP）
 │   └── mpc_vs_pid.html             … Step 3（制御として見る・MPC vs PID・z平面・安定性）

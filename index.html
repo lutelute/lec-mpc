@@ -150,6 +150,18 @@
         <span class="step-desc">同じ台車を MPC と PID で<strong>同時に走らせて競争</strong>。力に上限、コースに<strong>壁</strong>。MPC は壁の手前で滑らかに停止、PID は制約を知らず突っ込む——制約を扱える MPC の強みが一目で分かります。</span>
         <span class="step-go">レースを開く →</span>
       </a>
+      <a class="step" href="demos/crane.html" style="border-color: var(--blue);">
+        <span class="step-num">▶ 動く · アンチスウェイ</span>
+        <span class="step-title">天井クレーン</span>
+        <span class="step-desc">吊り荷を<strong>揺らさずに運ぶ</strong>。MPC は振れ角を予測して加減速を整形し、目標で残留スイングをほぼ 0 に。「揺れ抑制」を OFF にすると荷が大きく揺れ、アンチスウェイの価値が分かります。</span>
+        <span class="step-go">クレーンを開く →</span>
+      </a>
+      <a class="step" href="demos/acc.html" style="border-color: var(--blue);">
+        <span class="step-num">▶ 動く · 自動運転</span>
+        <span class="step-title">車間制御 (ACC)</span>
+        <span class="step-desc">前車に追従して<strong>車間を一定に保つ</strong>。加減速に上限。「前車ブレーキ」を押すと前車が急減速し、MPC が<strong>先回りして安全に減速</strong>——追突を防ぎます。身近な MPC 応用。</span>
+        <span class="step-go">ACC を開く →</span>
+      </a>
     </div>
   </section>
 
@@ -306,6 +318,20 @@
         <span>
           <span class="file-name">track_race.html</span>
           <span class="file-desc">動くデモ：台車レース MPC vs PID（力上限・壁の制約）</span>
+        </span>
+      </a>
+      <a class="file" href="demos/crane.html">
+        <span class="file-ico">▶</span>
+        <span>
+          <span class="file-name">crane.html</span>
+          <span class="file-desc">動くデモ：天井クレーン アンチスウェイ（揺らさず運ぶ）</span>
+        </span>
+      </a>
+      <a class="file" href="demos/acc.html">
+        <span class="file-ico">▶</span>
+        <span>
+          <span class="file-name">acc.html</span>
+          <span class="file-desc">動くデモ：車間制御 ACC（前車追従・追突回避）</span>
         </span>
       </a>
       <a class="file" href="demos/mpc_receding_horizon.html">

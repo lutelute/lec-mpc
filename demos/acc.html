@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>車間制御 ACC — 前車に追従する MPC</title>
+<style>
+  :root{
+    --bg:#f6f4ee;--surface:#fff;--surface-2:#efece4;--text-1:#1a1a1a;--text-2:#5f5e5a;--text-3:#888780;
+    --border:rgba(0,0,0,0.10);--border-2:rgba(0,0,0,0.22);--info-bg:#E6F1FB;--info-text:#0C447C;
+    --blue:#378ADD;--blue-deep:#0C447C;--amber:#EF9F27;--red:#E24B4A;--green:#3DA35D;--radius:10px;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    --font-mono:"SF Mono","Menlo","Consolas",monospace;--text-primary:var(--text-1);--text-secondary:var(--text-2);--border-strong:var(--border-2);
+  }
+  @media (prefers-color-scheme:dark){:root{--bg:#161614;--surface:#1f1f1d;--surface-2:#2a2a27;--text-1:#f0eee8;--text-2:#b4b2a9;--text-3:#888780;--border:rgba(255,255,255,0.10);--border-2:rgba(255,255,255,0.22);--info-bg:#0C447C;--info-text:#B5D4F4;--blue:#5BA0E8;--blue-deep:#B5D4F4;}}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text-1);font-family:var(--font-sans);font-size:14px;line-height:1.5;}
+  .app{max-width:1180px;margin:0 auto;padding:16px 18px 28px;}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  h1{font-size:17px;font-weight:600;margin:0;} .subtitle{font-size:11px;color:var(--text-3);margin:0;}
+  svg{display:block;}
+  .lec-nav{display:flex;gap:14px;margin-bottom:10px;padding:2px 4px;font-size:11px;flex-wrap:wrap;align-items:center;}
+  .lec-nav a{color:var(--text-3);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:1px;}
+  .lec-nav a:hover{color:var(--text-1);border-bottom-color:var(--border-2);} .lec-nav a.home{color:var(--text-2);font-weight:500;} .lec-nav .sep{color:var(--text-3);opacity:0.5;}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
+  .kpi-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 14px;}
+  .kpi-card.accent{background:var(--info-bg);border-color:transparent;}
+  .kpi-label{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;font-weight:500;} .kpi-card.accent .kpi-label{color:var(--info-text);opacity:0.85;}
+  .kpi-val{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:5px;} .kpi-card.accent .kpi-val{color:var(--info-text);}
+  .main-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:10px;align-items:start;}
+  .panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;}
+  .panel-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap;}
+  .panel-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;} .panel-hint{font-size:10px;color:var(--text-3);}
+  .stage{border-radius:8px;background:#3a3a38;}
+  .btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .btn{font-size:12px;padding:8px 13px;background:transparent;border:0.5px solid var(--border-2);border-radius:7px;cursor:pointer;color:var(--text-2);font-family:inherit;transition:all .1s;}
+  .btn:hover{background:var(--surface-2);color:var(--text-1);} .btn:active{transform:scale(0.97);}
+  .btn.warn{background:var(--red);color:#fff;border-color:transparent;}
+  .ctrl{margin:11px 0;} .ctrl-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .ctrl-name{font-size:12px;color:var(--text-2);} .ctrl-val{font-size:12px;color:var(--text-1);font-weight:500;font-variant-numeric:tabular-nums;}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;}
+  input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-moz-range-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--blue);border-radius:50%;margin-top:-5.5px;cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;background:var(--blue);border:none;border-radius:50%;cursor:pointer;}
+  .explain{font-size:12.5px;color:var(--text-2);line-height:1.7;} .explain b{color:var(--text-1);}
+  .footer{font-size:10px;color:var(--text-3);text-align:center;margin-top:14px;line-height:1.7;}
+  @media (max-width:980px){.main-grid{grid-template-columns:1fr;}.kpi{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="lec-nav">
+    <a class="home" href="../index.html">← 教材トップ</a><span class="sep">·</span>
+    <a href="../content/lecture-notes.html">講義ノート</a>
+    <a href="cartpole.html">倒立振子</a><a href="crane.html">クレーン</a><a href="track_race.html">台車レース</a>
+    <span class="sep">·</span><span style="color:var(--text-3)">動くデモ — 車間制御 ACC</span>
+  </nav>
+  <header>
+    <h1>車間制御 (ACC) — 前車に追従する MPC</h1>
+    <p class="subtitle">前車との車間を一定に保つ · 加速・減速に上限 · 「前車ブレーキ」に MPC が先回りして安全に減速</p>
+  </header>
+
+  <section class="kpi">
+    <div class="kpi-card"><div class="kpi-label">車間距離</div><div class="kpi-val" id="k-gap">30.0 m</div></div>
+    <div class="kpi-card"><div class="kpi-label">自車速度</div><div class="kpi-val" id="k-ve">72 km/h</div></div>
+    <div class="kpi-card accent"><div class="kpi-label">自車の加速度</div><div class="kpi-val" id="k-ae">0.0</div></div>
+    <div class="kpi-card"><div class="kpi-label">前車速度</div><div class="kpi-val" id="k-vl">72 km/h</div></div>
+  </section>
+
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-hdr"><div class="panel-title">道路（実時間）</div><div class="panel-hint">青＝自車（MPC）/ 黄＝前車。「前車ブレーキ」を押すと前車が急減速</div></div>
+      <svg id="stage" class="stage" viewBox="0 0 760 230" style="width:100%;" role="img"></svg>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">操作</div></div>
+        <div class="btn-row">
+          <button class="btn warn" id="b-brake">前車ブレーキ（押す）</button>
+          <button class="btn" id="b-acc2">前車 加速</button>
+          <button class="btn" id="b-reset">リセット</button>
+        </div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">目標車間 d*</span><span class="ctrl-val" id="v-d">15 m</span></div><input type="range" id="s-d" min="8" max="30" step="1" value="15"></div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">減速の上限 |a<sub>min</sub>|</span><span class="ctrl-val" id="v-amin">4.0</span></div><input type="range" id="s-amin" min="2" max="8" step="0.5" value="4"></div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">加速の上限 a<sub>max</sub></span><span class="ctrl-val" id="v-amax">2.5</span></div><input type="range" id="s-amax" min="1" max="4" step="0.5" value="2.5"></div>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">いま何が起きているか</div></div>
+        <p class="explain" id="explain"></p>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">仕組み</div></div>
+        <p class="explain" style="font-size:12px;">
+          状態 <math><mrow><mo>[</mo><msub><mi>e</mi><mtext>gap</mtext></msub><mo>,</mo><mi>Δv</mi><mo>,</mo><msub><mi>a</mi><mtext>ego</mtext></msub><mo>]</mo></mrow></math>（車間誤差・相対速度・自車加速度）。
+          MPC は車間誤差を 0 にしつつ、<strong>加減速の上限を制約として</strong>守る。前車の急減速時も先読みで早めに減速し、急ブレーキ＝快適性/安全の限界内に収める。
+          PID 的な単純追従より<strong>追突しにくく・滑らか</strong>。
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    縦方向 ACC モデル（一次の加速度遅れ τ=0.5s）· 状態コスト MPC（車間誤差を罰）＋ 加減速クランプ |a|≤上限 · 実時間アニメ<br>
+    目標車間を詰める／減速上限を小さくすると、前車ブレーキ時に車間が縮みやすくなります（それでも追突は回避）。
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const I=n=>Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
+  const zeros=(r,c)=>Array.from({length:r},()=>new Array(c).fill(0));
+  function mm(A,B){const n=A.length,m=B[0].length,p=B.length,C=zeros(n,m);for(let i=0;i<n;i++)for(let k=0;k<p;k++){const a=A[i][k];if(!a)continue;for(let j=0;j<m;j++)C[i][j]+=a*B[k][j];}return C;}
+  const tp=A=>A[0].map((_,j)=>A.map(r=>r[j]));const add=(A,B)=>A.map((r,i)=>r.map((v,j)=>v+B[i][j]));const sc=(A,s)=>A.map(r=>r.map(v=>v*s));
+  function inv(A){const n=A.length;const M=A.map((r,i)=>r.concat(I(n)[i]));for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)M[p][c]+=1e-9;[M[c],M[p]]=[M[p],M[c]];const d=M[c][c];for(let j=0;j<2*n;j++)M[c][j]/=d;for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];for(let j=0;j<2*n;j++)M[r][j]-=f*M[c][j];}}return M.map(r=>r.slice(n));}
+  function expm(A){const n=A.length;let nr=0;for(const r of A)for(const v of r)nr+=v*v;nr=Math.sqrt(nr);let s=Math.max(0,Math.ceil(Math.log2(nr+1e-9)));const As=sc(A,1/Math.pow(2,s));let t=I(n),sum=I(n);for(let k=1;k<=20;k++){t=sc(mm(t,As),1/k);sum=add(sum,t);}for(let i=0;i<s;i++)sum=mm(sum,sum);return sum;}
+  function c2d(Ac,Bc,dt){const n=Ac.length,m=Bc[0].length;const M=zeros(n+m,n+m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)M[i][j]=Ac[i][j]*dt;for(let j=0;j<m;j++)M[i][n+j]=Bc[i][j]*dt;}const E=expm(M);const Ad=zeros(n,n),Bd=zeros(n,m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)Ad[i][j]=E[i][j];for(let j=0;j<m;j++)Bd[i][j]=E[i][n+j];}return{Ad,Bd};}
+
+  const tau=0.5,dt=0.1;
+  const Ac=[[0,1,0],[0,0,-1],[0,0,-1/tau]],Bc=[[0],[0],[1/tau]];
+  const{Ad,Bd}=c2d(Ac,Bc,dt);
+  // 状態コストMPCゲイン（Kfb 1x3）
+  const Np=25,Nc=8,Qd=[2,3,0.3],Rw=0.5;
+  let Kfb=[0,0,0];
+  (function(){const Apow=[I(3)];for(let i=1;i<=Np;i++)Apow.push(mm(Apow[i-1],Ad));const Sx=zeros(Np*3,3),Su=zeros(Np*3,Nc);
+    for(let i=1;i<=Np;i++){const Ai=Apow[i];for(let r=0;r<3;r++)for(let c=0;c<3;c++)Sx[(i-1)*3+r][c]=Ai[r][c];for(let j=0;j<Nc;j++){if(j>i-1)break;const AB=mm(Apow[i-1-j],Bd);for(let r=0;r<3;r++)Su[(i-1)*3+r][j]=AB[r][0];}}
+    const SuT=tp(Su);const SuTQ=SuT.map(row=>row.map((v,k)=>v*Qd[k%3]));const H=mm(SuTQ,Su);for(let i=0;i<Nc;i++)H[i][i]+=Rw;const Gain=mm(inv(H),SuTQ);const K1=Gain[0];
+    for(let i=0;i<Np*3;i++)for(let c=0;c<3;c++)Kfb[c]+=K1[i]*Sx[i][c];})();
+
+  // 車両状態
+  let xe,ve,ae,xl,vl;
+  function reset(){xe=0;ve=20;ae=0;xl=30;vl=20;leadAcc=0;}
+  let leadAcc=0,braking=false,accing=false;
+  reset();
+  function params(){return{dstar:+document.getElementById('s-d').value,aMin:-(+document.getElementById('s-amin').value),aMax:+document.getElementById('s-amax').value};}
+
+  const NS='http://www.w3.org/2000/svg';const stage=document.getElementById('stage');
+  const W=760,H=230,roadY=120,egoX=230,scale=6; // m→px
+  const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  // 路面
+  stage.appendChild(el('rect',{x:0,y:roadY-44,width:W,height:88,fill:'#4a4a47'}));
+  // 車線（スクロール）
+  const lanes=[];for(let i=0;i<22;i++){const r=el('rect',{x:i*44,y:roadY-2,width:24,height:4,rx:2,fill:'#d8d4c8'});lanes.push(r);stage.appendChild(r);}
+  // 目標車間マーカ
+  const dstarMark=el('line',{x1:0,y1:roadY-40,x2:0,y2:roadY+40,stroke:'var(--green)','stroke-width':2,'stroke-dasharray':'4,3'});stage.appendChild(dstarMark);
+  const dstarT=el('text',{x:0,y:roadY-46,'font-size':9,fill:'var(--green)','text-anchor':'middle'});dstarT.textContent='目標車間';stage.appendChild(dstarT);
+  // 車間バー
+  const gapLine=el('line',{x1:0,y1:roadY+34,x2:0,y2:roadY+34,stroke:'#fff','stroke-width':1.5});const gapT=el('text',{x:0,y:roadY+50,'font-size':11,fill:'#fff','text-anchor':'middle'});stage.appendChild(gapLine);stage.appendChild(gapT);
+  function carEl(col){const g=el('g',{});g.appendChild(el('rect',{x:-26,y:-12,width:52,height:22,rx:5,fill:col}));g.appendChild(el('rect',{x:-12,y:-22,width:26,height:12,rx:4,fill:col,opacity:0.85}));g.appendChild(el('circle',{cx:-15,cy:12,r:5,fill:'#222'}));g.appendChild(el('circle',{cx:15,cy:12,r:5,fill:'#222'}));return g;}
+  const ego=carEl('var(--blue)'),lead=carEl('var(--amber)');stage.appendChild(ego);stage.appendChild(lead);
+
+  let scroll=0;
+  function render(){
+    const P=params();const gap=xl-xe;
+    ego.setAttribute('transform',`translate(${egoX},${roadY})`);
+    const leadPx=egoX+gap*scale;lead.setAttribute('transform',`translate(${Math.min(W-20,leadPx)},${roadY})`);
+    dstarMark.setAttribute('x1',egoX+P.dstar*scale);dstarMark.setAttribute('x2',egoX+P.dstar*scale);dstarT.setAttribute('x',egoX+P.dstar*scale);
+    gapLine.setAttribute('x1',egoX+10);gapLine.setAttribute('x2',Math.min(W-20,leadPx)-26);gapLine.setAttribute('y1',roadY+34);gapLine.setAttribute('y2',roadY+34);
+    gapT.setAttribute('x',(egoX+Math.min(W-20,leadPx))/2);gapT.textContent=gap.toFixed(1)+' m';
+    gapT.setAttribute('fill',gap<5?'#ff8a8a':'#fff');
+    // 車線スクロール
+    for(let i=0;i<lanes.length;i++){let x=(i*44-scroll)%(lanes.length*44);if(x<-44)x+=lanes.length*44;lanes[i].setAttribute('x',x);}
+    document.getElementById('k-gap').textContent=gap.toFixed(1)+' m';
+    document.getElementById('k-ve').textContent=Math.round(ve*3.6)+' km/h';
+    document.getElementById('k-vl').textContent=Math.round(Math.max(0,vl)*3.6)+' km/h';
+    const ael=document.getElementById('k-ae');ael.textContent=(ae>=0?'+':'')+ae.toFixed(1);ael.style.color=ae<-0.5?'var(--red)':(ae>0.5?'var(--green)':'');
+    let msg;
+    if(braking)msg=`<b style="color:var(--red)">前車が急ブレーキ。</b>MPC は車間の詰まりを予測し、減速上限の範囲で<b>早めに減速</b>して追突を防いでいます。`;
+    else if(Math.abs(gap-P.dstar)>2)msg=gap<P.dstar?`車間が詰まっているので<b>減速して</b>目標 ${P.dstar}m へ戻します。`:`車間が空いているので<b>加速して</b>前車に追いつきます。`;
+    else msg=`目標車間 ${P.dstar}m を<b>維持・追従中</b>。「前車ブレーキ」を押すと前車が急減速します。`;
+    document.getElementById('explain').innerHTML=msg;
+  }
+
+  let acc=0,prev=performance.now();
+  function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;acc+=dtr;let guard=0;const P=params();
+    while(acc>=dt&&guard<8){
+      // 前車
+      leadAcc=braking?-4.0:(accing?2.0:0);vl+=dt*leadAcc;if(vl<0)vl=0;xl+=dt*vl;
+      // 自車 MPC
+      const e=(xl-xe)-P.dstar,dv=vl-ve;let u=-(Kfb[0]*e+Kfb[1]*dv+Kfb[2]*ae);u=Math.max(P.aMin,Math.min(P.aMax,u));
+      ae+=dt*(u-ae)/tau;ve+=dt*ae;if(ve<0)ve=0;xe+=dt*ve;
+      scroll+=ve*scale*dt;
+      acc-=dt;guard++;
+    }
+    render();requestAnimationFrame(loop);}
+  requestAnimationFrame(loop);
+
+  const bb=document.getElementById('b-brake');
+  bb.addEventListener('pointerdown',()=>{braking=true;});bb.addEventListener('pointerup',()=>{braking=false;});bb.addEventListener('pointerleave',()=>{braking=false;});
+  const ba=document.getElementById('b-acc2');
+  ba.addEventListener('pointerdown',()=>{accing=true;});ba.addEventListener('pointerup',()=>{accing=false;});ba.addEventListener('pointerleave',()=>{accing=false;});
+  document.getElementById('b-reset').addEventListener('click',reset);
+  document.getElementById('s-d').addEventListener('input',e=>document.getElementById('v-d').textContent=e.target.value+' m');
+  document.getElementById('s-amin').addEventListener('input',e=>document.getElementById('v-amin').textContent=(+e.target.value).toFixed(1));
+  document.getElementById('s-amax').addEventListener('input',e=>document.getElementById('v-amax').textContent=(+e.target.value).toFixed(1));
+})();
+</script>
+</body>
+</html>
