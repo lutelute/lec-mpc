@@ -28,6 +28,7 @@
   .kpi-label{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;font-weight:500;} .kpi-card.accent .kpi-label{color:var(--info-text);opacity:0.85;}
   .kpi-val{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:5px;} .kpi-card.accent .kpi-val{color:var(--info-text);}
   .main-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:10px;align-items:start;}
+  .col{display:flex;flex-direction:column;gap:10px;}
   .panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;}
   .panel-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap;}
   .panel-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;} .panel-hint{font-size:10px;color:var(--text-3);}
@@ -36,6 +37,11 @@
   .btn{font-size:12px;padding:8px 13px;background:transparent;border:0.5px solid var(--border-2);border-radius:7px;cursor:pointer;color:var(--text-2);font-family:inherit;transition:all .1s;}
   .btn:hover{background:var(--surface-2);color:var(--text-1);} .btn:active{transform:scale(0.97);}
   .btn.warn{background:var(--red);color:#fff;border-color:transparent;}
+  .states{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:12.5px;}
+  .states .s-row{display:flex;justify-content:space-between;border-bottom:0.5px dotted var(--border);padding:2px 0;}
+  .states .s-k{color:var(--text-2);} .states .s-v{font-variant-numeric:tabular-nums;font-weight:500;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text-2);margin-top:2px;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;} .sw{width:14px;height:0;border-top-width:2.5px;border-top-style:solid;display:inline-block;}
   .ctrl{margin:11px 0;} .ctrl-row{display:flex;justify-content:space-between;margin-bottom:4px;}
   .ctrl-name{font-size:12px;color:var(--text-2);} .ctrl-val{font-size:12px;color:var(--text-1);font-weight:500;font-variant-numeric:tabular-nums;}
   input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;}
@@ -69,11 +75,21 @@
   </section>
 
   <div class="main-grid">
-    <div class="panel">
-      <div class="panel-hdr"><div class="panel-title">道路（実時間）</div><div class="panel-hint">青＝自車（MPC）/ 黄＝前車。「前車ブレーキ」を押すと前車が急減速</div></div>
-      <svg id="stage" class="stage" viewBox="0 0 760 230" style="width:100%;" role="img"></svg>
+    <div class="col">
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">道路（実時間）</div><div class="panel-hint">青＝自車（MPC）/ 黄＝前車。「前車ブレーキ」を押すと前車が急減速</div></div>
+        <svg id="stage" class="stage" viewBox="0 0 760 230" style="width:100%;" role="img"></svg>
+      </div>
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">時系列ロガー（直近 〜20 秒）</div><div class="panel-hint">上=車間誤差 (xl-xe)-d*（0=目標）/ 下=自車加速度 a（点線＝加減速上限）</div></div>
+        <svg id="strip" viewBox="0 0 760 200" style="width:100%;" role="img"></svg>
+        <div class="legend">
+          <span><i class="sw" style="border-top-color:var(--blue);"></i>車間誤差</span>
+          <span><i class="sw" style="border-top-color:var(--green);"></i>加速度 a</span>
+        </div>
+      </div>
     </div>
-    <div>
+    <div class="col">
       <div class="panel">
         <div class="panel-hdr"><div class="panel-title">操作</div></div>
         <div class="btn-row">
@@ -84,6 +100,17 @@
         <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">目標車間 d*</span><span class="ctrl-val" id="v-d">15 m</span></div><input type="range" id="s-d" min="8" max="30" step="1" value="15"></div>
         <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">減速の上限 |a<sub>min</sub>|</span><span class="ctrl-val" id="v-amin">4.0</span></div><input type="range" id="s-amin" min="2" max="8" step="0.5" value="4"></div>
         <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">加速の上限 a<sub>max</sub></span><span class="ctrl-val" id="v-amax">2.5</span></div><input type="range" id="s-amax" min="1" max="4" step="0.5" value="2.5"></div>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">状態量（ライブ）</div></div>
+        <div class="states">
+          <div class="s-row"><span class="s-k">車間 (xl-xe)</span><span class="s-v" id="s-gap">30.0 m</span></div>
+          <div class="s-row"><span class="s-k">車間誤差</span><span class="s-v" id="s-egap">0.0 m</span></div>
+          <div class="s-row"><span class="s-k">自車速度 v<sub>e</sub></span><span class="s-v" id="s-ve">72 km/h</span></div>
+          <div class="s-row"><span class="s-k">前車速度 v<sub>l</sub></span><span class="s-v" id="s-vl">72 km/h</span></div>
+          <div class="s-row"><span class="s-k">自車加速度 a<sub>e</sub></span><span class="s-v" id="s-ae">0.0 m/s²</span></div>
+          <div class="s-row"><span class="s-k">相対速度 v<sub>l</sub>-v<sub>e</sub></span><span class="s-v" id="s-dv">0.0 m/s</span></div>
+        </div>
       </div>
       <div class="panel" style="margin-top:10px;">
         <div class="panel-hdr"><div class="panel-title">いま何が起きているか</div></div>
@@ -149,6 +176,42 @@
   function carEl(col){const g=el('g',{});g.appendChild(el('rect',{x:-26,y:-12,width:52,height:22,rx:5,fill:col}));g.appendChild(el('rect',{x:-12,y:-22,width:26,height:12,rx:4,fill:col,opacity:0.85}));g.appendChild(el('circle',{cx:-15,cy:12,r:5,fill:'#222'}));g.appendChild(el('circle',{cx:15,cy:12,r:5,fill:'#222'}));return g;}
   const ego=carEl('var(--blue)'),lead=carEl('var(--amber)');stage.appendChild(ego);stage.appendChild(lead);
 
+  // ===== 時系列ロガー =====
+  const $=id=>document.getElementById(id);
+  const eHist=[],aHist=[];const HIST=200; // 〜20s @ dt=0.1
+  const strip=$('strip');
+  function drawStrip(){
+    const P=params();
+    const W2=760,topH=92,botH=88,m={l:48,r:10,t:8,gap:12};const pw=W2-m.l-m.r;
+    const n=eHist.length;const xAt=i=>m.l+(i/(HIST-1))*pw;
+    let s='';
+    // 上: 車間誤差 (xl-xe)-d* [m]、0=目標
+    const ty0=m.t,ty1=m.t+topH;const eMax=Math.max(10,...eHist.map(a=>Math.abs(a)));
+    const eY=v=>ty0+(1-(v+eMax)/(2*eMax))*topH;
+    s+=`<rect x="${m.l}" y="${ty0}" width="${pw}" height="${topH}" fill="var(--surface-2)" opacity="0.4"/>`;
+    s+=`<line x1="${m.l}" y1="${eY(0)}" x2="${m.l+pw}" y2="${eY(0)}" stroke="var(--green)" stroke-width="0.8" stroke-dasharray="4,3" opacity="0.7"/>`;
+    s+=`<text x="${m.l-5}" y="${ty0+9}" text-anchor="end" font-size="9" fill="var(--text-secondary)">+${eMax.toFixed(0)}m</text>`;
+    s+=`<text x="${m.l-5}" y="${ty1}" text-anchor="end" font-size="9" fill="var(--text-secondary)">-${eMax.toFixed(0)}m</text>`;
+    s+=`<text x="${m.l-5}" y="${eY(0)+3}" text-anchor="end" font-size="9" fill="var(--green)">0</text>`;
+    s+=`<text x="${m.l+4}" y="${ty0+10}" font-size="9" fill="var(--blue)">車間誤差 (xl-xe)-d*</text>`;
+    if(n>1){let p='';for(let i=0;i<n;i++)p+=`${xAt(i+HIST-n).toFixed(1)},${eY(Math.max(-eMax,Math.min(eMax,eHist[i]))).toFixed(1)} `;
+      s+=`<polyline points="${p}" fill="none" stroke="var(--blue)" stroke-width="1.6"/>`;}
+    // 下: 自車加速度 a [m/s²]、点線=加減速上限
+    const by0=ty1+m.gap,by1=by0+botH;const aLim=Math.max(P.aMax,-P.aMin,1);
+    const aY=v=>by0+(1-(v+aLim)/(2*aLim))*botH;
+    s+=`<rect x="${m.l}" y="${by0}" width="${pw}" height="${botH}" fill="var(--surface-2)" opacity="0.4"/>`;
+    s+=`<line x1="${m.l}" y1="${aY(0)}" x2="${m.l+pw}" y2="${aY(0)}" stroke="var(--border-strong)" stroke-width="0.5"/>`;
+    s+=`<line x1="${m.l}" y1="${aY(P.aMax)}" x2="${m.l+pw}" y2="${aY(P.aMax)}" stroke="var(--green)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.6"/>`;
+    s+=`<line x1="${m.l}" y1="${aY(P.aMin)}" x2="${m.l+pw}" y2="${aY(P.aMin)}" stroke="var(--red)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.6"/>`;
+    s+=`<text x="${m.l-5}" y="${aY(P.aMax)+3}" text-anchor="end" font-size="9" fill="var(--text-secondary)">+${P.aMax.toFixed(1)}</text>`;
+    s+=`<text x="${m.l-5}" y="${aY(P.aMin)+3}" text-anchor="end" font-size="9" fill="var(--text-secondary)">${P.aMin.toFixed(1)}</text>`;
+    s+=`<text x="${m.l+4}" y="${by0+10}" font-size="9" fill="var(--green)">a 自車加速度</text>`;
+    if(n>1){let p='';for(let i=0;i<n;i++)p+=`${xAt(i+HIST-n).toFixed(1)},${aY(Math.max(-aLim,Math.min(aLim,aHist[i]))).toFixed(1)} `;
+      s+=`<polyline points="${p}" fill="none" stroke="var(--green)" stroke-width="1.6"/>`;}
+    s+=`<text x="${m.l+pw}" y="${by1+12}" text-anchor="end" font-size="9" fill="var(--text-3)">← 過去　時間　現在 →</text>`;
+    strip.innerHTML=s;
+  }
+
   let scroll=0;
   function render(){
     const P=params();const gap=xl-xe;
@@ -169,6 +232,14 @@
     else if(Math.abs(gap-P.dstar)>2)msg=gap<P.dstar?`車間が詰まっているので<b>減速して</b>目標 ${P.dstar}m へ戻します。`:`車間が空いているので<b>加速して</b>前車に追いつきます。`;
     else msg=`目標車間 ${P.dstar}m を<b>維持・追従中</b>。「前車ブレーキ」を押すと前車が急減速します。`;
     document.getElementById('explain').innerHTML=msg;
+    // 状態量（ライブ）readout
+    $('s-gap').textContent=gap.toFixed(1)+' m';
+    $('s-egap').textContent=((gap-P.dstar>=0?'+':'')+(gap-P.dstar).toFixed(1))+' m';
+    $('s-ve').textContent=Math.round(ve*3.6)+' km/h';
+    $('s-vl').textContent=Math.round(Math.max(0,vl)*3.6)+' km/h';
+    $('s-ae').textContent=(ae>=0?'+':'')+ae.toFixed(1)+' m/s²';
+    $('s-dv').textContent=((vl-ve)>=0?'+':'')+(vl-ve).toFixed(1)+' m/s';
+    drawStrip();
   }
 
   let acc=0,prev=performance.now();
@@ -180,6 +251,8 @@
       const e=(xl-xe)-P.dstar,dv=vl-ve;let u=-(Kfb[0]*e+Kfb[1]*dv+Kfb[2]*ae);u=Math.max(P.aMin,Math.min(P.aMax,u));
       ae+=dt*(u-ae)/tau;ve+=dt*ae;if(ve<0)ve=0;xe+=dt*ve;
       scroll+=ve*scale*dt;
+      // 時系列ロガーへ記録（物理更新と同ステップ）
+      eHist.push((xl-xe)-P.dstar);aHist.push(ae);if(eHist.length>HIST){eHist.shift();aHist.shift();}
       acc-=dt;guard++;
     }
     render();requestAnimationFrame(loop);}
@@ -189,7 +262,7 @@
   bb.addEventListener('pointerdown',()=>{braking=true;});bb.addEventListener('pointerup',()=>{braking=false;});bb.addEventListener('pointerleave',()=>{braking=false;});
   const ba=document.getElementById('b-acc2');
   ba.addEventListener('pointerdown',()=>{accing=true;});ba.addEventListener('pointerup',()=>{accing=false;});ba.addEventListener('pointerleave',()=>{accing=false;});
-  document.getElementById('b-reset').addEventListener('click',reset);
+  document.getElementById('b-reset').addEventListener('click',()=>{reset();eHist.length=0;aHist.length=0;});
   document.getElementById('s-d').addEventListener('input',e=>document.getElementById('v-d').textContent=e.target.value+' m');
   document.getElementById('s-amin').addEventListener('input',e=>document.getElementById('v-amin').textContent=(+e.target.value).toFixed(1));
   document.getElementById('s-amax').addEventListener('input',e=>document.getElementById('v-amax').textContent=(+e.target.value).toFixed(1));
