@@ -21,7 +21,8 @@
 - 🎮 **触って学ぶデモ** — 予測軌道・最適入力列・receding horizon をスライダーとボタンで体験。制約付き MPC は QP をブラウザ内で実時間求解
 - 📐 **数式は MathML・図は SVG** — 単一 HTML で完結、ライブラリ・CDN 不要
 - 🌗 **ライト/ダークモード自動対応** — OS 設定に追従
-- 📚 **古典・現代制御 (PID/LQR) と接続** — 「無制約 MPC ＝ 状態フィードバック」を講義ノート＋演習7問（模範解答つき・数値検証済み）で
+- 📐 **制御の各方面からアクセス** — ブロック線図・**MPC vs PID 並走比較**・**閉ループ極 (z 平面) で安定性**・ステップ応答指標（行き過ぎ量/整定時間）・外乱応答を、4 プラント（1次系・台車・振動系・倒立振子）切替で 1 画面に
+- 📚 **古典・現代制御 (PID/LQR) と接続** — 「無制約 MPC ＝ 状態フィードバック」を講義ノート＋演習7問＋例題集（模範解答つき・数値検証済み）で
 - 🏭 **実用例・最新動向** — 石油化学プロセスから自動運転・ロケット着陸・組込み高速ソルバまで、出典つき
 - 🍎 **配布が簡単** — ダブルクリックで開くだけ／フォルダごとコピー可
 
@@ -36,8 +37,10 @@
 | 🏠 | **[教材トップ（ポータル）](https://lutelute.github.io/lec-mpc/)** | 学習フロー・教科書対応表・全導線 |
 | 1 | **[Step 1：受け取りホライズン デモ ▶](https://lutelute.github.io/lec-mpc/demos/mpc_receding_horizon.html)** | 無制約 MPC。予測・最適化・先頭だけ適用して再計算 |
 | 2 | **[Step 2：制約付き MPC デモ ▶](https://lutelute.github.io/lec-mpc/demos/mpc_constrained.html)** | 入力飽和・出力天井を QP（Hildreth 法）で処理 |
-| 3 | **[Step 3：講義ノート ▶](https://lutelute.github.io/lec-mpc/content/lecture-notes.html)** | 予測方程式・二次コスト・受け取り原理・制約と QP・演習7問 |
-| 4 | **[発展：応用ショーケース ▶](https://lutelute.github.io/lec-mpc/content/mpc-applications.html)** | 歴史・実用例・最新動向＋ミニデモ |
+| 3 | **[Step 3：MPC を制御として見る ▶](https://lutelute.github.io/lec-mpc/demos/mpc_vs_pid.html)** | ブロック線図・MPC vs PID 並走・閉ループ極(z平面)・ステップ応答指標を 4 プラントで比較 |
+| 4 | **[Step 4：講義ノート ▶](https://lutelute.github.io/lec-mpc/content/lecture-notes.html)** | 予測方程式・二次コスト・受け取り原理・制約と QP・安定性・演習7問 |
+| 5 | **[Step 5：例題集 ▶](https://lutelute.github.io/lec-mpc/content/worked-examples.html)** | 予測行列・安定性・MPC vs PID の数値例（解つき・検証済み） |
+| 発展 | **[応用ショーケース ▶](https://lutelute.github.io/lec-mpc/content/mpc-applications.html)** | 歴史・実用例・最新動向＋ミニデモ |
 
 ### 補助資料
 
@@ -61,9 +64,11 @@ lec-mpc/
 ├── CITATION.cff              … 引用情報（GitHub "Cite this repository"）
 ├── demos/                    … 触って動かす体験デモ
 │   ├── mpc_receding_horizon.html   … Step 1（無制約・受け取り）
-│   └── mpc_constrained.html        … Step 2（制約付き・QP）
+│   ├── mpc_constrained.html        … Step 2（制約付き・QP）
+│   └── mpc_vs_pid.html             … Step 3（制御として見る・MPC vs PID・z平面・安定性）
 ├── content/                  … 学習コンテンツ
-│   ├── lecture-notes.html          … Step 3（理論・演習）
+│   ├── lecture-notes.html          … Step 4（理論・演習・安定性）
+│   ├── worked-examples.html        … 例題集（数値例・解つき）
 │   └── mpc-applications.html       … 発展（応用ショーケース）
 └── guides/                   … ガイド・補助資料
     ├── how-to-use.html             … デモ操作ガイド

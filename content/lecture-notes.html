@@ -100,6 +100,8 @@
     <span class="sep">·</span>
     <a href="../demos/mpc_receding_horizon.html">受け取りホライズン デモ</a>
     <a href="../demos/mpc_constrained.html">制約付き MPC デモ</a>
+    <a href="../demos/mpc_vs_pid.html">制御として見るデモ</a>
+    <a href="worked-examples.html">例題集</a>
   </nav>
 
   <h1>モデル予測制御 講義ノート</h1>
@@ -138,6 +140,31 @@
     <li><strong>最適化</strong>：予測した出力が目標に近づき、かつ入力が暴れないように、<em>制約を守りながら</em>コスト最小の入力列を解く。</li>
     <li><strong>受け取り (receding horizon)</strong>：求めた入力列の<strong>先頭だけ</strong>を実際に打ち、1 ステップ進んだら<em>また最初から</em>解き直す。</li>
   </ol>
+  <p>制御の言葉でいえば、MPC は<strong>フィードバック制御器</strong>の一種である。古典制御と同じ閉ループの中で、PID や状態フィードバックの位置に「予測＋最適化を毎ステップ解く制御器」が座っているだけ、と見るとよい。</p>
+  <div class="eq">
+    <svg viewBox="0 0 720 120" style="width:100%;max-width:720px;" role="img" aria-label="MPC を含む制御ループのブロック線図">
+      <defs><marker id="bd-a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--text-3)"/></marker></defs>
+      <g font-size="12.5" fill="var(--text-1)">
+        <text x="14" y="60" font-size="13" fill="var(--text-2)">r</text>
+        <circle cx="60" cy="56" r="13" fill="var(--surface)" stroke="var(--border-2)" stroke-width="1"/><text x="60" y="61" text-anchor="middle" font-size="14">⊕</text>
+        <text x="46" y="82" font-size="13" fill="#E24B4A">−</text>
+        <rect x="135" y="34" width="190" height="44" rx="8" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="1"/>
+        <text x="230" y="52" text-anchor="middle" font-weight="600" fill="var(--info-text)">制御器 ＝ MPC</text>
+        <text x="230" y="69" text-anchor="middle" font-size="10.5" fill="var(--info-text)">予測 + 最適化（毎ステップ QP）</text>
+        <rect x="430" y="34" width="170" height="44" rx="8" fill="var(--surface-2)" stroke="var(--border-2)" stroke-width="0.5"/>
+        <text x="515" y="52" text-anchor="middle" font-weight="600">プラント</text>
+        <text x="515" y="69" text-anchor="middle" font-size="10.5" fill="var(--text-2)">x(k+1)=Ax+Bu</text>
+        <text x="650" y="52" font-size="13" fill="var(--text-2)">y</text>
+      </g>
+      <g stroke="var(--text-3)" stroke-width="1.4" fill="none">
+        <line x1="24" y1="56" x2="45" y2="56" marker-end="url(#bd-a)"/>
+        <line x1="73" y1="56" x2="131" y2="56" marker-end="url(#bd-a)"/><text x="102" y="50" font-size="11" fill="var(--text-3)" stroke="none">e</text>
+        <line x1="325" y1="56" x2="426" y2="56" marker-end="url(#bd-a)"/><text x="372" y="50" font-size="11" fill="var(--text-3)" stroke="none">u</text>
+        <line x1="600" y1="56" x2="665" y2="56"/>
+        <path d="M645,59 L645,104 L60,104 L60,71" marker-end="url(#bd-a)"/>
+      </g>
+    </svg>
+  </div>
   <div class="note">
     <div class="note-label">この教材の地図</div>
     MPC は「<a href="../demos/mpc_receding_horizon.html">受け取りデモ</a>＝予測と最適化と受け取り」「<a href="../demos/mpc_constrained.html">制約デモ</a>＝制約を QP で扱う」の 2 本立てで体験できる。理論（本ノート）と往復しながら読むと定着しやすい。
@@ -316,6 +343,19 @@
       <tr><td>制約</td><td>扱えない</td><td>扱えない</td><td><strong>陽に扱える</strong></td></tr>
     </tbody>
   </table>
+  <h3>6.1 安定性 — 閉ループ極で見る</h3>
+  <p>
+    制約が無ければ閉ループは線形系 <math><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mo>(</mo><mi>A</mi><mo>−</mo><mi>B</mi><msub><mi>K</mi><mi>fb</mi></msub><mo>)</mo><mi>x</mi><mo>(</mo><mi>k</mi><mo>)</mo><mo>+</mo><mo>(</mo><mtext>参照項</mtext><mo>)</mo></mrow></math> になる。
+    その<strong>固有値（閉ループ極）</strong>が複素 <math><mi>z</mi></math> 平面で<strong>すべて単位円 <math><mrow><mo>|</mo><mi>z</mi><mo>|</mo><mo>&lt;</mo><mn>1</mn></mrow></math> の内側</strong>にあれば安定（連続系の左半平面に対応）。
+    古典制御の極配置・根軌跡と同じ見方がそのまま使える。
+  </p>
+  <p>
+    ここで重要なのは、<strong>予測ホライズンが短すぎると閉ループ極が単位円の外に出て不安定化しうる</strong>こと。MPC は<em>有限</em>ホライズンの近似最適なので、未来を十分に見ないと「目先」だけで暴れる。実務では<strong>終端コスト</strong>（残りを LQR コストで近似）と<strong>終端制約集合</strong>を課して、短いホライズンでも閉ループ安定性を理論保証するのが標準である。
+  </p>
+  <div class="note">
+    <div class="note-label">手を動かす</div>
+    <a href="../demos/mpc_vs_pid.html">制御として見るデモ</a>は、この閉ループ極を <math><mi>z</mi></math> 平面に表示し、PID と並走比較できる（4 プラント切替）。<math><msub><mi>N</mi><mi>p</mi></msub></math> を下げると極が単位円を飛び出す様子、倒立振子（開ループ不安定）を MPC が安定化する様子が見える。数値例は <a href="worked-examples.html">例題集</a>（例題 3・5）。
+  </div>
   <div class="sidenote">
     <div class="sn-label">教科書サイドノート — 安定性と明示的 MPC</div>
     有限ホライズン MPC の閉ループ安定性は自明でなく、<strong>終端コスト</strong>（LQR コストを終端に付加）と<strong>終端制約集合</strong>を課すのが標準的な保証法である。また、制約付き MPC の解は状態空間を区分けした<strong>区分線形（piecewise-affine）</strong>則になり、これを前計算しておくのが<strong>明示的 MPC (Explicit MPC)</strong> である（応用ショーケース参照）。
@@ -406,7 +446,7 @@
 
   <div class="note" style="margin-top:30px;">
     <div class="note-label">次のステップ</div>
-    理論を一通り押さえたら、<a href="../demos/mpc_receding_horizon.html">受け取りデモ</a>・<a href="../demos/mpc_constrained.html">制約デモ</a>で各演習を「答え合わせ」し、最後に <a href="mpc-applications.html">応用ショーケース</a> で実世界の MPC（プロセス制御・自動運転・ロケット着陸・組込み高速ソルバ）を眺めると、全体像がつながる。
+    理論を一通り押さえたら、<a href="../demos/mpc_receding_horizon.html">受け取りデモ</a>・<a href="../demos/mpc_constrained.html">制約デモ</a>で各演習を「答え合わせ」。制御の各方面（ブロック線図・MPC vs PID・安定性）からは <a href="../demos/mpc_vs_pid.html">制御として見るデモ</a> と <a href="worked-examples.html">例題集</a> で確かめ、最後に <a href="mpc-applications.html">応用ショーケース</a> で実世界の MPC（プロセス制御・自動運転・ロケット着陸・組込み高速ソルバ）を眺めると、全体像がつながる。
   </div>
 
 </div>

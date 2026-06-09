@@ -111,6 +111,7 @@
     <span class="sep">·</span>
     <a href="../demos/mpc_receding_horizon.html">受け取りホライズン デモ</a>
     <a href="../demos/mpc_constrained.html">制約付き MPC デモ</a>
+    <a href="../demos/mpc_vs_pid.html">制御として見るデモ</a>
     <span class="sep">·</span>
     <a href="../content/lecture-notes.html">講義ノート</a>
   </nav>
@@ -313,6 +314,14 @@
       <tr><td class="l"><strong><math><msub><mi>N</mi><mi>c</mi></msub></math> を 1 と大きい値で比較</strong></td><td class="l"><math><mrow><msub><mi>N</mi><mi>c</mi></msub><mo>=</mo><mn>1</mn></mrow></math> では先頭がほぼ単純クリップ、<math><mrow><msub><mi>N</mi><mi>c</mi></msub><mo>&gt;</mo><mn>1</mn></mrow></math> では QP が入力列全体を整形（後続の棒も変わる）。「クリップ＝QP ではない」誤解の解消。</td></tr>
     </tbody>
   </table>
+  <h3>制御として見るデモ（発展）</h3>
+  <p>
+    発展教材<a href="../demos/mpc_vs_pid.html">「MPC を制御として見る」デモ</a>を使うと、<strong>ブロック線図 → PID との並走 → z 平面で安定性</strong>、を 1 画面で提示できます。プラントを<strong>倒立振子</strong>に切替えると <strong>PID が 124% 行き過ぎる一方 MPC は 0.8% で安定化</strong>する対比を見せ、<math><msub><mi>N</mi><mi>p</mi></msub></math> を 3 に下げると<strong>閉ループ極が単位円を出て不安定化</strong>する様子を実演できます。「外乱を加える」チェックで外乱応答の差も見せられます。古典制御（§6 の対応表）と MPC を橋渡しする総括に向きます。
+  </p>
+  <p>
+    数値での裏付けには補助教材<a href="../content/worked-examples.html">「例題集」</a>を併用できます。予測行列・安定性・MPC vs PID の数値例を収めており、デモで見た挙動を手計算と突き合わせる課題に使えます。
+  </p>
+
   <div class="note">
     <div class="note-label">提示の段取り</div>
     各デモとも、最初は<strong>既定値のまま「1 ステップ進む」を数回</strong>押して定常まで見せ、全体像を掴ませてから個別スライダーを振るのが鉄則。いきなりパラメータを極端値にすると因果関係が読めません。「リセット → 既定で観察 → 1 つだけ動かす → 戻す」を口頭で実況してください。

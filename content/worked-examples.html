@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>モデル予測制御 例題集 — 数値で見る「制御としての MPC」</title>
+<style>
+  :root {
+    --bg:#f6f4ee; --surface:#fff; --surface-2:#efece4; --text-1:#1a1a1a; --text-2:#5f5e5a; --text-3:#888780;
+    --border:rgba(0,0,0,0.10); --border-2:rgba(0,0,0,0.22); --info-bg:#E6F1FB; --info-text:#0C447C;
+    --blue:#378ADD; --blue-deep:#0C447C; --amber:#EF9F27; --amber-bg:#FBF0DC; --red:#E24B4A; --green:#3DA35D; --radius:10px;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    --font-mono:"SF Mono","Menlo","Consolas",monospace;
+    --text-primary:var(--text-1); --text-secondary:var(--text-2); --border-strong:var(--border-2);
+  }
+  @media (prefers-color-scheme: dark){:root{
+    --bg:#161614; --surface:#1f1f1d; --surface-2:#2a2a27; --text-1:#f0eee8; --text-2:#b4b2a9; --text-3:#888780;
+    --border:rgba(255,255,255,0.10); --border-2:rgba(255,255,255,0.22); --info-bg:#0C447C; --info-text:#B5D4F4;
+    --blue:#5BA0E8; --blue-deep:#B5D4F4; --amber-bg:#3a2f1a;
+  }}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text-1);font-family:var(--font-sans);font-size:15px;line-height:1.72;}
+  .wrap{max-width:820px;margin:0 auto;padding:32px 24px 64px;}
+  a{color:var(--blue-deep);}
+  h1{font-size:27px;font-weight:600;letter-spacing:-0.01em;margin:0 0 6px;}
+  .subtitle{font-size:14px;color:var(--text-2);margin:0 0 22px;}
+  h2{font-size:19px;font-weight:600;margin:36px 0 12px;padding-top:14px;border-top:2px solid var(--border);}
+  p{margin:12px 0;} ul,ol{margin:12px 0;padding-left:24px;} li{margin:5px 0;} strong{font-weight:600;} em{font-style:italic;color:var(--text-2);}
+  .note{background:var(--info-bg);border-radius:var(--radius);padding:14px 18px;margin:18px 0;font-size:14px;}
+  .note .note-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--info-text);font-weight:600;margin-bottom:4px;}
+  .ex{background:var(--surface);border:0.5px solid var(--border);border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:14px 18px;margin:18px 0;}
+  .ex .ex-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);font-weight:600;margin-bottom:6px;}
+  .ex .tag{font-size:10px;padding:2px 7px;border-radius:10px;background:var(--surface-2);color:var(--text-2);margin-left:6px;font-weight:500;}
+  .sol{margin-top:10px;border-top:0.5px dashed var(--border-2);padding-top:10px;}
+  .sol-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--green);font-weight:600;margin-bottom:4px;}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.5px;}
+  th,td{border:0.5px solid var(--border);padding:7px 12px;text-align:center;font-variant-numeric:tabular-nums;}
+  th{background:var(--surface-2);font-weight:600;}
+  code{font-family:var(--font-mono);font-size:0.92em;background:var(--surface-2);padding:1px 5px;border-radius:4px;}
+  math{font-size:1.05em;} .eq{margin:14px 0;text-align:center;overflow-x:auto;}
+  .toc{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin:22px 0 30px;}
+  .toc-title{font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);font-weight:600;margin-bottom:8px;}
+  .toc ol{margin:0;padding-left:20px;} .toc a{color:var(--text-1);text-decoration:none;} .toc a:hover{color:var(--blue-deep);}
+  .lec-nav{display:flex;gap:14px;margin-bottom:20px;font-size:12px;flex-wrap:wrap;align-items:center;}
+  .lec-nav a{color:var(--text-3);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:1px;}
+  .lec-nav a:hover{color:var(--text-1);border-bottom-color:var(--border-2);}
+  .lec-nav a.home{color:var(--text-2);font-weight:500;} .lec-nav .sep{color:var(--text-3);opacity:0.5;}
+  .demo-link{font-size:12.5px;color:var(--blue-deep);font-weight:500;}
+  svg{display:block;margin:8px auto;}
+  @media (max-width:640px){.wrap{padding:24px 18px 48px;}h1{font-size:23px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="lec-nav">
+    <a class="home" href="../index.html">← 教材トップ</a>
+    <span class="sep">·</span>
+    <a href="lecture-notes.html">講義ノート</a>
+    <a href="../demos/mpc_vs_pid.html">制御として見るデモ</a>
+    <a href="../demos/mpc_receding_horizon.html">受け取りデモ</a>
+  </nav>
+
+  <h1>モデル予測制御 例題集</h1>
+  <p class="subtitle">数値で見る「制御としての MPC」— ブロック線図・安定性・PID 比較</p>
+
+  <div class="note">
+    <div class="note-label">使い方</div>
+    各例題は<strong>完全な解つき</strong>です。数値はすべて
+    <a href="../demos/mpc_vs_pid.html">制御として見るデモ</a>と同じ条件（離散化 <code>Δt=0.1</code>、Δu 定式化のオフセットフリー MPC）で算出し、別途数値検証済み。
+    「<span class="demo-link">▶ デモで確認</span>」のリンク先で同じパラメータを再現できます。プラントは 4 種（1 次系・台車・2 次振動系・倒立振子）。
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">例題一覧</div>
+    <ol>
+      <li><a href="#e1">プラントの開ループ極を z 平面に置く</a></li>
+      <li><a href="#e2">無制約 MPC ＝ 状態フィードバック（閉ループ極を求める）</a></li>
+      <li><a href="#e3">予測ホライズンと安定性</a></li>
+      <li><a href="#e4">MPC vs PID：台車の位置決め</a></li>
+      <li><a href="#e5">不安定プラント（倒立振子）の安定化</a></li>
+      <li><a href="#e6">オフセットフリーと外乱除去（積分動作）</a></li>
+    </ol>
+  </div>
+
+  <!-- ===== 例題1 ===== -->
+  <h2 id="e1">例題 1：開ループ極を z 平面に置く</h2>
+  <div class="ex">
+    <div class="ex-label">例題<span class="tag">安定性・離散化</span></div>
+    <p>4 つのプラント（連続系）を <math><mrow><mi>Δt</mi><mo>=</mo><mn>0.1</mn></mrow></math> で ZOH 離散化したときの開ループ極（離散系）の絶対値 <math><mrow><mo>|</mo><mi>z</mi><mo>|</mo></mrow></math> を求め、安定/不安定を判定せよ。</p>
+    <div class="sol">
+      <div class="sol-label">解</div>
+      <table>
+        <thead><tr><th>プラント</th><th>連続系</th><th>離散極 |z|</th><th>判定</th></tr></thead>
+        <tbody>
+          <tr><td>1 次系</td><td><math><mrow><mn>1</mn><mo>/</mo><mo>(</mo><mi>s</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow></math></td><td>0.905</td><td>安定</td></tr>
+          <tr><td>台車</td><td><math><mrow><mn>1</mn><mo>/</mo><msup><mi>s</mi><mn>2</mn></msup></mrow></math></td><td>1.000, 1.000</td><td>限界（境界上）</td></tr>
+          <tr><td>2 次振動系</td><td><math><mrow><msub><mi>ω</mi><mi>n</mi></msub><mo>=</mo><mn>2</mn><mo>,</mo><mi>ζ</mi><mo>=</mo><mn>0.2</mn></mrow></math></td><td>0.961（複素共役対）</td><td>安定（振動的）</td></tr>
+          <tr><td>倒立振子</td><td>不安定 2 次</td><td>0.679, <strong style="color:var(--red)">1.473</strong></td><td><strong style="color:var(--red)">不安定</strong></td></tr>
+        </tbody>
+      </table>
+      <p>離散系では<strong>単位円 <math><mrow><mo>|</mo><mi>z</mi><mo>|</mo><mo>=</mo><mn>1</mn></mrow></math> の内側が安定</strong>（連続系の左半平面に対応）。倒立振子は <math><mrow><mo>|</mo><mi>z</mi><mo>|</mo><mo>=</mo><mn>1.473</mn><mo>&gt;</mo><mn>1</mn></mrow></math> の極を持ち、放っておくと発散する。台車は境界上（積分器）。<a class="demo-link" href="../demos/mpc_vs_pid.html">▶ デモの z 平面（✕印）で確認</a></p>
+    </div>
+  </div>
+
+  <!-- ===== 例題2 ===== -->
+  <h2 id="e2">例題 2：無制約 MPC ＝ 状態フィードバック</h2>
+  <div class="ex">
+    <div class="ex-label">例題<span class="tag">MPC=状態FB</span></div>
+    <p>台車（2 重積分系, <math><mrow><mi>Δt</mi><mo>=</mo><mn>0.2</mn></mrow></math>）で <math><mrow><msub><mi>N</mi><mi>p</mi></msub><mo>=</mo><mn>3</mn></mrow></math>, <math><mrow><msub><mi>N</mi><mi>c</mi></msub><mo>=</mo><mn>2</mn></mrow></math>, <math><mrow><mi>λ</mi><mo>=</mo><mn>0.1</mn></mrow></math> のとき、無制約 MPC が等価的にどんな状態フィードバック <math><mrow><mi>u</mi><mo>=</mo><mo>−</mo><msub><mi>K</mi><mi>fb</mi></msub><mi>x</mi></mrow></math> になるか求めよ（規制形・入力 <math><mi>u</mi></math> に罰）。</p>
+    <div class="sol">
+      <div class="sol-label">解</div>
+      <p>予測行列（<a href="lecture-notes.html#s7">講義ノート 演習 1</a>）は
+      <math><mrow><msub><mi>S</mi><mi>x</mi></msub><mo>=</mo><mo>[</mo><mo>[</mo><mn>1</mn><mo>,</mo><mn>0.2</mn><mo>]</mo><mo>;</mo><mo>[</mo><mn>1</mn><mo>,</mo><mn>0.4</mn><mo>]</mo><mo>;</mo><mo>[</mo><mn>1</mn><mo>,</mo><mn>0.6</mn><mo>]</mo><mo>]</mo></mrow></math>,
+      <math><mrow><msub><mi>S</mi><mi>u</mi></msub><mo>=</mo><mo>[</mo><mo>[</mo><mn>0.02</mn><mo>,</mo><mn>0</mn><mo>]</mo><mo>;</mo><mo>[</mo><mn>0.06</mn><mo>,</mo><mn>0.02</mn><mo>]</mo><mo>;</mo><mo>[</mo><mn>0.10</mn><mo>,</mo><mn>0.06</mn><mo>]</mo><mo>]</mo></mrow></math>。</p>
+      <p>ゲイン行列 <math><mrow><mi>K</mi><mo>=</mo><msup><mrow><mo>(</mo><msubsup><mi>S</mi><mi>u</mi><mi>⊤</mi></msubsup><msub><mi>S</mi><mi>u</mi></msub><mo>+</mo><mn>0.1</mn><mi>I</mi><mo>)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup><msubsup><mi>S</mi><mi>u</mi><mi>⊤</mi></msubsup></mrow></math> の先頭行 <math><mrow><msub><mi>K</mi><mn>1</mn></msub><mo>≈</mo><mo>[</mo><mn>0.176</mn><mo>,</mo><mn>0.516</mn><mo>,</mo><mn>0.844</mn><mo>]</mo></mrow></math>、状態フィードバックは <math><mrow><msub><mi>K</mi><mi>fb</mi></msub><mo>=</mo><msub><mi>K</mi><mn>1</mn></msub><msub><mi>S</mi><mi>x</mi></msub></mrow></math>：</p>
+      <div class="eq"><math display="block"><mrow><msub><mi>K</mi><mi>fb</mi></msub><mo>≈</mo><mo>[</mo><mn>1.537</mn><mo>,</mo><mn>0.748</mn><mo>]</mo><mo>,</mo><mspace width="1em"/><msup><mi>u</mi><mo>*</mo></msup><mo>=</mo><mo>−</mo><mn>1.537</mn><mi>p</mi><mo>−</mo><mn>0.748</mn><mi>v</mi></mrow></math></div>
+      <p>制約が無い限り、MPC は<strong>固定ゲインの状態フィードバック</strong>に過ぎない。閉ループ極は <math><mrow><mtext>eig</mtext><mo>(</mo><mi>A</mi><mo>−</mo><mi>B</mi><msub><mi>K</mi><mi>fb</mi></msub><mo>)</mo></mrow></math> で求まり、単位円内なら安定。</p>
+    </div>
+  </div>
+
+  <!-- ===== 例題3 ===== -->
+  <h2 id="e3">例題 3：予測ホライズンと安定性</h2>
+  <div class="ex">
+    <div class="ex-label">例題<span class="tag">安定性・チューニング</span></div>
+    <p>各プラントで、オフセットフリー（Δu 形）MPC の閉ループ極の最大半径 <math><mrow><mi>max</mi><mo>|</mo><mi>z</mi><mo>|</mo></mrow></math> を、長いホライズン（<math><mrow><msub><mi>N</mi><mi>p</mi></msub><mo>=</mo><mn>20</mn><mo>,</mo><msub><mi>N</mi><mi>c</mi></msub><mo>=</mo><mn>5</mn></mrow></math>）と短いホライズン（<math><mrow><msub><mi>N</mi><mi>p</mi></msub><mo>=</mo><mn>3</mn><mo>,</mo><msub><mi>N</mi><mi>c</mi></msub><mo>=</mo><mn>1</mn></mrow></math>）で比較せよ（<math><mrow><mi>λ</mi><mo>=</mo><mn>0.2</mn></mrow></math>）。</p>
+    <div class="sol">
+      <div class="sol-label">解</div>
+      <table>
+        <thead><tr><th>プラント</th><th>長 (Np=20,Nc=5)</th><th>短 (Np=3,Nc=1)</th></tr></thead>
+        <tbody>
+          <tr><td>1 次系</td><td>0.700 ✓安定</td><td>0.765 ✓安定</td></tr>
+          <tr><td>台車</td><td>0.842 ✓安定</td><td><strong style="color:var(--red)">1.064 ✗不安定</strong></td></tr>
+          <tr><td>2 次振動系</td><td>0.732 ✓安定</td><td><strong style="color:var(--red)">1.026 ✗不安定</strong></td></tr>
+          <tr><td>倒立振子</td><td>0.709 ✓安定</td><td><strong style="color:var(--red)">1.160 ✗不安定</strong></td></tr>
+        </tbody>
+      </table>
+      <p><strong>ホライズンが短すぎると不安定化する</strong>のが要点。MPC は有限ホライズンの近似最適なので、未来を十分に見ないと「目先だけ」で暴れる。実務では<strong>終端コスト</strong>（残りを LQR コストで近似）や<strong>終端制約</strong>を加えて、短いホライズンでも安定性を保証する（<a href="lecture-notes.html#s6">講義ノート §6 サイドノート</a>）。<a class="demo-link" href="../demos/mpc_vs_pid.html">▶ デモで N<sub>p</sub> を 3 に下げて z 平面の極が単位円を飛び出すのを確認</a></p>
+    </div>
+  </div>
+
+  <!-- ===== 例題4 ===== -->
+  <h2 id="e4">例題 4：MPC vs PID（台車の位置決め）</h2>
+  <div class="ex">
+    <div class="ex-label">例題<span class="tag">PID 比較</span></div>
+    <p>台車（2 重積分系）を <math><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow></math> へ。MPC（<math><mrow><msub><mi>N</mi><mi>p</mi></msub><mo>=</mo><mn>20</mn><mo>,</mo><msub><mi>N</mi><mi>c</mi></msub><mo>=</mo><mn>5</mn><mo>,</mo><mi>λ</mi><mo>=</mo><mn>0.2</mn></mrow></math>）と PID（<math><mrow><msub><mi>K</mi><mi>p</mi></msub><mo>=</mo><mn>2</mn><mo>,</mo><msub><mi>K</mi><mi>i</mi></msub><mo>=</mo><mn>0.5</mn><mo>,</mo><msub><mi>K</mi><mi>d</mi></msub><mo>=</mo><mn>3</mn></mrow></math>）のステップ応答指標を比べよ。</p>
+    <div class="sol">
+      <div class="sol-label">解</div>
+      <table>
+        <thead><tr><th>制御器</th><th>行き過ぎ量 M<sub>p</sub></th><th>整定時間 T<sub>s</sub></th><th>定常偏差 e<sub>ss</sub></th></tr></thead>
+        <tbody>
+          <tr><td><strong>MPC</strong></td><td>3.9 %</td><td>2.0 s</td><td>0.000</td></tr>
+          <tr><td>PID</td><td>18.3 %</td><td>3.8 s</td><td>0.004</td></tr>
+        </tbody>
+      </table>
+      <p>同条件で MPC のほうが<strong>行き過ぎが小さく整定も速い</strong>。PID の大きな <math><msub><mi>K</mi><mi>d</mi></msub></math> はステップ目標で<strong>微分キック</strong>（入力スパイク）を生むのに対し、MPC は未来を見越して滑らかに入力する。両者とも積分動作で <math><mrow><msub><mi>e</mi><mi>ss</mi></msub><mo>≈</mo><mn>0</mn></mrow></math>。<a class="demo-link" href="../demos/mpc_vs_pid.html">▶ デモの「台車」で並走を確認</a></p>
+    </div>
+  </div>
+
+  <!-- ===== 例題5 ===== -->
+  <h2 id="e5">例題 5：不安定プラント（倒立振子）の安定化</h2>
+  <div class="ex">
+    <div class="ex-label">例題<span class="tag">安定化・PID 比較</span></div>
+    <p>開ループ不安定な倒立振子（離散極 0.679, <strong>1.473</strong>）を MPC で安定化できるか。閉ループ極と、PID との応答の違いを述べよ。</p>
+    <div class="sol">
+      <div class="sol-label">解</div>
+      <p>MPC（<math><mrow><msub><mi>N</mi><mi>p</mi></msub><mo>=</mo><mn>20</mn><mo>,</mo><msub><mi>N</mi><mi>c</mi></msub><mo>=</mo><mn>5</mn></mrow></math>）の閉ループ極の最大半径は <strong>0.709 &lt; 1</strong>。開ループで単位円の<em>外</em>にあった極（1.473）が、<strong>内側へ引き戻されて安定化</strong>される。</p>
+      <svg viewBox="0 0 300 200" width="300" height="200" role="img" aria-label="z-plane stabilization">
+        <circle cx="150" cy="100" r="72" fill="var(--blue)" fill-opacity="0.05" stroke="var(--blue-deep)" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="60" y1="100" x2="240" y2="100" stroke="var(--border-2)" stroke-width="0.5"/>
+        <line x1="150" y1="22" x2="150" y2="178" stroke="var(--border-2)" stroke-width="0.5"/>
+        <text x="225" y="96" font-size="9" fill="var(--text-3)">Re</text>
+        <text x="223" y="113" font-size="9" fill="var(--text-3)">1</text>
+        <!-- 開ループ極 ✕ at 1.473 (外) and 0.679 -->
+        <g stroke="var(--text-3)" stroke-width="1.6">
+          <path d="M226,96 L234,104 M226,104 L234,96"/>
+          <path d="M195,96 L203,104 M195,104 L203,96"/>
+        </g>
+        <text x="230" y="120" font-size="8.5" fill="var(--red)">1.473（外）</text>
+        <!-- 閉ループ極 ● inside -->
+        <circle cx="172" cy="100" r="4.5" fill="var(--blue)" stroke="var(--surface)" stroke-width="1"/>
+        <circle cx="158" cy="86" r="4.5" fill="var(--blue)" stroke="var(--surface)" stroke-width="1"/>
+        <circle cx="158" cy="114" r="4.5" fill="var(--blue)" stroke="var(--surface)" stroke-width="1"/>
+        <text x="150" y="16" font-size="9" fill="var(--blue-deep)" text-anchor="middle">単位円（|z|=1）</text>
+        <text x="150" y="195" font-size="9" fill="var(--text-3)" text-anchor="middle">✕ 開ループ極 → ● MPC 閉ループ極（内側へ）</text>
+      </svg>
+      <p>応答の指標（<math><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow></math>）：</p>
+      <table>
+        <thead><tr><th>制御器</th><th>行き過ぎ量 M<sub>p</sub></th><th>整定時間 T<sub>s</sub></th></tr></thead>
+        <tbody>
+          <tr><td><strong>MPC</strong></td><td>0.8 %</td><td>1.0 s</td></tr>
+          <tr><td>PID</td><td style="color:var(--red)">124.3 %</td><td style="color:var(--red)">7.2 s</td></tr>
+        </tbody>
+      </table>
+      <p>MPC はモデルで先読みするため不安定系も<strong>滑らかに安定化</strong>。PID は不安定系の整定が難しく、激しく行き過ぎてから収束する。<a class="demo-link" href="../demos/mpc_vs_pid.html">▶ デモの「倒立振子」で確認</a></p>
+    </div>
+  </div>
+
+  <!-- ===== 例題6 ===== -->
+  <h2 id="e6">例題 6：オフセットフリーと外乱除去</h2>
+  <div class="ex">
+    <div class="ex-label">例題<span class="tag">積分動作・外乱</span></div>
+    <p>入力 <math><mi>u</mi></math> に罰を与える「規制形」MPC では 1 次系・振動系などで<strong>定常偏差</strong>が残る（<a href="lecture-notes.html#s7">講義ノート 演習 2</a> では 0.926）。これを消し、さらに一定外乱も除去するにはどうするか。</p>
+    <div class="sol">
+      <div class="sol-label">解</div>
+      <p>決定変数を入力<strong>増分</strong> <math><mrow><mi>Δu</mi><mo>=</mo><mi>u</mi><mo>(</mo><mi>k</mi><mo>)</mo><mo>−</mo><mi>u</mi><mo>(</mo><mi>k</mi><mo>−</mo><mn>1</mn><mo>)</mo></mrow></math> にとり、状態を <math><mrow><mo>[</mo><mi>Δ</mi><msub><mi>x</mi><mi>m</mi></msub><mo>;</mo><mi>y</mi><mo>]</mo></mrow></math> に拡大する（<strong>Δu 定式化</strong>）。<math><mi>y</mi></math> を状態に含めることで<strong>積分動作</strong>が内蔵され、定常偏差が消える。</p>
+      <p>このデモの MPC は全プラントで Δu 形を採用しており、検証結果は：</p>
+      <table>
+        <thead><tr><th>プラント</th><th>定常偏差 e<sub>ss</sub></th><th>入力外乱 d=0.4 後の最終 y</th></tr></thead>
+        <tbody>
+          <tr><td>台車</td><td>0.000</td><td>1.000（除去✓）</td></tr>
+          <tr><td>2 次振動系</td><td>0.000</td><td>1.000（除去✓）</td></tr>
+          <tr><td>倒立振子</td><td>0.000</td><td>—</td></tr>
+        </tbody>
+      </table>
+      <p>積分動作のおかげで、一定の入力外乱が入っても出力は目標 <math><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow></math> に戻る。これは PID の積分項と同じ役割で、<strong>MPC でも偏差ゼロの追従・外乱除去ができる</strong>ことを示す。<a class="demo-link" href="../demos/mpc_vs_pid.html">▶ デモで「外乱を加える」にチェックして確認</a></p>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:30px;">
+    <div class="note-label">関連</div>
+    理論の導出は <a href="lecture-notes.html">講義ノート</a>、手を動かすのは <a href="../demos/mpc_vs_pid.html">制御として見るデモ</a>。MPC の内部動作（予測・受け取り・制約）は <a href="../demos/mpc_receding_horizon.html">受け取りデモ</a>・<a href="../demos/mpc_constrained.html">制約デモ</a> へ。
+  </div>
+
+</div>
+</body>
+</html>

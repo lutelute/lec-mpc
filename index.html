@@ -150,10 +150,16 @@
         <span class="step-desc">入力 <math><mrow><msub><mi>u</mi><mi>min</mi></msub><mo>≤</mo><mi>u</mi><mo>≤</mo><msub><mi>u</mi><mi>max</mi></msub></mrow></math> や出力の制約を <strong>二次計画 (QP)</strong> で陽に処理。制約に当たると最適入力列がどう変形するかを目で確かめ、PID のアンチワインドアップとの違いを掴みます。</span>
         <span class="step-go">制約と QP を開く →</span>
       </a>
-      <a class="step" href="content/lecture-notes.html">
+      <a class="step" href="demos/mpc_vs_pid.html">
         <span class="step-num">STEP 3</span>
+        <span class="step-title">MPC を制御として見る</span>
+        <span class="step-desc"><strong>ブロック線図・MPC vs PID 並走・閉ループ極 (z 平面)・ステップ応答指標</strong>（行き過ぎ量/整定時間）を、4 つのプラント（1 次系・台車・振動系・倒立振子）で比較。制御理論の<em>いろんな方面</em>から MPC を眺める章。</span>
+        <span class="step-go">制御として比較する →</span>
+      </a>
+      <a class="step" href="content/lecture-notes.html">
+        <span class="step-num">STEP 4</span>
         <span class="step-title">講義ノート</span>
-        <span class="step-desc">デモで見た内容を数式で整理します。予測モデル・予測方程式・二次コスト・受け取り原理・制約と QP を定義し、無制約 MPC が状態フィードバックに一致することを導出。各節に教科書併用のサイドノートと演習問題を用意。</span>
+        <span class="step-desc">デモで見た内容を数式で整理します。予測モデル・予測方程式・二次コスト・受け取り原理・制約と QP・<strong>安定性（閉ループ極）</strong>を定義し、無制約 MPC が状態フィードバックに一致することを導出。各節に演習問題と例題集を用意。</span>
         <span class="step-go">理論と演習へ →</span>
       </a>
       <a class="step" href="content/mpc-applications.html">
@@ -215,6 +221,16 @@
             <td class="mpc">ホライズン <math><mrow><msub><mi>N</mi><mi>p</mi></msub><mo>,</mo><msub><mi>N</mi><mi>c</mi></msub></mrow></math> と重み <math><mrow><mi>Q</mi><mo>/</mo><mi>R</mi></mrow></math> のチューニング</td>
             <td class="where">両デモ / §3</td>
           </tr>
+          <tr>
+            <td class="classic">PID 制御器との比較</td>
+            <td class="mpc">同じプラント・同じ目標で MPC と PID を並走（行き過ぎ量・整定時間・外乱応答）</td>
+            <td class="where"><a href="demos/mpc_vs_pid.html">制御として見る</a></td>
+          </tr>
+          <tr>
+            <td class="classic">閉ループ極・安定性（<math><mi>z</mi></math> 平面・単位円）</td>
+            <td class="mpc">無制約 MPC の閉ループ極 ＝ <math><mrow><mtext>eig</mtext><mo>(</mo><mi>A</mi><mo>−</mo><mi>B</mi><mi>K</mi><mo>)</mo></mrow></math>。ホライズンが短いと極が単位円の外へ ＝ 不安定</td>
+            <td class="where"><a href="demos/mpc_vs_pid.html">制御として見る</a> / §7</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -271,11 +287,25 @@
           <span class="file-desc">Step 2：制約付き MPC デモ（入力/出力制約・QP）</span>
         </span>
       </a>
+      <a class="file" href="demos/mpc_vs_pid.html">
+        <span class="file-ico">⇄</span>
+        <span>
+          <span class="file-name">mpc_vs_pid.html</span>
+          <span class="file-desc">Step 3：制御として見る（ブロック線図・MPC vs PID・z平面・安定性）</span>
+        </span>
+      </a>
       <a class="file" href="content/lecture-notes.html">
         <span class="file-ico">§</span>
         <span>
           <span class="file-name">lecture-notes.html</span>
-          <span class="file-desc">Step 3：講義ノート（理論・数式・教科書サイドノート・演習）</span>
+          <span class="file-desc">Step 4：講義ノート（理論・数式・安定性・演習）</span>
+        </span>
+      </a>
+      <a class="file" href="content/worked-examples.html">
+        <span class="file-ico">例</span>
+        <span>
+          <span class="file-name">worked-examples.html</span>
+          <span class="file-desc">例題集（予測行列・安定性・MPC vs PID の数値例）</span>
         </span>
       </a>
       <a class="file" href="content/mpc-applications.html">

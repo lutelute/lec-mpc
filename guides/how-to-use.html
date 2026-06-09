@@ -101,6 +101,7 @@
     <span class="sep">·</span>
     <a href="../demos/mpc_receding_horizon.html">受け取りホライズン デモ</a>
     <a href="../demos/mpc_constrained.html">制約付き MPC デモ</a>
+    <a href="../demos/mpc_vs_pid.html">制御として見るデモ</a>
     <a href="../content/lecture-notes.html">講義ノート</a>
   </nav>
 
@@ -297,6 +298,17 @@
     比較のための<em>ものさし</em>です。制約付きの解（破線・塗り）が、制約のせいで<strong>本来の最適解（点線・枠線）からどれだけ離れたか</strong>を一目で見せます。
     両者が重なっていれば制約は効いておらず、離れていればそこで制約が解を曲げている、という読み方をします。
   </p>
+
+  <div class="note">
+    <div class="note-label">発展デモ「MPC を制御として見る」の観察ポイント</div>
+    <a href="../demos/mpc_vs_pid.html">MPC を制御として見るデモ</a>は、MPC をフィードバック制御系として読み解くための 1 画面です。次の順で見ると要点がつかめます。
+    <ul style="margin:6px 0;">
+      <li><strong>ブロック線図</strong>でループ構造（目標 <math><mi>r</mi></math> → コントローラ → プラント → 出力 <math><mi>y</mi></math> のフィードバック）を確認し、MPC が「最適化を中身にもつコントローラ」だと捉える。</li>
+      <li><strong>MPC と PID のステップ応答を並走</strong>させ、行き過ぎ量（オーバーシュート）と整定時間を見比べる。上のプラント切替ボタン（<strong>1 次系／台車／2 次振動系／倒立振子</strong>）を切り替え、PID(<math><mrow><msub><mi>K</mi><mi>p</mi></msub><mo>,</mo><msub><mi>K</mi><mi>i</mi></msub><mo>,</mo><msub><mi>K</mi><mi>d</mi></msub></mrow></math>) と MPC(<math><mi>r</mi></math>・<math><msub><mi>N</mi><mi>p</mi></msub></math>・<math><msub><mi>N</mi><mi>c</mi></msub></math>・<math><mi>λ</mi></math>) のスライダーで両者を調整する。</li>
+      <li><strong>z 平面</strong>で閉ループ極が<strong>単位円の内側</strong>にあるか（＝安定か）を見る。<math><msub><mi>N</mi><mi>p</mi></msub></math> を下げていくと極が単位円へ近づき、外に出ると不安定化するのを確認する。</li>
+      <li><strong>「外乱を加える」チェック</strong>を入れ、外乱が入った後に MPC と PID がどう立て直すかを比べる。</li>
+    </ul>
+  </div>
 
   <div class="note" style="margin-top:30px;">
     <div class="note-label">次は数式の裏付けを</div>
