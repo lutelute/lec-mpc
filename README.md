@@ -18,6 +18,7 @@
 
 ## ✨ 特徴
 
+- 🎬 **動くデモ（リアルタイム・アニメーション）** — 倒立振子が実際にバランスし、台車がトラックを走る。外乱で蹴っても MPC が先読みで立て直す。非線形 cart-pole を実時間制御
 - 🎮 **触って学ぶデモ** — 予測軌道・最適入力列・receding horizon をスライダーとボタンで体験。制約付き MPC は QP をブラウザ内で実時間求解
 - 📐 **数式は MathML・図は SVG** — 単一 HTML で完結、ライブラリ・CDN 不要
 - 🌗 **ライト/ダークモード自動対応** — OS 設定に追従
@@ -35,6 +36,8 @@
 | # | 教材 | 役割 |
 |---|---|---|
 | 🏠 | **[教材トップ（ポータル）](https://lutelute.github.io/lec-mpc/)** | 学習フロー・教科書対応表・全導線 |
+| ▶ | **[動く：倒立振子を立てる ▶](https://lutelute.github.io/lec-mpc/demos/cartpole.html)** | MPC が不安定な振子をバランスさせて走る。外乱から先読みで復帰（非線形・実時間） |
+| ▶ | **[動く：台車レース MPC vs PID ▶](https://lutelute.github.io/lec-mpc/demos/track_race.html)** | 2 台が同時発進。壁（位置の上限）を MPC は守り PID は突っ込む |
 | 1 | **[Step 1：受け取りホライズン デモ ▶](https://lutelute.github.io/lec-mpc/demos/mpc_receding_horizon.html)** | 無制約 MPC。予測・最適化・先頭だけ適用して再計算 |
 | 2 | **[Step 2：制約付き MPC デモ ▶](https://lutelute.github.io/lec-mpc/demos/mpc_constrained.html)** | 入力飽和・出力天井を QP（Hildreth 法）で処理 |
 | 3 | **[Step 3：MPC を制御として見る ▶](https://lutelute.github.io/lec-mpc/demos/mpc_vs_pid.html)** | ブロック線図・MPC vs PID 並走・閉ループ極(z平面)・ステップ応答指標を 4 プラントで比較 |
@@ -63,6 +66,8 @@ lec-mpc/
 ├── LICENSE                   … CC BY 4.0
 ├── CITATION.cff              … 引用情報（GitHub "Cite this repository"）
 ├── demos/                    … 触って動かす体験デモ
+│   ├── cartpole.html               … 動く：倒立振子を MPC で立てる（非線形・実時間アニメ）
+│   ├── track_race.html             … 動く：台車レース MPC vs PID（力上限・壁の制約）
 │   ├── mpc_receding_horizon.html   … Step 1（無制約・受け取り）
 │   ├── mpc_constrained.html        … Step 2（制約付き・QP）
 │   └── mpc_vs_pid.html             … Step 3（制御として見る・MPC vs PID・z平面・安定性）

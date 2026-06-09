@@ -121,8 +121,8 @@
       モデル予測制御 (Model Predictive Control) を
       <strong>予測 → 最適化 → 受け取り (receding horizon)</strong> の流れに沿って体験する教材です。
       「未来をモデルで予測し、コストが最小になる入力列を毎ステップ解き直し、その先頭だけを実際に打つ」という
-      MPC の中心アイデアを、ブラウザだけで動くインタラクティブなデモで確かめます。
-      制約を陽に扱える点が古典制御との決定的な違いです。教科書の最適制御と対比しながら読み進めてください。
+      MPC の中心アイデアを、<strong>倒立振子が実際にバランスし、台車がトラックを走る</strong>リアルタイム・アニメーションで体感します。
+      制約を陽に扱える点が古典制御との決定的な違いです。まず「動かして体感」してから、ブロック線図・MPC vs PID・安定性・理論へと進んでください。
     </p>
     <div class="meta-row">
       <span class="tag accent">前提: 古典制御（PID）＋状態空間・LQR の基礎</span>
@@ -134,8 +134,29 @@
 
   <section>
     <div class="sec-hdr">
-      <h2>学習の流れ</h2>
-      <span class="sec-sub">易しい順に進み、最後に応用へ。デモは何度でも触って構いません</span>
+      <h2>まず動かして体感する</h2>
+      <span class="sec-sub">物理系が実際に動くアニメ。トラックをクリックで目標移動・「外乱」で揺さぶれます</span>
+    </div>
+    <div class="flow">
+      <a class="step" href="demos/cartpole.html" style="border-color: var(--blue);">
+        <span class="step-num">▶ 動く · 目玉</span>
+        <span class="step-title">倒立振子を立てる</span>
+        <span class="step-desc">MPC が<strong>不安定な振子をバランスさせながら</strong>カートを目標へ走らせます。「外乱」で蹴っても先読みで立て直し。力の上限・振子の長さも変えられるリアルタイム制御アニメ（非線形 cart-pole）。</span>
+        <span class="step-go">倒立振子デモを開く →</span>
+      </a>
+      <a class="step" href="demos/track_race.html" style="border-color: var(--blue);">
+        <span class="step-num">▶ 動く · MPC vs PID</span>
+        <span class="step-title">台車レース</span>
+        <span class="step-desc">同じ台車を MPC と PID で<strong>同時に走らせて競争</strong>。力に上限、コースに<strong>壁</strong>。MPC は壁の手前で滑らかに停止、PID は制約を知らず突っ込む——制約を扱える MPC の強みが一目で分かります。</span>
+        <span class="step-go">レースを開く →</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-hdr">
+      <h2>仕組みと理論（学習の流れ）</h2>
+      <span class="sec-sub">体感したあと、易しい順に仕組み→理論→応用へ。デモは何度でも触って構いません</span>
     </div>
     <div class="flow">
       <a class="step" href="demos/mpc_receding_horizon.html">
@@ -273,6 +294,20 @@
       <span class="sec-sub">すべて同じフォルダに置けば相互リンクで行き来できます</span>
     </div>
     <div class="files">
+      <a class="file" href="demos/cartpole.html">
+        <span class="file-ico">▶</span>
+        <span>
+          <span class="file-name">cartpole.html</span>
+          <span class="file-desc">動くデモ：倒立振子を MPC で立てる（非線形・リアルタイム）</span>
+        </span>
+      </a>
+      <a class="file" href="demos/track_race.html">
+        <span class="file-ico">▶</span>
+        <span>
+          <span class="file-name">track_race.html</span>
+          <span class="file-desc">動くデモ：台車レース MPC vs PID（力上限・壁の制約）</span>
+        </span>
+      </a>
       <a class="file" href="demos/mpc_receding_horizon.html">
         <span class="file-ico">1D</span>
         <span>

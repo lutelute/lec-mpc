@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>倒立振子を MPC で立てる — リアルタイム・アニメーション</title>
+<style>
+  :root{
+    --bg:#f6f4ee;--surface:#fff;--surface-2:#efece4;--text-1:#1a1a1a;--text-2:#5f5e5a;--text-3:#888780;
+    --border:rgba(0,0,0,0.10);--border-2:rgba(0,0,0,0.22);--info-bg:#E6F1FB;--info-text:#0C447C;
+    --blue:#378ADD;--blue-deep:#0C447C;--amber:#EF9F27;--red:#E24B4A;--green:#3DA35D;--radius:10px;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    --font-mono:"SF Mono","Menlo","Consolas",monospace;
+    --text-primary:var(--text-1);--text-secondary:var(--text-2);--border-strong:var(--border-2);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#161614;--surface:#1f1f1d;--surface-2:#2a2a27;--text-1:#f0eee8;--text-2:#b4b2a9;--text-3:#888780;
+    --border:rgba(255,255,255,0.10);--border-2:rgba(255,255,255,0.22);--info-bg:#0C447C;--info-text:#B5D4F4;--blue:#5BA0E8;--blue-deep:#B5D4F4;
+  }}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text-1);font-family:var(--font-sans);font-size:14px;line-height:1.5;}
+  .app{max-width:1180px;margin:0 auto;padding:16px 18px 28px;}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  h1{font-size:17px;font-weight:600;margin:0;}
+  .subtitle{font-size:11px;color:var(--text-3);margin:0;}
+  svg{display:block;}
+  .lec-nav{display:flex;gap:14px;margin-bottom:10px;padding:2px 4px;font-size:11px;flex-wrap:wrap;align-items:center;}
+  .lec-nav a{color:var(--text-3);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:1px;}
+  .lec-nav a:hover{color:var(--text-1);border-bottom-color:var(--border-2);}
+  .lec-nav a.home{color:var(--text-2);font-weight:500;} .lec-nav .sep{color:var(--text-3);opacity:0.5;}
+
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
+  .kpi-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 14px;}
+  .kpi-card.accent{background:var(--info-bg);border-color:transparent;}
+  .kpi-label{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;font-weight:500;}
+  .kpi-card.accent .kpi-label{color:var(--info-text);opacity:0.85;}
+  .kpi-val{font-size:21px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:5px;}
+  .kpi-card.accent .kpi-val{color:var(--info-text);}
+
+  .main-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:10px;align-items:start;}
+  .panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;}
+  .panel-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap;}
+  .panel-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;}
+  .panel-hint{font-size:10px;color:var(--text-3);}
+  .stage{border-radius:8px;overflow:hidden;cursor:crosshair;background:linear-gradient(var(--surface),var(--surface-2));}
+
+  .btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .btn{font-size:12px;padding:8px 13px;background:transparent;border:0.5px solid var(--border-2);border-radius:7px;cursor:pointer;color:var(--text-2);font-family:inherit;transition:all .1s;}
+  .btn:hover{background:var(--surface-2);color:var(--text-1);} .btn:active{transform:scale(0.97);}
+  .btn.primary{background:var(--blue);color:#fff;border-color:transparent;} .btn.primary:hover{background:var(--blue-deep);}
+  .btn.warn{background:var(--amber);color:#3a2600;border-color:transparent;} .btn.warn:hover{filter:brightness(0.95);}
+
+  .ctrl{margin:11px 0;}
+  .ctrl-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .ctrl-name{font-size:12px;color:var(--text-2);} .ctrl-val{font-size:12px;color:var(--text-1);font-weight:500;font-variant-numeric:tabular-nums;}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;}
+  input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-moz-range-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--blue);border-radius:50%;margin-top:-5.5px;cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;background:var(--blue);border:none;border-radius:50%;cursor:pointer;}
+  .explain{font-size:12.5px;color:var(--text-2);line-height:1.7;} .explain b{color:var(--text-1);}
+  .footer{font-size:10px;color:var(--text-3);text-align:center;margin-top:14px;line-height:1.7;}
+  @media (max-width:980px){.main-grid{grid-template-columns:1fr;}.kpi{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="lec-nav">
+    <a class="home" href="../index.html">← 教材トップ</a><span class="sep">·</span>
+    <a href="../content/lecture-notes.html">講義ノート</a>
+    <a href="track_race.html">台車レース デモ</a>
+    <a href="mpc_vs_pid.html">制御として見る</a>
+    <span class="sep">·</span><span style="color:var(--text-3)">動くデモ — 倒立振子</span>
+  </nav>
+  <header>
+    <h1>倒立振子を MPC で立てる</h1>
+    <p class="subtitle">非線形 cart-pole をリアルタイム制御 · モデルで先読み · トラックをクリックで目標移動 · 「外乱」で蹴る</p>
+  </header>
+
+  <section class="kpi">
+    <div class="kpi-card"><div class="kpi-label">振子の角度 θ</div><div class="kpi-val" id="k-th">0.0°</div></div>
+    <div class="kpi-card"><div class="kpi-label">カート位置 x</div><div class="kpi-val" id="k-x">0.00 m</div></div>
+    <div class="kpi-card accent"><div class="kpi-label">制御力 F</div><div class="kpi-val" id="k-f">0.0 N</div></div>
+    <div class="kpi-card"><div class="kpi-label">状態</div><div class="kpi-val" id="k-st" style="font-size:15px;">直立</div></div>
+  </section>
+
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-hdr"><div class="panel-title">ステージ（実時間アニメーション）</div><div class="panel-hint">トラックをクリック → 目標へ移動 / 「外乱」ボタンで振子を蹴る</div></div>
+      <svg id="stage" class="stage" viewBox="0 0 760 360" style="width:100%;" role="img"></svg>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">操作</div></div>
+        <div class="btn-row">
+          <button class="btn warn" id="b-kick">外乱（蹴る）</button>
+          <button class="btn" id="b-pause">一時停止</button>
+          <button class="btn" id="b-reset">リセット</button>
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-name">力の上限 F<sub>max</sub></span><span class="ctrl-val" id="v-fmax">15 N</span></div>
+          <input type="range" id="s-fmax" min="4" max="30" step="1" value="15">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-name">振子の長さ L</span><span class="ctrl-val" id="v-len">0.50 m</span></div>
+          <input type="range" id="s-len" min="0.3" max="1.0" step="0.05" value="0.5">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-name">外乱の強さ</span><span class="ctrl-val" id="v-dist">中</span></div>
+          <input type="range" id="s-dist" min="1" max="3" step="1" value="2">
+        </div>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">いま何が起きているか</div></div>
+        <p class="explain" id="explain"></p>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">仕組み</div></div>
+        <p class="explain" style="font-size:12px;">
+          状態 <math><mrow><mi>x</mi><mo>=</mo><mo>[</mo><mtext>位置</mtext><mo>,</mo><mtext>速度</mtext><mo>,</mo><mi>θ</mi><mo>,</mo><mover><mi>θ</mi><mo>˙</mo></mover><mo>]</mo></mrow></math>。
+          MPC は上向き平衡まわりで<strong>線形化したモデル</strong>で未来を予測し、コスト最小の力を毎ステップ算出（事前計算ゲイン <math><mrow><mi>F</mi><mo>=</mo><msub><mi>K</mi><mi>r</mi></msub><mi>r</mi><mo>−</mo><msub><mi>K</mi><mi>fb</mi></msub><mi>x</mi></mrow></math>）。
+          描画される運動は<strong>非線形</strong>な実ダイナミクス（RK4 積分）。<a href="../content/lecture-notes.html#s6">§6 状態フィードバック</a>と同じ原理です。
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    cart-pole（M=1, m=0.2, 可変 L, g=9.81）· 数値線形化 → 離散化 → 状態コスト MPC（Np=40, Nc=12, 力制限クランプ）· 非線形 RK4 で実時間描画<br>
+    MPC が不安定平衡（倒立）を安定化。力上限を下げる／外乱を強くすると、限界で倒れる様子も見られます。
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // ===== 線形代数 =====
+  const I=n=>Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
+  const zeros=(r,c)=>Array.from({length:r},()=>new Array(c).fill(0));
+  function mm(A,B){const n=A.length,m=B[0].length,p=B.length,C=zeros(n,m);for(let i=0;i<n;i++)for(let k=0;k<p;k++){const a=A[i][k];if(!a)continue;for(let j=0;j<m;j++)C[i][j]+=a*B[k][j];}return C;}
+  const tp=A=>A[0].map((_,j)=>A.map(r=>r[j]));
+  const add=(A,B)=>A.map((r,i)=>r.map((v,j)=>v+B[i][j]));
+  const sc=(A,s)=>A.map(r=>r.map(v=>v*s));
+  function inv(A){const n=A.length;const M=A.map((r,i)=>r.concat(I(n)[i]));for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)M[p][c]+=1e-9;[M[c],M[p]]=[M[p],M[c]];const d=M[c][c];for(let j=0;j<2*n;j++)M[c][j]/=d;for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];for(let j=0;j<2*n;j++)M[r][j]-=f*M[c][j];}}return M.map(r=>r.slice(n));}
+  function expm(A){const n=A.length;let nr=0;for(const r of A)for(const v of r)nr+=v*v;nr=Math.sqrt(nr);let s=Math.max(0,Math.ceil(Math.log2(nr+1e-9)));const As=sc(A,1/Math.pow(2,s));let t=I(n),sum=I(n);for(let k=1;k<=20;k++){t=sc(mm(t,As),1/k);sum=add(sum,t);}for(let i=0;i<s;i++)sum=mm(sum,sum);return sum;}
+  function c2d(Ac,Bc,dt){const n=Ac.length,m=Bc[0].length;const M=zeros(n+m,n+m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)M[i][j]=Ac[i][j]*dt;for(let j=0;j<m;j++)M[i][n+j]=Bc[i][j]*dt;}const E=expm(M);const Ad=zeros(n,n),Bd=zeros(n,m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)Ad[i][j]=E[i][j];for(let j=0;j<m;j++)Bd[i][j]=E[i][n+j];}return{Ad,Bd};}
+
+  // ===== cart-pole 非線形ダイナミクス =====
+  const Mc=1.0, mp=0.2, g=9.81;
+  let L=0.5;
+  function deriv(s,F){const[x,xd,th,thd]=s;const ct=Math.cos(th),st=Math.sin(th);const tot=Mc+mp;
+    const temp=(F+mp*L*thd*thd*st)/tot;
+    const thdd=(g*st-ct*temp)/(L*(4/3-mp*ct*ct/tot));
+    const xdd=temp-mp*L*thdd*ct/tot;return[xd,xdd,thd,thdd];}
+  function rk4(s,F,dt){const k1=deriv(s,F);const s2=s.map((v,i)=>v+0.5*dt*k1[i]);const k2=deriv(s2,F);const s3=s.map((v,i)=>v+0.5*dt*k2[i]);const k3=deriv(s3,F);const s4=s.map((v,i)=>v+dt*k3[i]);const k4=deriv(s4,F);return s.map((v,i)=>v+dt/6*(k1[i]+2*k2[i]+2*k3[i]+k4[i]));}
+
+  // ===== MPC ゲイン（線形化→離散→状態コスト, 先頭行を Kr,Kfb に縮約）=====
+  const ctrlDt=0.05, Np=40, Nc=12;
+  const Qd=[8,1,60,6], Rw=0.02;
+  let Kfb=[0,0,0,0], Kr=0;
+  function rebuildGain(){
+    // 数値線形化
+    const eps=1e-6,s0=[0,0,0,0];const Ac=zeros(4,4),Bc=zeros(4,1);
+    for(let j=0;j<4;j++){const sp=s0.slice();sp[j]+=eps;const sm=s0.slice();sm[j]-=eps;const fp=deriv(sp,0),fm=deriv(sm,0);for(let i=0;i<4;i++)Ac[i][j]=(fp[i]-fm[i])/(2*eps);}
+    const fp=deriv(s0,eps),fm=deriv(s0,-eps);for(let i=0;i<4;i++)Bc[i][0]=(fp[i]-fm[i])/(2*eps);
+    const{Ad,Bd}=c2d(Ac,Bc,ctrlDt);
+    const Apow=[I(4)];for(let i=1;i<=Np;i++)Apow.push(mm(Apow[i-1],Ad));
+    const Sx=zeros(Np*4,4),Su=zeros(Np*4,Nc);
+    for(let i=1;i<=Np;i++){const Ai=Apow[i];for(let r=0;r<4;r++)for(let c=0;c<4;c++)Sx[(i-1)*4+r][c]=Ai[r][c];
+      for(let j=0;j<Nc;j++){if(j>i-1)break;const AB=mm(Apow[i-1-j],Bd);for(let r=0;r<4;r++)Su[(i-1)*4+r][j]=AB[r][0];}}
+    const SuT=tp(Su);const SuTQ=SuT.map(row=>row.map((v,k)=>v*Qd[k%4]));
+    const H=mm(SuTQ,Su);for(let i=0;i<Nc;i++)H[i][i]+=Rw;
+    const Gain=mm(inv(H),SuTQ);const K1=Gain[0];
+    // Kfb = K1·Sx (1x4), Kr = Σ K1[i] (i%4==0)
+    Kfb=[0,0,0,0];Kr=0;
+    for(let i=0;i<Np*4;i++){for(let c=0;c<4;c++)Kfb[c]+=K1[i]*Sx[i][c];if(i%4===0)Kr+=K1[i];}
+  }
+  rebuildGain();
+
+  // ===== 状態 =====
+  let st=[0,0,0,0], target=0, Fmax=15, running=true, lastF=0, fellTimer=0;
+  function controlForce(){
+    let u=Kr*target;for(let c=0;c<4;c++)u-=Kfb[c]*st[c];
+    return Math.max(-Fmax,Math.min(Fmax,u));
+  }
+
+  // ===== 描画（SVG, 永続要素 + transform 更新）=====
+  const NS='http://www.w3.org/2000/svg';
+  const stage=document.getElementById('stage');
+  const W=760,H=360, trackY=250, scale=110, cx=W/2, TRACK_HALF=3.0;
+  function el(tag,attrs){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;}
+  // 静的背景
+  stage.appendChild(el('line',{x1:40,y1:trackY,x2:W-40,y2:trackY,stroke:'var(--border-strong)','stroke-width':2}));
+  for(let xm=-3;xm<=3;xm++){const px=cx+xm*scale;if(px<40||px>W-40)continue;stage.appendChild(el('line',{x1:px,y1:trackY,x2:px,y2:trackY+7,stroke:'var(--border-2)','stroke-width':1}));const t=el('text',{x:px,y:trackY+22,'text-anchor':'middle','font-size':10,fill:'var(--text-secondary)'});t.textContent=xm+'m';stage.appendChild(t);}
+  // 目標フラグ
+  const tgtG=el('g',{});const tgtLine=el('line',{x1:0,y1:trackY,x2:0,y2:trackY-46,stroke:'var(--red)','stroke-width':1.5,'stroke-dasharray':'4,3'});const tgtFlag=el('path',{d:'M0,-46 L16,-40 L0,-34 Z',fill:'var(--red)'});const tgtTxt=el('text',{x:3,y:trackY-50,'font-size':10,fill:'var(--red)'});tgtTxt.textContent='目標';tgtG.appendChild(tgtLine);tgtG.appendChild(tgtFlag);tgtG.appendChild(tgtTxt);stage.appendChild(tgtG);
+  // 力の矢印
+  const forceG=el('g',{});const forceLine=el('line',{x1:0,y1:trackY-16,x2:0,y2:trackY-16,stroke:'var(--green)','stroke-width':4,'stroke-linecap':'round'});const forceHead=el('path',{d:'',fill:'var(--green)'});forceG.appendChild(forceLine);forceG.appendChild(forceHead);stage.appendChild(forceG);
+  // カート＋振子
+  const cart=el('rect',{x:-34,y:-22,width:68,height:40,rx:6,fill:'var(--blue)'});
+  const wheel1=el('circle',{cx:-20,cy:20,r:7,fill:'var(--blue-deep)'}),wheel2=el('circle',{cx:20,cy:20,r:7,fill:'var(--blue-deep)'});
+  const cartG=el('g',{});cartG.appendChild(cart);cartG.appendChild(wheel1);cartG.appendChild(wheel2);
+  const pivot=el('circle',{cx:0,cy:0,r:4,fill:'var(--text-1)'});
+  const poleG=el('g',{});const pole=el('line',{x1:0,y1:0,x2:0,y2:0,stroke:'var(--text-1)','stroke-width':6,'stroke-linecap':'round'});const bob=el('circle',{cx:0,cy:0,r:13,fill:'var(--amber)',stroke:'var(--surface)','stroke-width':2});poleG.appendChild(pole);poleG.appendChild(bob);
+  const unit=el('g',{});unit.appendChild(cartG);unit.appendChild(poleG);unit.appendChild(pivot);stage.appendChild(unit);
+
+  function render(){
+    const px=cx+st[0]*scale;
+    cartG.setAttribute('transform',`translate(${px},${trackY-20})`);
+    pivot.setAttribute('cx',px);pivot.setAttribute('cy',trackY-40);
+    // 振子（θ=0で上向き）
+    const plen=2*L*scale;const bx=px+plen*Math.sin(st[2]),by=(trackY-40)-plen*Math.cos(st[2]);
+    pole.setAttribute('x1',px);pole.setAttribute('y1',trackY-40);pole.setAttribute('x2',bx);pole.setAttribute('y2',by);
+    bob.setAttribute('cx',bx);bob.setAttribute('cy',by);
+    const upright=Math.abs(st[2])<0.04;
+    bob.setAttribute('fill',Math.abs(st[2])>0.6?'var(--red)':'var(--amber)');
+    // 目標
+    tgtG.setAttribute('transform',`translate(${cx+target*scale},0)`);
+    // 力の矢印
+    const fpx=px, fy=trackY-16, flen=Math.max(-60,Math.min(60,lastF*3.5));
+    forceLine.setAttribute('x1',fpx);forceLine.setAttribute('y1',fy);forceLine.setAttribute('x2',fpx+flen);forceLine.setAttribute('y2',fy);
+    if(Math.abs(flen)>4){const dir=Math.sign(flen);forceHead.setAttribute('d',`M${fpx+flen},${fy} L${fpx+flen-dir*7},${fy-4} L${fpx+flen-dir*7},${fy+4} Z`);forceHead.setAttribute('fill','var(--green)');}else forceHead.setAttribute('d','');
+    // KPI
+    document.getElementById('k-th').textContent=(st[2]*180/Math.PI).toFixed(1)+'°';
+    document.getElementById('k-x').textContent=st[0].toFixed(2)+' m';
+    document.getElementById('k-f').textContent=lastF.toFixed(1)+' N';
+    const stt=document.getElementById('k-st');
+    if(Math.abs(st[2])>1.2){stt.textContent='転倒';stt.style.color='var(--red)';}
+    else if(!upright){stt.textContent='復帰中';stt.style.color='var(--amber)';}
+    else{stt.textContent='直立';stt.style.color='';}
+    // 説明
+    const sat=Math.abs(lastF)>=Fmax-0.2;
+    let msg;
+    if(Math.abs(st[2])>1.2)msg=`<b>転倒。</b>力の上限 F<sub>max</sub> が小さすぎるか外乱が強すぎて、MPC が立て直せませんでした。F<sub>max</sub> を上げてリセットしてみてください。`;
+    else if(Math.abs(target-st[0])>0.15)msg=`目標 ${target.toFixed(2)} m へ<b>移動中</b>。MPC は「倒さずに動く」力を予測して出しています${sat?'（力は上限に飽和中）':''}。`;
+    else if(!upright)msg=`外乱で傾いた振子を<b>立て直し中</b>。MPC が先読みで逆向きに動いて角度を戻します。`;
+    else msg=`<b>直立を維持。</b>トラックをクリックで目標移動、「外乱（蹴る）」で振子に角速度を加えられます。`;
+    document.getElementById('explain').innerHTML=msg;
+  }
+
+  // ===== ループ（固定ステップ・アキュムレータ）=====
+  let acc=0,prev=performance.now();
+  function loop(now){
+    const dtr=Math.min(0.1,(now-prev)/1000);prev=now;
+    if(running){acc+=dtr;let guard=0;
+      while(acc>=ctrlDt&&guard<10){const F=controlForce();lastF=F;const sub=4;for(let i=0;i<sub;i++)st=rk4(st,F,ctrlDt/sub);acc-=ctrlDt;guard++;}}
+    render();requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // ===== 操作 =====
+  function clientToX(clientX){const r=stage.getBoundingClientRect();const vx=(clientX-r.left)*(W/r.width);return Math.max(-TRACK_HALF,Math.min(TRACK_HALF,(vx-cx)/scale));}
+  stage.addEventListener('pointerdown',e=>{target=Math.round(clientToX(e.clientX)*100)/100;});
+  document.getElementById('b-kick').addEventListener('click',()=>{const mag=[0,1.5,2.5,3.5][+document.getElementById('s-dist').value];st[3]+=(Math.random()<0.5?-1:1)*mag;});
+  document.getElementById('b-pause').addEventListener('click',e=>{running=!running;e.target.textContent=running?'一時停止':'再開';prev=performance.now();});
+  document.getElementById('b-reset').addEventListener('click',()=>{st=[0,0,0,0];target=0;lastF=0;});
+  document.getElementById('s-fmax').addEventListener('input',e=>{Fmax=+e.target.value;document.getElementById('v-fmax').textContent=Fmax+' N';});
+  document.getElementById('s-len').addEventListener('input',e=>{L=+e.target.value;document.getElementById('v-len').textContent=L.toFixed(2)+' m';rebuildGain();});
+  document.getElementById('s-dist').addEventListener('input',e=>{document.getElementById('v-dist').textContent=['','弱','中','強'][+e.target.value];});
+})();
+</script>
+</body>
+</html>

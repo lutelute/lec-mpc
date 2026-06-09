@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台車レース — MPC vs PID が実際に走る（制約あり）</title>
+<style>
+  :root{
+    --bg:#f6f4ee;--surface:#fff;--surface-2:#efece4;--text-1:#1a1a1a;--text-2:#5f5e5a;--text-3:#888780;
+    --border:rgba(0,0,0,0.10);--border-2:rgba(0,0,0,0.22);--info-bg:#E6F1FB;--info-text:#0C447C;
+    --blue:#378ADD;--blue-deep:#0C447C;--amber:#EF9F27;--red:#E24B4A;--green:#3DA35D;--radius:10px;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    --font-mono:"SF Mono","Menlo","Consolas",monospace;
+    --text-primary:var(--text-1);--text-secondary:var(--text-2);--border-strong:var(--border-2);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#161614;--surface:#1f1f1d;--surface-2:#2a2a27;--text-1:#f0eee8;--text-2:#b4b2a9;--text-3:#888780;
+    --border:rgba(255,255,255,0.10);--border-2:rgba(255,255,255,0.22);--info-bg:#0C447C;--info-text:#B5D4F4;--blue:#5BA0E8;--blue-deep:#B5D4F4;
+  }}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text-1);font-family:var(--font-sans);font-size:14px;line-height:1.5;}
+  .app{max-width:1180px;margin:0 auto;padding:16px 18px 28px;}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  h1{font-size:17px;font-weight:600;margin:0;} .subtitle{font-size:11px;color:var(--text-3);margin:0;}
+  svg{display:block;}
+  .lec-nav{display:flex;gap:14px;margin-bottom:10px;padding:2px 4px;font-size:11px;flex-wrap:wrap;align-items:center;}
+  .lec-nav a{color:var(--text-3);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:1px;}
+  .lec-nav a:hover{color:var(--text-1);border-bottom-color:var(--border-2);} .lec-nav a.home{color:var(--text-2);font-weight:500;} .lec-nav .sep{color:var(--text-3);opacity:0.5;}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
+  .kpi-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 14px;}
+  .kpi-label{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;font-weight:500;}
+  .kpi-val{font-size:19px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:5px;}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
+  .main-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:10px;align-items:start;}
+  .panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;}
+  .panel-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap;}
+  .panel-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;} .panel-hint{font-size:10px;color:var(--text-3);}
+  .stage{border-radius:8px;cursor:crosshair;background:linear-gradient(var(--surface),var(--surface-2));}
+  .btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .btn{font-size:12px;padding:8px 13px;background:transparent;border:0.5px solid var(--border-2);border-radius:7px;cursor:pointer;color:var(--text-2);font-family:inherit;transition:all .1s;}
+  .btn:hover{background:var(--surface-2);color:var(--text-1);} .btn:active{transform:scale(0.97);}
+  .btn.primary{background:var(--blue);color:#fff;border-color:transparent;} .btn.primary:hover{background:var(--blue-deep);}
+  .chk-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);margin:8px 0;}
+  .chk-row input{width:14px;height:14px;accent-color:var(--red);}
+  .ctrl{margin:11px 0;} .ctrl-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .ctrl-name{font-size:12px;color:var(--text-2);} .ctrl-val{font-size:12px;color:var(--text-1);font-weight:500;font-variant-numeric:tabular-nums;}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;}
+  input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-moz-range-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--text-1);border-radius:50%;margin-top:-5.5px;cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;background:var(--text-1);border:none;border-radius:50%;cursor:pointer;}
+  .explain{font-size:12.5px;color:var(--text-2);line-height:1.7;} .explain b{color:var(--text-1);}
+  .footer{font-size:10px;color:var(--text-3);text-align:center;margin-top:14px;line-height:1.7;}
+  @media (max-width:980px){.main-grid{grid-template-columns:1fr;}.kpi{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="lec-nav">
+    <a class="home" href="../index.html">← 教材トップ</a><span class="sep">·</span>
+    <a href="../content/lecture-notes.html">講義ノート</a>
+    <a href="cartpole.html">倒立振子 デモ</a>
+    <a href="mpc_vs_pid.html">制御として見る</a>
+    <span class="sep">·</span><span style="color:var(--text-3)">動くデモ — 台車レース</span>
+  </nav>
+  <header>
+    <h1>台車レース — MPC vs PID</h1>
+    <p class="subtitle">同じ台車を 2 台、MPC と PID で同時制御 · 力に上限 · 壁（位置の上限）を MPC は守り PID は突っ込む</p>
+  </header>
+
+  <section class="kpi">
+    <div class="kpi-card"><div class="kpi-label"><span class="dot" style="background:var(--blue)"></span>MPC 位置</div><div class="kpi-val" id="k-mx">−2.00 m</div></div>
+    <div class="kpi-card"><div class="kpi-label"><span class="dot" style="background:var(--amber)"></span>PID 位置</div><div class="kpi-val" id="k-px">−2.00 m</div></div>
+    <div class="kpi-card"><div class="kpi-label">目標 / 壁</div><div class="kpi-val" id="k-tw" style="font-size:15px;">1.5 / 2.2</div></div>
+    <div class="kpi-card"><div class="kpi-label">判定</div><div class="kpi-val" id="k-res" style="font-size:14px;">—</div></div>
+  </section>
+
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-hdr"><div class="panel-title">レースステージ（実時間）</div><div class="panel-hint">トラックをクリックで目標移動 / 「スタート」で同時発進</div></div>
+      <svg id="stage" class="stage" viewBox="0 0 760 300" style="width:100%;" role="img"></svg>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">操作</div></div>
+        <div class="btn-row">
+          <button class="btn primary" id="b-start">スタート</button>
+          <button class="btn" id="b-reset">リセット</button>
+        </div>
+        <div class="chk-row"><input type="checkbox" id="c-wall" checked><label for="c-wall">壁（位置の上限）を有効化</label></div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">力の上限 F<sub>max</sub></span><span class="ctrl-val" id="v-fmax">1.0</span></div><input type="range" id="s-fmax" min="0.3" max="4" step="0.1" value="1.0"></div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">壁の位置</span><span class="ctrl-val" id="v-wall">2.2 m</span></div><input type="range" id="s-wall" min="0.5" max="2.8" step="0.1" value="2.2"></div>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">いま何が起きているか</div></div>
+        <p class="explain" id="explain">「スタート」で 2 台が同時発進します。トラックをクリックすると目標を動かせます。</p>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">ねらい</div></div>
+        <p class="explain" style="font-size:12px;">
+          <b style="color:var(--blue)">MPC</b> は壁（位置の上限）と力の上限を<strong>最適化の制約として知っている</strong>ので、壁の手前で滑らかに停止。
+          <b style="color:var(--amber)">PID</b> は制約を知らず、目標へ突き進んで<strong>壁を越える（制約違反）</strong>。これが制約を陽に扱える MPC の最大の利点です。理論は <a href="../content/lecture-notes.html#s5">§5 制約と QP</a>。
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    2 重積分系（力→加速度）· MPC＝制約付き QP（Hildreth, |F|≤F<sub>max</sub> かつ 位置≤壁）を毎ステップ求解 · PID＝PD制御＋力クランプ（壁は未認識）<br>
+    力上限を下げる／壁を目標に近づけると、PID の行き過ぎと制約違反が顕著になります。
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const I=n=>Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
+  const zeros=(r,c)=>Array.from({length:r},()=>new Array(c).fill(0));
+  function mm(A,B){const n=A.length,m=B[0].length,p=B.length,C=zeros(n,m);for(let i=0;i<n;i++)for(let k=0;k<p;k++){const a=A[i][k];if(!a)continue;for(let j=0;j<m;j++)C[i][j]+=a*B[k][j];}return C;}
+  const tp=A=>A[0].map((_,j)=>A.map(r=>r[j]));
+  function inv(A){const n=A.length;const M=A.map((r,i)=>r.concat(I(n)[i]));for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)M[p][c]+=1e-9;[M[c],M[p]]=[M[p],M[c]];const d=M[c][c];for(let j=0;j<2*n;j++)M[c][j]/=d;for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];for(let j=0;j<2*n;j++)M[r][j]-=f*M[c][j];}}return M.map(r=>r.slice(n));}
+  // Hildreth QP: min (1/2)UᵀEU+UᵀF s.t. MU<=γ
+  function hildreth(E,F,Mc,gam,iters){const Ei=inv(E);const Uunc=mm(Ei,F.map(v=>[-v])).map(r=>r[0]);
+    if(!Mc.length)return Uunc;const Mu=mm(Mc,Uunc.map(v=>[v]));let feas=true;for(let i=0;i<Mc.length;i++)if(Mu[i][0]-gam[i]>1e-9){feas=false;break;}if(feas)return Uunc;
+    const P=mm(mm(Mc,Ei),tp(Mc));const MEF=mm(Mc,mm(Ei,F.map(v=>[v])));const K=gam.map((g,i)=>g+MEF[i][0]);const m=Mc.length;let lam=new Array(m).fill(0);
+    for(let it=0;it<iters;it++){let md=0;for(let i=0;i<m;i++){let s=K[i];for(let j=0;j<m;j++)if(j!==i)s+=P[i][j]*lam[j];const w=-s/P[i][i];const o=lam[i];lam[i]=Math.max(0,w);md=Math.max(md,Math.abs(lam[i]-o));}if(md<1e-10)break;}
+    const MtL=mm(tp(Mc),lam.map(v=>[v]));return mm(Ei,F.map((v,i)=>[-(v+MtL[i][0])])).map(r=>r[0]);}
+
+  const dt=0.1;const A=[[1,dt],[0,1]],B=[[0.5*dt*dt],[dt]],C=[[1,0]];
+  const Np=20,Nc=6,lam=0.1;
+  function buildPred(){const Ap=[I(2)];for(let i=1;i<=Np;i++)Ap.push(mm(Ap[i-1],A));const Sx=zeros(Np,2),Su=zeros(Np,Nc);for(let i=1;i<=Np;i++){const CA=mm(C,Ap[i]);Sx[i-1][0]=CA[0][0];Sx[i-1][1]=CA[0][1];for(let j=0;j<Nc;j++){if(j>i-1)break;Su[i-1][j]=mm(mm(C,Ap[i-1-j]),B)[0][0];}}return{Sx,Su};}
+  const {Sx,Su}=buildPred();const SuT=tp(Su);const Hbase=mm(SuT,Su);for(let i=0;i<Nc;i++)Hbase[i][i]+=lam;
+  function mpcForce(state,r,Fmax,wall){
+    const Sxx=mm(Sx,[[state[0]],[state[1]]]);const diff=Array.from({length:Np},(_,i)=>[r-Sxx[i][0]]);const g=mm(SuT,diff).map(rr=>rr[0]);
+    const E=Hbase.map(row=>row.map(v=>2*v));const F=g.map(v=>-2*v);const M=[],gam=[];
+    for(let j=0;j<Nc;j++){const e=new Array(Nc).fill(0);e[j]=1;M.push(e);gam.push(Fmax);const e2=new Array(Nc).fill(0);e2[j]=-1;M.push(e2);gam.push(Fmax);}
+    if(isFinite(wall))for(let i=0;i<Np;i++){M.push(Su[i].slice());gam.push(wall-Sxx[i][0]);}
+    const U=hildreth(E,F,M,gam,200);return U[0];}
+  function pidForce(state,r,Fmax,ig){const Kp=1.5,Kd=2.5;let u=Kp*(r-state[0])-Kd*state[1];return Math.max(-Fmax,Math.min(Fmax,u));}
+  const step=(s,u)=>[s[0]+dt*s[1]+0.5*dt*dt*u,s[1]+dt*u];
+
+  // 状態
+  const X0=-2;
+  let mpc={s:[X0,0],u:0},pid={s:[X0,0],u:0},target=1.5,running=false,t=0,mpcSettled=0,pidSettled=0,pidViol=false;
+  function params(){return{Fmax:+document.getElementById('s-fmax').value,wall:document.getElementById('c-wall').checked?+document.getElementById('s-wall').value:Infinity};}
+
+  // 描画
+  const NS='http://www.w3.org/2000/svg';const stage=document.getElementById('stage');
+  const W=760,H=300,scale=95,cx=W/2,TH=3.0;const yM=95,yP=205;
+  const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  function track(y,label,col){const g=el('g',{});g.appendChild(el('line',{x1:40,y1:y,x2:W-40,y2:y,stroke:'var(--border-strong)','stroke-width':2}));const lb=el('text',{x:44,y:y-30,'font-size':11,fill:col,'font-weight':600});lb.textContent=label;g.appendChild(lb);return g;}
+  stage.appendChild(track(yM,'MPC','var(--blue)'));stage.appendChild(track(yP,'PID','var(--amber)'));
+  // 目標線
+  const tgt=el('line',{x1:0,y1:60,x2:0,y2:H-30,stroke:'var(--red)','stroke-width':1.5,'stroke-dasharray':'5,4'});stage.appendChild(tgt);
+  const tgtT=el('text',{x:0,y:52,'font-size':10,fill:'var(--red)','text-anchor':'middle'});tgtT.textContent='目標';stage.appendChild(tgtT);
+  // 壁
+  const wallG=el('g',{});const wallRect=el('rect',{x:0,y:40,width:0,height:H-70,fill:'var(--red)','fill-opacity':0.10});const wallLine=el('line',{x1:0,y1:40,x2:0,y2:H-30,stroke:'var(--red)','stroke-width':2});const wallT=el('text',{x:0,y:52,'font-size':10,fill:'var(--red)'});wallT.textContent='壁';wallG.appendChild(wallRect);wallG.appendChild(wallLine);wallG.appendChild(wallT);stage.appendChild(wallG);
+  function cartEl(y,col){const g=el('g',{});g.appendChild(el('rect',{x:-26,y:-16,width:52,height:30,rx:5,fill:col}));g.appendChild(el('circle',{cx:-14,cy:15,r:6,fill:'var(--blue-deep)'}));g.appendChild(el('circle',{cx:14,cy:15,r:6,fill:'var(--blue-deep)'}));return {g,y};}
+  const mc=cartEl(yM,'var(--blue)'),pc=cartEl(yP,'var(--amber)');stage.appendChild(mc.g);stage.appendChild(pc.g);
+  const X=xm=>cx+xm*scale;
+
+  function render(){
+    const P=params();
+    mc.g.setAttribute('transform',`translate(${X(mpc.s[0])},${yM-15})`);
+    pc.g.setAttribute('transform',`translate(${X(pid.s[0])},${yP-15})`);
+    tgt.setAttribute('x1',X(target));tgt.setAttribute('x2',X(target));tgtT.setAttribute('x',X(target));
+    if(isFinite(P.wall)){wallG.style.display='';const wx=X(P.wall);wallLine.setAttribute('x1',wx);wallLine.setAttribute('x2',wx);wallRect.setAttribute('x',wx);wallRect.setAttribute('width',Math.max(0,W-40-wx));wallT.setAttribute('x',wx+3);}else wallG.style.display='none';
+    // PID 壁越え=赤く
+    pc.g.querySelector('rect').setAttribute('fill',(isFinite(P.wall)&&pid.s[0]>P.wall+0.01)?'var(--red)':'var(--amber)');
+    document.getElementById('k-mx').textContent=mpc.s[0].toFixed(2)+' m';
+    document.getElementById('k-px').textContent=pid.s[0].toFixed(2)+' m';
+    document.getElementById('k-tw').textContent=target.toFixed(1)+' / '+(isFinite(P.wall)?P.wall.toFixed(1):'—');
+  }
+
+  let acc=0,prev=performance.now();
+  function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;const P=params();
+    if(running){acc+=dtr;let guard=0;while(acc>=dt&&guard<8){
+      mpc.u=mpcForce(mpc.s,target,P.Fmax,P.wall);mpc.s=step(mpc.s,mpc.u);
+      pid.u=pidForce(pid.s,target,P.Fmax);pid.s=step(pid.s,pid.u);
+      if(isFinite(P.wall)&&pid.s[0]>P.wall+0.01)pidViol=true;
+      t+=dt;acc-=dt;guard++;
+      const goalM=isFinite(P.wall)?Math.min(target,P.wall):target;
+      if(!mpcSettled&&Math.abs(mpc.s[0]-goalM)<0.05&&Math.abs(mpc.s[1])<0.05)mpcSettled=t;
+      if(!pidSettled&&Math.abs(pid.s[0]-target)<0.05&&Math.abs(pid.s[1])<0.05)pidSettled=t;
+    }
+      // 終了判定
+      if(t>14||(mpcSettled&&pidSettled)){running=false;finishMsg();}
+    }
+    render();requestAnimationFrame(loop);
+  }
+  function finishMsg(){const res=document.getElementById('k-res');
+    res.innerHTML=pidViol?'<span style="color:var(--red)">PID 壁越え</span>':'両者 目標到達';
+    const ex=document.getElementById('explain');
+    ex.innerHTML=pidViol
+      ?`<b style="color:var(--blue)">MPC</b> は壁の手前で停止（制約を満たす）。<b style="color:var(--amber)">PID</b> は壁を越えて<strong style="color:var(--red)">制約違反</strong>。MPC は壁を最適化の中で知っているからです。`
+      :`MPC 整定 ${mpcSettled?mpcSettled.toFixed(1):'—'}s / PID 整定 ${pidSettled?pidSettled.toFixed(1):'—'}s。力上限を下げる・壁を目標に近づけると差が際立ちます。`;
+  }
+  requestAnimationFrame(loop);
+
+  function clientToX(clientX){const r=stage.getBoundingClientRect();const vx=(clientX-r.left)*(W/r.width);return Math.max(-TH,Math.min(TH,(vx-cx)/scale));}
+  stage.addEventListener('pointerdown',e=>{target=Math.round(clientToX(e.clientX)*10)/10;render();});
+  document.getElementById('b-start').addEventListener('click',()=>{mpc={s:[X0,0],u:0};pid={s:[X0,0],u:0};t=0;mpcSettled=0;pidSettled=0;pidViol=false;document.getElementById('k-res').textContent='レース中…';running=true;prev=performance.now();acc=0;});
+  document.getElementById('b-reset').addEventListener('click',()=>{running=false;mpc={s:[X0,0],u:0};pid={s:[X0,0],u:0};t=0;mpcSettled=0;pidSettled=0;pidViol=false;document.getElementById('k-res').textContent='—';document.getElementById('explain').textContent='「スタート」で 2 台が同時発進します。';render();});
+  document.getElementById('s-fmax').addEventListener('input',e=>{document.getElementById('v-fmax').textContent=(+e.target.value).toFixed(1);});
+  document.getElementById('c-wall').addEventListener('change',render);
+  document.getElementById('s-wall').addEventListener('input',e=>{document.getElementById('v-wall').textContent=(+e.target.value).toFixed(1)+' m';render();});
+  render();
+})();
+</script>
+</body>
+</html>
