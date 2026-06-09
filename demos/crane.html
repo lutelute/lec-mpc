@@ -98,6 +98,7 @@
         <div class="panel-hdr"><div class="panel-title">操作</div></div>
         <div class="chk-row"><input type="checkbox" id="c-mpc" checked><label for="c-mpc">揺れ抑制（MPC）を有効化</label></div>
         <div class="btn-row">
+          <button class="btn" id="b-auto" style="background:linear-gradient(90deg,var(--blue),var(--blue-deep));color:#fff;border-color:transparent;">▶ オート上映</button>
           <button class="btn warn" id="b-kick">揺らす（外乱）</button>
           <button class="btn" id="b-reset">リセット</button>
         </div>
@@ -166,6 +167,8 @@
   const NS='http://www.w3.org/2000/svg';const stage=document.getElementById('stage');
   const W=760,H=360,railY=70,scale=110,cx=W/2,TH=2.6;
   const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  // グロー用 defs（追加・SNS映え演出）
+  const defs=el('defs',{});defs.innerHTML='<filter id="cglow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';stage.insertBefore(defs,stage.firstChild);
   // 天井レール
   stage.appendChild(el('rect',{x:40,y:railY-10,width:W-80,height:10,fill:'var(--surface-2)',stroke:'var(--border-2)','stroke-width':0.5}));
   stage.appendChild(el('line',{x1:40,y1:railY,x2:W-40,y2:railY,stroke:'var(--border-strong)','stroke-width':2}));
@@ -178,7 +181,10 @@
   const cable=el('line',{x1:0,y1:0,x2:0,y2:0,stroke:'var(--text-2)','stroke-width':2});
   const trolley=el('rect',{x:-30,y:-14,width:60,height:24,rx:4,fill:'var(--blue)'});
   const load=el('rect',{x:-16,y:-16,width:32,height:32,rx:4,fill:'var(--amber)',stroke:'var(--surface)','stroke-width':2});
+  const bobTrailG=el('g',{});stage.appendChild(bobTrailG);  // 吊り荷のコメット軌跡（機体の下）
   stage.appendChild(cable);const trG=el('g',{});trG.appendChild(trolley);stage.appendChild(trG);const ldG=el('g',{});ldG.appendChild(load);stage.appendChild(ldG);
+  const bob=load;bob.setAttribute('filter','url(#cglow)');  // 吊り荷にグロー適用
+  const bobTrail=[];
 
   // ===== 時系列ロガー =====
   const $=id=>document.getElementById(id);
@@ -226,6 +232,9 @@
     cable.setAttribute('x1',px);cable.setAttribute('y1',railY);cable.setAttribute('x2',bx);cable.setAttribute('y2',by);
     ldG.setAttribute('transform',`translate(${bx},${by})`);
     load.setAttribute('fill',Math.abs(st[2])>0.35?'var(--red)':'var(--amber)');
+    // 吊り荷のコメット軌跡（残光円）
+    bobTrail.push({x:bx,y:by});if(bobTrail.length>26)bobTrail.shift();
+    let ts='';for(let i=0;i<bobTrail.length;i++){const a=i/bobTrail.length;ts+=`<circle cx="${bobTrail[i].x.toFixed(1)}" cy="${bobTrail[i].y.toFixed(1)}" r="${(2+a*9).toFixed(1)}" fill="${Math.abs(st[2])>0.35?'var(--red)':'var(--amber)'}" opacity="${(a*0.26).toFixed(3)}"/>`;}bobTrailG.innerHTML=ts;
     tgt.setAttribute('transform',`translate(${cx+target*scale},0)`);
     const fy=railY-30,flen=Math.max(-55,Math.min(55,lastF*4));fLine.setAttribute('x1',px);fLine.setAttribute('y1',fy);fLine.setAttribute('x2',px+flen);fLine.setAttribute('y2',fy);
     if(Math.abs(flen)>4){const d=Math.sign(flen);fHead.setAttribute('d',`M${px+flen},${fy} L${px+flen-d*7},${fy-4} L${px+flen-d*7},${fy+4} Z`);}else fHead.setAttribute('d','');
@@ -242,8 +251,10 @@
     refreshReadouts();if((frame++ %2)===0)drawStrip();
   }
 
-  let acc=0,prev=performance.now();
-  function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;acc+=dtr;let guard=0;
+  let acc=0,prev=performance.now(),auto=false,autoAcc=0;
+  function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;
+    if(auto){autoAcc+=dtr;if(autoAcc>3.2){autoAcc=0;if(Math.random()<0.6){target=Math.round((Math.random()*4-2)*10)/10;}else{st[3]+=(Math.random()<0.5?-1:1)*1.6;}}}
+    acc+=dtr;let guard=0;
     while(acc>=ctrlDt&&guard<10){const F=force();lastF=F;for(let i=0;i<4;i++)st=rk4(st,F,ctrlDt/4);acc-=ctrlDt;guard++;
       phHist.push(st[2]*180/Math.PI);FHist.push(F);xHist.push(st[0]);if(phHist.length>HIST){phHist.shift();FHist.shift();xHist.shift();}}
     render();requestAnimationFrame(loop);}
@@ -253,9 +264,11 @@
   stage.addEventListener('pointerdown',e=>{target=Math.round(clientToX(e.clientX)*100)/100;});
   document.getElementById('c-mpc').addEventListener('change',e=>{useMPC=e.target.checked;});
   document.getElementById('b-kick').addEventListener('click',()=>{st[3]+=(Math.random()<0.5?-1:1)*2.5;});
-  document.getElementById('b-reset').addEventListener('click',()=>{st=[0,0,0,0];target=0;lastF=0;phHist.length=0;FHist.length=0;xHist.length=0;});
+  document.getElementById('b-auto').addEventListener('click',e=>{auto=!auto;e.target.textContent=auto?'■ オート停止':'▶ オート上映';if(auto){useMPC=true;document.getElementById('c-mpc').checked=true;autoAcc=2.6;}});
+  document.getElementById('b-reset').addEventListener('click',()=>{st=[0,0,0,0];target=0;lastF=0;phHist.length=0;FHist.length=0;xHist.length=0;bobTrail.length=0;auto=false;autoAcc=0;document.getElementById('b-auto').textContent='▶ オート上映';});
   document.getElementById('s-len').addEventListener('input',e=>{L=+e.target.value;document.getElementById('v-len').textContent=L.toFixed(2)+' m';rebuildGain();});
   document.getElementById('s-fmax').addEventListener('input',e=>{Fmax=+e.target.value;document.getElementById('v-fmax').textContent=Fmax+' N';});
+  if(location.search.indexOf('show')>=0){const b=document.getElementById('b-auto');if(b)b.click();}
 })();
 </script>
 </body>

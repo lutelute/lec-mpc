@@ -94,6 +94,7 @@
       <div class="panel">
         <div class="panel-hdr"><div class="panel-title">操作</div></div>
         <div class="btn-row">
+          <button class="btn" id="b-auto" style="background:linear-gradient(90deg,var(--blue),var(--blue-deep));color:#fff;border-color:transparent;">▶ オート上映</button>
           <button class="btn warn" id="b-gust">突風（外乱）</button>
           <button class="btn" id="b-reset">リセット</button>
         </div>
@@ -169,11 +170,15 @@
   const NS='http://www.w3.org/2000/svg';const stage=document.getElementById('stage');
   const W=760,H=420,groundY=384,cx=W/2,sX=120,sY=110;
   const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  // グロー用フィルタ（stage 先頭へ）
+  const ddefs=el('defs',{});ddefs.innerHTML='<filter id="dgglow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';stage.appendChild(ddefs);
   // 地面
   stage.appendChild(el('rect',{x:0,y:groundY,width:W,height:H-groundY,fill:'var(--surface-2)'}));
   stage.appendChild(el('line',{x1:0,y1:groundY,x2:W,y2:groundY,stroke:'var(--border-strong)','stroke-width':1.5}));
   // 目標クロスヘア
   const tg=el('g',{});tg.appendChild(el('circle',{cx:0,cy:0,r:13,fill:'none',stroke:'var(--red)','stroke-width':1.5,'stroke-dasharray':'3,3'}));tg.appendChild(el('line',{x1:-18,y1:0,x2:18,y2:0,stroke:'var(--red)','stroke-width':1}));tg.appendChild(el('line',{x1:0,y1:-18,x2:0,y2:18,stroke:'var(--red)','stroke-width':1}));stage.appendChild(tg);
+  // コメット軌跡（機体の下＝この後に機体を append）
+  const trailG=el('g',{});stage.appendChild(trailG);
   // ドローン: 本体＋2ローター＋推力
   const drone=el('g',{});
   const arm=el('rect',{x:-38,y:-3,width:76,height:6,rx:3,fill:'var(--blue)'});
@@ -184,11 +189,16 @@
   const thrustR=el('line',{x1:38,y1:-7,x2:38,y2:-7,stroke:'var(--green)','stroke-width':3,'stroke-linecap':'round',opacity:0.8});
   drone.appendChild(thrustL);drone.appendChild(thrustR);drone.appendChild(arm);drone.appendChild(rotorL);drone.appendChild(rotorR);drone.appendChild(body);
   stage.appendChild(drone);
+  drone.setAttribute('filter','url(#dgglow)');
+  const droneTrail=[]; // {x,y} 機体位置の残光
 
   function render(){
     const px=cx+st[0]*sX, py=groundY-st[2]*sY;
     const deg=-st[4]*180/Math.PI; // 右移動(θ<0)で右に傾くよう符号調整
     drone.setAttribute('transform',`translate(${px},${py}) rotate(${deg})`);
+    // コメット軌跡（半透明残光）
+    droneTrail.push({x:px,y:py});if(droneTrail.length>30)droneTrail.shift();
+    let tcom='';for(let i=0;i<droneTrail.length;i++){const a=i/droneTrail.length;tcom+=`<circle cx="${droneTrail[i].x.toFixed(1)}" cy="${droneTrail[i].y.toFixed(1)}" r="${(2+a*7).toFixed(1)}" fill="var(--blue)" opacity="${(a*0.22).toFixed(3)}"/>`;}trailG.innerHTML=tcom;
     const tl=Math.min(26,Math.max(2,lastT*3));thrustL.setAttribute('y2',-7-tl);thrustR.setAttribute('y2',-7-tl);
     tg.setAttribute('transform',`translate(${cx+tx*sX},${groundY-ty*sY})`);
     document.getElementById('k-x').textContent=st[0].toFixed(2)+' m';
@@ -241,8 +251,9 @@
     strip.innerHTML=s;
   }
 
-  let acc=0,prev=performance.now();
+  let acc=0,prev=performance.now(),auto=false,autoAcc=0;
   function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;acc+=dtr;let guard=0;
+    if(auto){autoAcc+=dtr;if(autoAcc>3.0){autoAcc=0;tx=Math.round((Math.random()*4-2)*10)/10;ty=Math.round((0.6+Math.random()*2.2)*10)/10;if(Math.random()<0.4)st[1]+=(Math.random()<0.5?-1:1)*1.6;}}
     while(acc>=dt&&guard<10){const u=ctrl();lastT=m*g+u[0];for(let i=0;i<3;i++)st=rk4(st,u,dt/3);if(st[2]<0.05){st[2]=0.05;if(st[3]<0)st[3]=0;}acc-=dt;guard++;
       exHist.push(st[0]-tx);eyHist.push(st[2]-ty);thHist.push(st[4]*180/Math.PI);if(exHist.length>HIST){exHist.shift();eyHist.shift();thHist.shift();}}
     render();requestAnimationFrame(loop);}
@@ -250,10 +261,12 @@
 
   stage.addEventListener('pointerdown',e=>{const r=stage.getBoundingClientRect();const vx=(e.clientX-r.left)*(W/r.width),vy=(e.clientY-r.top)*(H/r.height);
     tx=Math.max(-2.6,Math.min(2.6,(vx-cx)/sX));ty=Math.max(0.3,Math.min(3.2,(groundY-vy)/sY));});
+  document.getElementById('b-auto').addEventListener('click',e=>{auto=!auto;e.target.textContent=auto?'■ オート停止':'▶ オート上映';if(auto)autoAcc=2.4;});
   document.getElementById('b-gust').addEventListener('click',()=>{const mag=[0,1.2,2.2,3.2][+document.getElementById('s-gust').value];st[1]+=(Math.random()<0.5?-1:1)*mag;});
-  document.getElementById('b-reset').addEventListener('click',()=>{st=[0,0,1.5,0,0,0];tx=0;ty=1.5;exHist.length=0;eyHist.length=0;thHist.length=0;});
+  document.getElementById('b-reset').addEventListener('click',()=>{st=[0,0,1.5,0,0,0];tx=0;ty=1.5;exHist.length=0;eyHist.length=0;thHist.length=0;auto=false;document.getElementById('b-auto').textContent='▶ オート上映';droneTrail.length=0;});
   document.getElementById('s-agi').addEventListener('input',e=>{const w=[0,3,6,12][+e.target.value];document.getElementById('v-agi').textContent=['','穏やか','標準','機敏'][+e.target.value];rebuild(w);});
   document.getElementById('s-gust').addEventListener('input',e=>{document.getElementById('v-gust').textContent=['','弱','中','強'][+e.target.value];});
+  if(location.search.indexOf('show')>=0){const b=document.getElementById('b-auto');if(b)b.click();}
 })();
 </script>
 </body>

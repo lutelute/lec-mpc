@@ -174,8 +174,9 @@
     document.getElementById('k-tw').textContent=target.toFixed(1)+' / '+(isFinite(P.wall)?P.wall.toFixed(1):'—');
   }
 
-  let acc=0,prev=performance.now();
+  let acc=0,prev=performance.now(),showLoop=false,finishT=0;
   function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;const P=params();
+    if(showLoop&&!running){finishT+=dtr;if(finishT>2.8){finishT=0;startRace();}}
     if(running){acc+=dtr;let guard=0;while(acc>=dt&&guard<8){
       mpc.u=mpcForce(mpc.s,target,P.Fmax,P.wall);mpc.s=step(mpc.s,mpc.u);
       pid.u=pidForce(pid.s,target,P.Fmax);pid.s=step(pid.s,pid.u);
@@ -201,12 +202,14 @@
 
   function clientToX(clientX){const r=stage.getBoundingClientRect();const vx=(clientX-r.left)*(W/r.width);return Math.max(-TH,Math.min(TH,(vx-cx)/scale));}
   stage.addEventListener('pointerdown',e=>{target=Math.round(clientToX(e.clientX)*10)/10;render();});
-  document.getElementById('b-start').addEventListener('click',()=>{mpc={s:[X0,0],u:0};pid={s:[X0,0],u:0};t=0;mpcSettled=0;pidSettled=0;pidViol=false;document.getElementById('k-res').textContent='レース中…';running=true;prev=performance.now();acc=0;});
+  function startRace(){mpc={s:[X0,0],u:0};pid={s:[X0,0],u:0};t=0;mpcSettled=0;pidSettled=0;pidViol=false;document.getElementById('k-res').textContent='レース中…';running=true;prev=performance.now();acc=0;}
+  document.getElementById('b-start').addEventListener('click',startRace);
   document.getElementById('b-reset').addEventListener('click',()=>{running=false;mpc={s:[X0,0],u:0};pid={s:[X0,0],u:0};t=0;mpcSettled=0;pidSettled=0;pidViol=false;document.getElementById('k-res').textContent='—';document.getElementById('explain').textContent='「スタート」で 2 台が同時発進します。';render();});
   document.getElementById('s-fmax').addEventListener('input',e=>{document.getElementById('v-fmax').textContent=(+e.target.value).toFixed(1);});
   document.getElementById('c-wall').addEventListener('change',render);
   document.getElementById('s-wall').addEventListener('input',e=>{document.getElementById('v-wall').textContent=(+e.target.value).toFixed(1)+' m';render();});
   render();
+  if(location.search.indexOf('show')>=0){showLoop=true;startRace();}
 })();
 </script>
 </body>
