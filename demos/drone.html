@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2D ドローン — MPC でホバリング＆飛行</title>
+<style>
+  :root{
+    --bg:#f6f4ee;--surface:#fff;--surface-2:#efece4;--text-1:#1a1a1a;--text-2:#5f5e5a;--text-3:#888780;
+    --border:rgba(0,0,0,0.10);--border-2:rgba(0,0,0,0.22);--info-bg:#E6F1FB;--info-text:#0C447C;
+    --blue:#378ADD;--blue-deep:#0C447C;--amber:#EF9F27;--red:#E24B4A;--green:#3DA35D;--radius:10px;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    --font-mono:"SF Mono","Menlo","Consolas",monospace;--text-primary:var(--text-1);--text-secondary:var(--text-2);--border-strong:var(--border-2);
+  }
+  @media (prefers-color-scheme:dark){:root{--bg:#161614;--surface:#1f1f1d;--surface-2:#2a2a27;--text-1:#f0eee8;--text-2:#b4b2a9;--text-3:#888780;--border:rgba(255,255,255,0.10);--border-2:rgba(255,255,255,0.22);--info-bg:#0C447C;--info-text:#B5D4F4;--blue:#5BA0E8;--blue-deep:#B5D4F4;}}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text-1);font-family:var(--font-sans);font-size:14px;line-height:1.5;}
+  .app{max-width:1180px;margin:0 auto;padding:16px 18px 28px;}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  h1{font-size:17px;font-weight:600;margin:0;} .subtitle{font-size:11px;color:var(--text-3);margin:0;}
+  svg{display:block;}
+  .lec-nav{display:flex;gap:14px;margin-bottom:10px;padding:2px 4px;font-size:11px;flex-wrap:wrap;align-items:center;}
+  .lec-nav a{color:var(--text-3);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:1px;}
+  .lec-nav a:hover{color:var(--text-1);border-bottom-color:var(--border-2);} .lec-nav a.home{color:var(--text-2);font-weight:500;} .lec-nav .sep{color:var(--text-3);opacity:0.5;}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
+  .kpi-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 14px;}
+  .kpi-card.accent{background:var(--info-bg);border-color:transparent;}
+  .kpi-label{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;font-weight:500;} .kpi-card.accent .kpi-label{color:var(--info-text);opacity:0.85;}
+  .kpi-val{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:5px;} .kpi-card.accent .kpi-val{color:var(--info-text);}
+  .main-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:10px;align-items:start;}
+  .panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;}
+  .panel-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap;}
+  .panel-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;} .panel-hint{font-size:10px;color:var(--text-3);}
+  .stage{border-radius:8px;cursor:crosshair;background:linear-gradient(#cfe6f7,#eaf4fb);}
+  @media (prefers-color-scheme:dark){.stage{background:linear-gradient(#1a2733,#141b22);}}
+  .btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .btn{font-size:12px;padding:8px 13px;background:transparent;border:0.5px solid var(--border-2);border-radius:7px;cursor:pointer;color:var(--text-2);font-family:inherit;transition:all .1s;}
+  .btn:hover{background:var(--surface-2);color:var(--text-1);} .btn:active{transform:scale(0.97);} .btn.warn{background:var(--amber);color:#3a2600;border-color:transparent;}
+  .ctrl{margin:11px 0;} .ctrl-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .ctrl-name{font-size:12px;color:var(--text-2);} .ctrl-val{font-size:12px;color:var(--text-1);font-weight:500;font-variant-numeric:tabular-nums;}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;}
+  input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-moz-range-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--blue);border-radius:50%;margin-top:-5.5px;cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;background:var(--blue);border:none;border-radius:50%;cursor:pointer;}
+  .explain{font-size:12.5px;color:var(--text-2);line-height:1.7;} .explain b{color:var(--text-1);}
+  .footer{font-size:10px;color:var(--text-3);text-align:center;margin-top:14px;line-height:1.7;}
+  @media (max-width:980px){.main-grid{grid-template-columns:1fr;}.kpi{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="lec-nav">
+    <a class="home" href="../index.html">← 教材トップ</a><span class="sep">·</span>
+    <a href="../content/lecture-notes.html">講義ノート</a>
+    <a href="cartpole.html">倒立振子</a><a href="crane.html">クレーン</a><a href="acc.html">車間制御 ACC</a><a href="track_race.html">台車レース</a>
+    <span class="sep">·</span><span style="color:var(--text-3)">動くデモ — 2D ドローン</span>
+  </nav>
+  <header>
+    <h1>2D ドローン — ホバリング＆飛行</h1>
+    <p class="subtitle">クリックした位置へ飛んで<strong>水平を保ってホバリング</strong> · 多入力 MPC（推力＋トルク）· 「突風」でも復帰</p>
+  </header>
+
+  <section class="kpi">
+    <div class="kpi-card"><div class="kpi-label">水平位置 x</div><div class="kpi-val" id="k-x">0.00 m</div></div>
+    <div class="kpi-card"><div class="kpi-label">高度 y</div><div class="kpi-val" id="k-y">1.50 m</div></div>
+    <div class="kpi-card accent"><div class="kpi-label">機体の傾き θ</div><div class="kpi-val" id="k-th">0.0°</div></div>
+    <div class="kpi-card"><div class="kpi-label">総推力 T</div><div class="kpi-val" id="k-t">4.9 N</div></div>
+  </section>
+
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-hdr"><div class="panel-title">飛行空間（実時間）</div><div class="panel-hint">空間をクリック → その位置へ飛行 / 「突風」で横から外乱</div></div>
+      <svg id="stage" class="stage" viewBox="0 0 760 420" style="width:100%;" role="img"></svg>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">操作</div></div>
+        <div class="btn-row">
+          <button class="btn warn" id="b-gust">突風（外乱）</button>
+          <button class="btn" id="b-reset">リセット</button>
+        </div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">機敏さ（位置の重み）</span><span class="ctrl-val" id="v-agi">標準</span></div><input type="range" id="s-agi" min="1" max="3" step="1" value="2"></div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">突風の強さ</span><span class="ctrl-val" id="v-gust">中</span></div><input type="range" id="s-gust" min="1" max="3" step="1" value="2"></div>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">いま何が起きているか</div></div>
+        <p class="explain" id="explain"></p>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">仕組み</div></div>
+        <p class="explain" style="font-size:12px;">
+          状態は <math><mrow><mo>[</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>θ</mi></mrow></math> と各速度の 6 次元、入力は<strong>2 つ（総推力 δT・回転トルク u₂）</strong>。
+          これは<strong>多入力 (MIMO) の MPC</strong>です。水平移動は機体を<strong>傾けて</strong>推力の横成分で行うため、位置と姿勢を同時に最適化する必要があり、単純な個別ループでは難しい——MPC が一括で扱います。
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    平面クアッドロータ（m=0.5, J=0.012, g=9.81）· ホバリング平衡で線形化 → 多入力 状態コスト MPC（事前計算ゲイン）· 非線形 RK4 で実時間描画<br>
+    入力は総推力とトルクの 2 つ。位置・高度・姿勢を同時最適化し、クリック先へ水平を保って飛行します。
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const I=n=>Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
+  const zeros=(r,c)=>Array.from({length:r},()=>new Array(c).fill(0));
+  function mm(A,B){const n=A.length,m=B[0].length,p=B.length,C=zeros(n,m);for(let i=0;i<n;i++)for(let k=0;k<p;k++){const a=A[i][k];if(!a)continue;for(let j=0;j<m;j++)C[i][j]+=a*B[k][j];}return C;}
+  const tp=A=>A[0].map((_,j)=>A.map(r=>r[j]));const add=(A,B)=>A.map((r,i)=>r.map((v,j)=>v+B[i][j]));const sc=(A,s)=>A.map(r=>r.map(v=>v*s));
+  function inv(A){const n=A.length;const M=A.map((r,i)=>r.concat(I(n)[i]));for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)M[p][c]+=1e-9;[M[c],M[p]]=[M[p],M[c]];const d=M[c][c];for(let j=0;j<2*n;j++)M[c][j]/=d;for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];for(let j=0;j<2*n;j++)M[r][j]-=f*M[c][j];}}return M.map(r=>r.slice(n));}
+  function expm(A){const n=A.length;let nr=0;for(const r of A)for(const v of r)nr+=v*v;nr=Math.sqrt(nr);let s=Math.max(0,Math.ceil(Math.log2(nr+1e-9)));const As=sc(A,1/Math.pow(2,s));let t=I(n),sum=I(n);for(let k=1;k<=22;k++){t=sc(mm(t,As),1/k);sum=add(sum,t);}for(let i=0;i<s;i++)sum=mm(sum,sum);return sum;}
+  function c2d(Ac,Bc,dt){const n=Ac.length,m=Bc[0].length;const M=zeros(n+m,n+m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)M[i][j]=Ac[i][j]*dt;for(let j=0;j<m;j++)M[i][n+j]=Bc[i][j]*dt;}const E=expm(M);const Ad=zeros(n,n),Bd=zeros(n,m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)Ad[i][j]=E[i][j];for(let j=0;j<m;j++)Bd[i][j]=E[i][n+j];}return{Ad,Bd};}
+
+  const m=0.5,J=0.012,g=9.81;
+  function deriv(s,u){const[x,xd,y,yd,th,thd]=s;const T=m*g+u[0];return[xd,-(T/m)*Math.sin(th),yd,(T/m)*Math.cos(th)-g,thd,u[1]/J];}
+  function rk4(s,u,dt){const k1=deriv(s,u);const s2=s.map((v,i)=>v+0.5*dt*k1[i]);const k2=deriv(s2,u);const s3=s.map((v,i)=>v+0.5*dt*k2[i]);const k3=deriv(s3,u);const s4=s.map((v,i)=>v+dt*k3[i]);const k4=deriv(s4,u);return s.map((v,i)=>v+dt/6*(k1[i]+2*k2[i]+2*k3[i]+k4[i]));}
+
+  const dt=0.04,Np=35,Nc=10;
+  let Kfb=zeros(2,6),Kr=zeros(2,6);
+  function rebuild(posW){
+    const eps=1e-6,Ac=zeros(6,6),Bc=zeros(6,2);
+    for(let j=0;j<6;j++){const sp=[0,0,0,0,0,0];sp[j]=eps;const sm=[0,0,0,0,0,0];sm[j]=-eps;const fp=deriv(sp,[0,0]),fm=deriv(sm,[0,0]);for(let i=0;i<6;i++)Ac[i][j]=(fp[i]-fm[i])/(2*eps);}
+    for(let q=0;q<2;q++){const up=[0,0];up[q]=eps;const um=[0,0];um[q]=-eps;const fp=deriv([0,0,0,0,0,0],up),fm=deriv([0,0,0,0,0,0],um);for(let i=0;i<6;i++)Bc[i][q]=(fp[i]-fm[i])/(2*eps);}
+    const{Ad,Bd}=c2d(Ac,Bc,dt);
+    const Qd=[posW,1,posW,1,5,0.2],Rd=[0.02,0.4];
+    const Apow=[I(6)];for(let i=1;i<=Np;i++)Apow.push(mm(Apow[i-1],Ad));
+    const Sx=zeros(Np*6,6),Su=zeros(Np*6,Nc*2);
+    for(let i=1;i<=Np;i++){const Ai=Apow[i];for(let r=0;r<6;r++)for(let c=0;c<6;c++)Sx[(i-1)*6+r][c]=Ai[r][c];for(let j=0;j<Nc;j++){if(j>i-1)break;const AB=mm(Apow[i-1-j],Bd);for(let r=0;r<6;r++)for(let q=0;q<2;q++)Su[(i-1)*6+r][j*2+q]=AB[r][q];}}
+    const SuT=tp(Su);const SuTQ=SuT.map(row=>row.map((v,k)=>v*Qd[k%6]));const H=mm(SuTQ,Su);for(let i=0;i<Nc*2;i++)H[i][i]+=Rd[i%2];
+    const Gain=mm(inv(H),SuTQ);Kfb=zeros(2,6);Kr=zeros(2,6);
+    for(let q=0;q<2;q++){const row=Gain[q];for(let i=0;i<Np*6;i++){for(let c=0;c<6;c++)Kfb[q][c]+=row[i]*Sx[i][c];Kr[q][i%6]+=row[i];}}
+  }
+  rebuild(6);
+
+  let st=[0,0,1.5,0,0,0],tx=0,ty=1.5,lastT=m*g;
+  function ctrl(){const xref=[tx,0,ty,0,0,0];const u=[0,0];for(let q=0;q<2;q++){let v=0;for(let c=0;c<6;c++)v+=Kr[q][c]*xref[c]-Kfb[q][c]*st[c];u[q]=v;}
+    u[0]=Math.max(-m*g+0.3,Math.min(2*m*g,u[0]));u[1]=Math.max(-0.6,Math.min(0.6,u[1]));return u;}
+
+  const NS='http://www.w3.org/2000/svg';const stage=document.getElementById('stage');
+  const W=760,H=420,groundY=384,cx=W/2,sX=120,sY=110;
+  const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  // 地面
+  stage.appendChild(el('rect',{x:0,y:groundY,width:W,height:H-groundY,fill:'var(--surface-2)'}));
+  stage.appendChild(el('line',{x1:0,y1:groundY,x2:W,y2:groundY,stroke:'var(--border-strong)','stroke-width':1.5}));
+  // 目標クロスヘア
+  const tg=el('g',{});tg.appendChild(el('circle',{cx:0,cy:0,r:13,fill:'none',stroke:'var(--red)','stroke-width':1.5,'stroke-dasharray':'3,3'}));tg.appendChild(el('line',{x1:-18,y1:0,x2:18,y2:0,stroke:'var(--red)','stroke-width':1}));tg.appendChild(el('line',{x1:0,y1:-18,x2:0,y2:18,stroke:'var(--red)','stroke-width':1}));stage.appendChild(tg);
+  // ドローン: 本体＋2ローター＋推力
+  const drone=el('g',{});
+  const arm=el('rect',{x:-38,y:-3,width:76,height:6,rx:3,fill:'var(--blue)'});
+  const body=el('rect',{x:-12,y:-9,width:24,height:14,rx:4,fill:'var(--blue-deep)'});
+  const rotorL=el('ellipse',{cx:-38,cy:-5,rx:16,ry:4,fill:'var(--text-2)',opacity:0.55});
+  const rotorR=el('ellipse',{cx:38,cy:-5,rx:16,ry:4,fill:'var(--text-2)',opacity:0.55});
+  const thrustL=el('line',{x1:-38,y1:-7,x2:-38,y2:-7,stroke:'var(--green)','stroke-width':3,'stroke-linecap':'round',opacity:0.8});
+  const thrustR=el('line',{x1:38,y1:-7,x2:38,y2:-7,stroke:'var(--green)','stroke-width':3,'stroke-linecap':'round',opacity:0.8});
+  drone.appendChild(thrustL);drone.appendChild(thrustR);drone.appendChild(arm);drone.appendChild(rotorL);drone.appendChild(rotorR);drone.appendChild(body);
+  stage.appendChild(drone);
+
+  function render(){
+    const px=cx+st[0]*sX, py=groundY-st[2]*sY;
+    const deg=-st[4]*180/Math.PI; // 右移動(θ<0)で右に傾くよう符号調整
+    drone.setAttribute('transform',`translate(${px},${py}) rotate(${deg})`);
+    const tl=Math.min(26,Math.max(2,lastT*3));thrustL.setAttribute('y2',-7-tl);thrustR.setAttribute('y2',-7-tl);
+    tg.setAttribute('transform',`translate(${cx+tx*sX},${groundY-ty*sY})`);
+    document.getElementById('k-x').textContent=st[0].toFixed(2)+' m';
+    document.getElementById('k-y').textContent=st[2].toFixed(2)+' m';
+    document.getElementById('k-th').textContent=(st[4]*180/Math.PI).toFixed(1)+'°';
+    document.getElementById('k-t').textContent=lastT.toFixed(1)+' N';
+    const d=Math.hypot(tx-st[0],ty-st[2]);
+    let msg;
+    if(d>0.15)msg=`目標へ<b>飛行中</b>。水平移動のため機体を<b>傾けて</b>推力の横成分を使い、同時に高度と姿勢を保っています。`;
+    else if(Math.abs(st[4])>0.1)msg=`<b>姿勢を立て直し中</b>（突風で傾いた）。`;
+    else msg=`<b>水平ホバリング中。</b>空間をクリックでその位置へ飛び、「突風」で横外乱を与えられます。`;
+    document.getElementById('explain').innerHTML=msg;
+  }
+
+  let acc=0,prev=performance.now();
+  function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;acc+=dtr;let guard=0;
+    while(acc>=dt&&guard<10){const u=ctrl();lastT=m*g+u[0];for(let i=0;i<3;i++)st=rk4(st,u,dt/3);if(st[2]<0.05){st[2]=0.05;if(st[3]<0)st[3]=0;}acc-=dt;guard++;}
+    render();requestAnimationFrame(loop);}
+  requestAnimationFrame(loop);
+
+  stage.addEventListener('pointerdown',e=>{const r=stage.getBoundingClientRect();const vx=(e.clientX-r.left)*(W/r.width),vy=(e.clientY-r.top)*(H/r.height);
+    tx=Math.max(-2.6,Math.min(2.6,(vx-cx)/sX));ty=Math.max(0.3,Math.min(3.2,(groundY-vy)/sY));});
+  document.getElementById('b-gust').addEventListener('click',()=>{const mag=[0,1.2,2.2,3.2][+document.getElementById('s-gust').value];st[1]+=(Math.random()<0.5?-1:1)*mag;});
+  document.getElementById('b-reset').addEventListener('click',()=>{st=[0,0,1.5,0,0,0];tx=0;ty=1.5;});
+  document.getElementById('s-agi').addEventListener('input',e=>{const w=[0,3,6,12][+e.target.value];document.getElementById('v-agi').textContent=['','穏やか','標準','機敏'][+e.target.value];rebuild(w);});
+  document.getElementById('s-gust').addEventListener('input',e=>{document.getElementById('v-gust').textContent=['','弱','中','強'][+e.target.value];});
+})();
+</script>
+</body>
+</html>
