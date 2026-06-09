@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>モデル予測制御 教員用ガイド＋模範解答 — 授業展開・時間配分・ルーブリック</title>
+<style>
+  :root {
+    --bg: #f6f4ee;
+    --surface: #ffffff;
+    --surface-2: #efece4;
+    --text-1: #1a1a1a;
+    --text-2: #5f5e5a;
+    --text-3: #888780;
+    --border: rgba(0,0,0,0.10);
+    --border-2: rgba(0,0,0,0.22);
+    --info-bg: #E6F1FB;
+    --info-text: #0C447C;
+    --blue: #378ADD;
+    --blue-deep: #0C447C;
+    --amber: #EF9F27;
+    --amber-bg: #FBF0DC;
+    --red: #E24B4A;
+    --red-bg: #FBE3E3;
+    --radius: 10px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    --font-mono: "SF Mono", "Menlo", "Consolas", monospace;
+    --font-serif: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614;
+      --surface: #1f1f1d;
+      --surface-2: #2a2a27;
+      --text-1: #f0eee8;
+      --text-2: #b4b2a9;
+      --text-3: #888780;
+      --border: rgba(255,255,255,0.10);
+      --border-2: rgba(255,255,255,0.22);
+      --info-bg: #0C447C;
+      --info-text: #B5D4F4;
+      --blue: #5BA0E8;
+      --blue-deep: #B5D4F4;
+      --amber: #EF9F27;
+      --amber-bg: #3a2f1a;
+      --red: #E97F7E;
+      --red-bg: #3a1f1f;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text-1); font-family: var(--font-sans); font-size: 15px; line-height: 1.72; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 32px 24px 64px; }
+  a { color: var(--blue-deep); }
+
+  h1 { font-size: 27px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .subtitle { font-size: 14px; color: var(--text-2); margin: 0 0 22px; }
+  h2 { font-size: 20px; font-weight: 600; margin: 40px 0 12px; padding-top: 14px; border-top: 2px solid var(--border); letter-spacing: -0.005em; }
+  h3 { font-size: 16px; font-weight: 600; margin: 26px 0 10px; }
+  p { margin: 12px 0; }
+  ul, ol { margin: 12px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+  strong { font-weight: 600; }
+  em { font-style: italic; color: var(--text-2); }
+
+  .note { background: var(--info-bg); border-radius: var(--radius); padding: 14px 18px; margin: 18px 0; font-size: 14px; }
+  .note .note-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--info-text); font-weight: 600; margin-bottom: 4px; }
+  .sidenote { border-left: 3px solid var(--amber); background: var(--amber-bg); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 16px 0; font-size: 13.5px; }
+  .sidenote .sn-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--amber); font-weight: 600; margin-bottom: 4px; }
+
+  /* 警告（模範解答ページの注意） — note を赤系に */
+  .warn { background: var(--red-bg); border: 1px solid var(--red); border-radius: var(--radius); padding: 16px 20px; margin: 18px 0 26px; font-size: 14px; }
+  .warn .warn-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--red); font-weight: 700; margin-bottom: 6px; }
+  .warn code { background: rgba(0,0,0,0.06); }
+
+  .exercise { background: var(--surface); border: 0.5px solid var(--border); border-left: 3px solid var(--blue); border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 16px 0; }
+  .exercise .ex-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); font-weight: 600; margin-bottom: 6px; }
+  .ex-tag { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: var(--surface-2); color: var(--text-2); margin-left: 6px; font-weight: 500; }
+  .ex-ans { margin: 8px 0; }
+  .ex-ans .ans-label { font-size: 11px; font-weight: 600; color: var(--blue-deep); letter-spacing: 0.04em; }
+  .teach-pt { border-top: 0.5px dashed var(--border-2); margin-top: 10px; padding-top: 8px; font-size: 13.5px; }
+  .teach-pt .tp-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--amber); font-weight: 600; margin-bottom: 3px; }
+
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 13.5px; }
+  th, td { border: 0.5px solid var(--border); padding: 7px 12px; text-align: center; }
+  th { background: var(--surface-2); font-weight: 600; }
+  td.l, th.l { text-align: left; }
+  code { font-family: var(--font-mono); font-size: 0.92em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+  math { font-size: 1.05em; }
+  .eq { margin: 16px 0; text-align: center; overflow-x: auto; }
+
+  .toc { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin: 22px 0 30px; }
+  .toc-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); font-weight: 600; margin-bottom: 8px; }
+  .toc ol { margin: 0; padding-left: 20px; }
+  .toc a { color: var(--text-1); text-decoration: none; }
+  .toc a:hover { color: var(--blue-deep); }
+
+  .lec-nav { display: flex; gap: 14px; margin-bottom: 20px; font-size: 12px; flex-wrap: wrap; align-items: center; }
+  .lec-nav a { color: var(--text-3); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 1px; }
+  .lec-nav a:hover { color: var(--text-1); border-bottom-color: var(--border-2); }
+  .lec-nav a.home { color: var(--text-2); font-weight: 500; }
+  .lec-nav .sep { color: var(--text-3); opacity: 0.5; }
+
+  @media (max-width: 640px) { .wrap { padding: 24px 18px 48px; } h1 { font-size: 23px; } table { font-size: 12px; } th, td { padding: 6px 7px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="lec-nav">
+    <a class="home" href="../index.html">← 教材トップ</a>
+    <span class="sep">·</span>
+    <a href="../demos/mpc_receding_horizon.html">受け取りホライズン デモ</a>
+    <a href="../demos/mpc_constrained.html">制約付き MPC デモ</a>
+    <span class="sep">·</span>
+    <a href="../content/lecture-notes.html">講義ノート</a>
+  </nav>
+
+  <h1>モデル予測制御 — 教員用ガイド＋模範解答</h1>
+  <p class="subtitle">授業展開・時間配分・教えどころ・演習 7 問の解答・評価ルーブリック</p>
+
+  <div class="warn">
+    <div class="warn-label">⚠ このページは模範解答を含みます</div>
+    本ページは教員専用です。<strong>演習 7 問のすべての解答・数値</strong>と評価ルーブリックを掲載しています。
+    学生には教材トップ URL（<code>index.html</code>）のみを案内し、<strong>この <code>guides/teacher-guide.html</code> の URL は配布しないでください</strong>。
+    学生向けには「<a href="../content/lecture-notes.html">講義ノート</a>」（解答は折りたたみ式）と「操作ガイド（how-to-use）」を案内します。
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">目次</div>
+    <ol>
+      <li><a href="#s0">この教材の構成と本ガイドの使い方</a></li>
+      <li><a href="#s1">対象・前提・到達目標</a></li>
+      <li><a href="#s2">授業展開（2〜3 コマ）と時間配分</a></li>
+      <li><a href="#s3">各節の教えどころ・板書のコツ・つまずきポイント</a></li>
+      <li><a href="#s4">デモを使った提示のコツ</a></li>
+      <li><a href="#s5">演習 7 問 模範解答</a></li>
+      <li><a href="#s6">よくある質問・誤解</a></li>
+      <li><a href="#s7">評価ルーブリック</a></li>
+    </ol>
+  </div>
+
+  <!-- ===================== §0 ===================== -->
+  <h2 id="s0">1. この教材の構成と本ガイドの使い方</h2>
+  <p>
+    本教材は「<strong>動かして理解する MPC</strong>」を狙った、外部依存ゼロの HTML 教材です。学生の動線は
+    <a href="../index.html">教材トップ</a> → <strong>Step 1 受け取りデモ</strong> → <strong>Step 2 制約デモ</strong> →
+    <strong>Step 3 講義ノート（理論・演習）</strong> → 発展（応用ショーケース）の順を想定しています。
+    本ガイドはこの動線に沿って、<em>どこで何を語り、どのデモをどう動かし、どこで学生がつまずくか</em>を整理したものです。
+  </p>
+  <p>理論の節番号（§1〜§7）は <a href="../content/lecture-notes.html">講義ノート</a> の章立てと一致します。本ガイドの「教えどころ」と「模範解答」は、すべてこの講義ノートを下敷きにしています。</p>
+  <div class="note">
+    <div class="note-label">運用のひとこと</div>
+    デモはブラウザで HTML を開くだけで動きます（サーバ・インストール不要）。プロジェクタに 1 画面映し、スライダーをライブで動かしながら口頭で問いかける使い方が最も効きます。学生には各自のノート PC／タブレットで同じ URL を開かせ、「先生と同じ操作をしてみて」と促すと参加度が上がります。
+  </div>
+
+  <!-- ===================== §1 ===================== -->
+  <h2 id="s1">2. 対象・前提・到達目標</h2>
+  <h3>対象</h3>
+  <p>制御工学を一通り学んだ学部 3〜4 年・大学院初年次。授業 1 コマ 90 分換算で 2〜3 コマ分を想定（演習込み）。</p>
+  <h3>前提知識</h3>
+  <ul>
+    <li><strong>古典制御（PID）</strong>：フィードバック、偏差 <math><mrow><mi>e</mi><mo>=</mo><mi>r</mi><mo>−</mo><mi>y</mi></mrow></math>、積分動作とワインドアップの概念。</li>
+    <li><strong>状態空間モデル</strong>：<math><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mi>A</mi><mi>x</mi><mo>+</mo><mi>B</mi><mi>u</mi></mrow></math>、可制御性、離散時間表現。</li>
+    <li><strong>最適制御（LQR）</strong>：二次コスト、固定ゲイン <math><mrow><mi>u</mi><mo>=</mo><mo>−</mo><mi>K</mi><mi>x</mi></mrow></math>、リカッチ方程式の存在（解法の詳細は不要）。</li>
+    <li><strong>線形代数</strong>：行列の積・転置・逆行列、二次形式の微分。</li>
+  </ul>
+  <h3>到達目標</h3>
+  <p>この教材を終えた学生は、次を「自分の言葉で説明」かつ「デモで実演」できることを目標とします。</p>
+  <ol>
+    <li><strong>3 つのアイデアの説明</strong>：MPC を <em>予測（モデルで未来を見る）／最適化（コスト最小の入力列を解く）／受け取り（先頭だけ打って解き直す）</em> の流れで説明できる。</li>
+    <li><strong>無制約 MPC＝状態フィードバック</strong>：制約が無いとき、MPC が固定ゲインの状態フィードバック（さらに <math><mrow><msub><mi>N</mi><mi>p</mi></msub><mo>→</mo><mi>∞</mi></mrow></math> で LQR）に帰着することを理解し、導出の筋道を追える。</li>
+    <li><strong>制約を QP で扱う意義</strong>：入力飽和・出力上限などの制約を二次計画 (QP) として最適化の中で陽に扱える——これが PID のアンチワインドアップを最適に一般化したものだと理解できる。</li>
+  </ol>
+  <div class="sidenote">
+    <div class="sn-label">到達度の最低ライン</div>
+    時間が限られる場合の「ここだけは」は、(1) 受け取り原理（なぜ先頭だけ打つか）と、(3) 制約を陽に扱える点の 2 つ。(2) の状態フィードバック等価は山場ですが、導出の完全再現までは求めず「無制約なら線形則に過ぎない」という<em>結論の理解</em>を最低ラインに置くと現実的です。
+  </div>
+
+  <!-- ===================== §2 ===================== -->
+  <h2 id="s2">3. 授業展開（2〜3 コマ）と時間配分</h2>
+  <p>標準は <strong>2 コマ（各 90 分）＋演習 1 コマ</strong>。下表は理論と体験を交互に挟む推奨進行です。時間が足りなければ 3 コマ目（演習）を宿題に回し、2 コマに圧縮できます。</p>
+
+  <h3>標準進行（合計 約 255 分 ＝ 2 コマ＋演習）</h3>
+  <table>
+    <thead>
+      <tr><th class="l">局面</th><th>時間</th><th class="l">使う教材</th><th class="l">この時間の狙い</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="l">導入：なぜ MPC か</td><td>15 分</td>
+        <td class="l">トップ／§1</td>
+        <td class="l">PID・LQR の限界（飽和でのワインドアップ、多変数干渉、予見）を共有し、MPC の 3 アイデアを予告する。</td>
+      </tr>
+      <tr>
+        <td class="l">Step 1 デモ提示</td><td>30 分</td>
+        <td class="l">受け取りデモ</td>
+        <td class="l">理論に入る前に「予測の破線」「先頭だけ打つ」を体感させ、疑問を先に湧かせる。スライダーをライブ操作。</td>
+      </tr>
+      <tr>
+        <td class="l">講義：予測〜受け取り</td><td>60 分</td>
+        <td class="l">§2・§3・§4</td>
+        <td class="l">予測方程式 <math><mrow><mi>Y</mi><mo>=</mo><msub><mi>S</mi><mi>x</mi></msub><mi>x</mi><mo>+</mo><msub><mi>S</mi><mi>u</mi></msub><mi>U</mi></mrow></math>、二次コストと無制約解、受け取り原理を板書で導く。デモと往復。</td>
+      </tr>
+      <tr style="background:var(--surface-2)"><td class="l" colspan="4" style="text-align:center;font-size:12px;color:var(--text-3)">― 1 コマ目ここまで（約 105 分）／休憩 ―</td></tr>
+      <tr>
+        <td class="l">Step 2 デモ提示</td><td>30 分</td>
+        <td class="l">制約デモ</td>
+        <td class="l"><math><msub><mi>u</mi><mi>max</mi></msub></math> を絞る・天井を下げると、QP が入力列を整形する様子を見せ、「有効な制約の数」KPI を読む。</td>
+      </tr>
+      <tr>
+        <td class="l">講義：制約と接続</td><td>45 分</td>
+        <td class="l">§5・§6</td>
+        <td class="l">制約 → 線形不等式 → QP の流れ、無制約 MPC＝状態フィードバック（山場）、LQR との対応表を解説。</td>
+      </tr>
+      <tr>
+        <td class="l">まとめ・Q&amp;A</td><td>15 分</td>
+        <td class="l">トップの対応表</td>
+        <td class="l">教科書概念と MPC の対応を 1 枚で振り返り、応用ショーケースへ橋渡し。</td>
+      </tr>
+      <tr style="background:var(--surface-2)"><td class="l" colspan="4" style="text-align:center;font-size:12px;color:var(--text-3)">― 2 コマ目ここまで（約 90 分） ―</td></tr>
+      <tr>
+        <td class="l">演習</td><td>60 分</td>
+        <td class="l">§7（演習 1〜7）</td>
+        <td class="l">「手計算 → デモで答え合わせ」。演習 1・2・6 を必修、3〜5・7 を時間に応じて。下の模範解答を参照。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>圧縮版（1 コマ・90 分、概念重視）</h3>
+  <table>
+    <thead><tr><th class="l">局面</th><th>時間</th><th class="l">割り切り</th></tr></thead>
+    <tbody>
+      <tr><td class="l">導入＋受け取りデモ</td><td>25 分</td><td class="l">§1 と Step 1 で 3 アイデアを体感。</td></tr>
+      <tr><td class="l">予測・コスト・受け取りの要点</td><td>30 分</td><td class="l">§2〜§4 を結論中心に。行列の作り方は演習 1 を宿題化。</td></tr>
+      <tr><td class="l">制約デモ＋QP の意義</td><td>25 分</td><td class="l">§5 を体感重視。§6 は「無制約なら状態 FB」の結論だけ。</td></tr>
+      <tr><td class="l">まとめ</td><td>10 分</td><td class="l">対応表で総括、演習は全問宿題。</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <div class="note-label">配分の考え方</div>
+    「<strong>理論の前にデモ</strong>」を徹底するのがコツです。先に Step 1 を触らせて「なぜ全部打たないの？」という疑問を持たせてから §4 を講義すると、受け取り原理が腑に落ちます。逆順（理論を先に詰めてからデモ）にすると、デモが単なる確認作業になり食いつきが落ちます。
+  </div>
+
+  <!-- ===================== §3 ===================== -->
+  <h2 id="s3">4. 各節の教えどころ・板書のコツ・つまずきポイント</h2>
+
+  <h3>§2 予測方程式 — <math><msub><mi>S</mi><mi>u</mi></msub></math> が下三角＝因果性</h3>
+  <p><strong>教えどころ：</strong>モデルを <math><mi>i</mi></math> 回反復適用すれば、将来出力が <math><mrow><mi>Y</mi><mo>=</mo><msub><mi>S</mi><mi>x</mi></msub><mi>x</mi><mo>(</mo><mi>k</mi><mo>)</mo><mo>+</mo><msub><mi>S</mi><mi>u</mi></msub><mi>U</mi></mrow></math> と「現在状態の効き（<math><msub><mi>S</mi><mi>x</mi></msub></math>）」と「将来入力の効き（<math><msub><mi>S</mi><mi>u</mi></msub></math>）」の和に分かれる、というのが核です。</p>
+  <p><strong>板書のコツ：</strong><math><msub><mi>S</mi><mi>u</mi></msub></math> を 3×2 など小さいサイズで実際に書き、<strong>右上三角がすべて 0</strong> になることを指で示します。「<em>未来の入力は過去の出力を変えられない＝因果性</em>」と一言添えると印象に残ります。<math><mrow><mo>(</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo>)</mo></mrow></math> 成分が <math><mrow><mi>C</mi><msup><mi>A</mi><mrow><mi>i</mi><mo>−</mo><mn>1</mn><mo>−</mo><mi>j</mi></mrow></msup><mi>B</mi></mrow></math>（<math><mrow><mi>j</mi><mo>≤</mo><mi>i</mi><mo>−</mo><mn>1</mn></mrow></math> のときのみ非ゼロ）であることと結びつけます。これは演習 1 の手計算に直結します。</p>
+  <p><strong>つまずき：</strong>(a) <math><msub><mi>N</mi><mi>p</mi></msub></math>（予測の長さ）と <math><msub><mi>N</mi><mi>c</mi></msub></math>（自由入力の本数）の混同。<math><msub><mi>N</mi><mi>c</mi></msub></math> を超えたら <math><mrow><mi>u</mi><mo>=</mo><mn>0</mn></mrow></math>（コースティング）と置く仮定を明示。(b) 添字 <math><mi>i</mi><mo>,</mo><mi>j</mi></math> のずれ。「行＝予測ステップ、列＝入力番号」と固定して読む癖をつけさせます。</p>
+
+  <h3>§3 コスト関数と無制約最適解 — <math><mi>λ</mi></math> と定常偏差の罠</h3>
+  <p><strong>教えどころ：</strong>予測方程式をコスト <math><mrow><mi>J</mi><mo>=</mo><msup><mrow><mo>(</mo><mi>Y</mi><mo>−</mo><mi>R</mi><mo>)</mo></mrow><mi>⊤</mi></msup><mover><mi>Q</mi><mo>¯</mo></mover><mo>(</mo><mi>Y</mi><mo>−</mo><mi>R</mi><mo>)</mo><mo>+</mo><msup><mi>U</mi><mi>⊤</mi></msup><mover><mi>R</mi><mo>¯</mo></mover><mi>U</mi></mrow></math> に代入し、<math><mi>U</mi></math> で微分して 0 と置けば解析解が出る——「最適化と言っても、無制約なら連立 1 次方程式」という安心感を与えます。効くのは比 <math><mrow><mi>λ</mi><mo>=</mo><mi>R</mi><mo>/</mo><mi>Q</mi></mrow></math> だけ、という点も強調。</p>
+  <p><strong>定常偏差の罠（重要・演習 2 と接続）：</strong>入力 <math><mi>u</mi></math> <em>そのもの</em>に罰 <math><mrow><mi>λ</mi><msup><mi>u</mi><mn>2</mn></msup></mrow></math> を与えると、目標保持に <math><mrow><mi>u</mi><mo>≠</mo><mn>0</mn></mrow></math> が要る系（1 次系など）では<strong>定常偏差</strong>が残ります。これは「目標保持に必要な入力を惜しんでしまう」ため。実用 MPC は入力<em>増分</em> <math><mi>Δu</mi></math> に罰を与えて状態を拡大し、<strong>積分動作を内蔵</strong>して偏差を消します。</p>
+  <div class="sidenote">
+    <div class="sn-label">この教材が偏差を見せない理由（板書で必ず一言）</div>
+    本デモが 2 重積分系を採用したのは、<strong>目標保持に <math><mrow><mi>u</mi><mo>=</mo><mn>0</mn></mrow></math> でよい</strong>（位置を保つのに加速度は不要）ため、<math><mi>u</mi></math> へ罰を与えても定常偏差が出ないからです。「デモでは偏差ゼロに収まる → だが 1 次系（演習 2）では <math><mrow><msub><mi>x</mi><mi>∞</mi></msub><mo>=</mo><mn>0.926</mn></mrow></math> と届かない」という対比を必ず作ると、罠が腹落ちします。
+  </div>
+
+  <h3>§4 受け取りホライズン — 「なぜ先頭だけ？」</h3>
+  <p><strong>これが最頻出の疑問です。</strong>学生は「せっかく <math><msub><mi>N</mi><mi>c</mi></msub></math> 本も計画したのに、なぜ先頭 1 本しか使わず、また全部解き直すのか。無駄では？」と感じます。</p>
+  <p><strong>板書のコツ（外乱フィードバックの観点で説明）：</strong></p>
+  <ul>
+    <li>「全部実行＝<strong>開ループ</strong>」「先頭だけ＋解き直し＝<strong>閉ループ（フィードバック）</strong>」と対比して書く。</li>
+    <li>毎ステップ <em>実測した</em> <math><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>)</mo></mrow></math> を使って解き直すから、外乱やモデル誤差で状態がずれても次の一手で補正される——「計画を<strong>状態フィードバックに変える</strong>装置が受け取り」と要約。</li>
+    <li><strong>デモの「1 ステップ進む」を連打して見せる：</strong>濃い棒（適用する <math><mrow><msup><mi>u</mi><mo>*</mo></msup><mo>(</mo><mi>k</mi><mo>)</mo></mrow></math>）だけが実績に変わり、薄い棒（残りの計画）が<strong>破棄</strong>され、新しい位置から予測窓が前へずれる（＝receding）。これを目で見せるのが最も雄弁です。</li>
+  </ul>
+  <p><strong>つまずき：</strong>「解き直しのたびに計画が変わるなら不安定では？」という不安。→ 無制約なら毎回同じ固定ゲイン（§6）になるので心配ない、と先回りして安心させます。</p>
+
+  <h3>§5 制約と QP</h3>
+  <p><strong>教えどころ：</strong>入力上下限・変化率・出力上限はすべて決定変数 <math><mi>U</mi></math> の<strong>線形不等式</strong> <math><mrow><mi>M</mi><mi>U</mi><mo>≤</mo><mi>γ</mi></mrow></math> に書ける。コストは <math><mi>U</mi></math> の二次式なので、問題は<strong>二次計画 (QP)</strong>。「制約が一つも効かなければ QP の解は §3 の無制約解にぴたり一致、効くと境界に乗る」が要点です。本デモは軽量な Hildreth 双対法で解いており、乗数 <math><mrow><msub><mi>λ</mi><mi>i</mi></msub><mo>&gt;</mo><mn>0</mn></mrow></math> の制約が「有効」——これが KPI「有効な制約の数」です。</p>
+  <p><strong>板書のコツ：</strong>出力上限 <math><mrow><mi>Y</mi><mo>≤</mo><msub><mi>y</mi><mi>max</mi></msub></mrow></math> から <math><mrow><msub><mi>S</mi><mi>u</mi></msub><mi>U</mi><mo>≤</mo><msub><mi>y</mi><mi>max</mi></msub><mo>−</mo><msub><mi>S</mi><mi>x</mi></msub><mi>x</mi></mrow></math> を 1 行導いて「予測方程式さえあれば制約も自動で <math><mi>U</mi></math> の式になる」を実演します。</p>
+  <p><strong>つまずき：</strong>「制約付き＝無制約解を単純にクリップ」という誤解。1 変数（<math><mrow><msub><mi>N</mi><mi>c</mi></msub><mo>=</mo><mn>1</mn></mrow></math>）では確かにクリップですが（演習 5）、多変数では QP が入力列<em>全体</em>を整形します（デモの「塗り vs 枠線」の差）。ここを演習 5 で釘を刺します。</p>
+
+  <h3>§6 古典・現代制御との接続 — 無制約 MPC＝状態フィードバック（山場）</h3>
+  <p><strong>教えどころ：</strong>§3 の無制約解は <math><mi>x</mi></math> について<strong>線形</strong>。ゲイン行列 <math><mi>K</mi></math> を定義すれば <math><mrow><msup><mi>U</mi><mo>*</mo></msup><mo>=</mo><mi>K</mi><mo>(</mo><mi>R</mi><mo>−</mo><msub><mi>S</mi><mi>x</mi></msub><mi>x</mi><mo>)</mo></mrow></math>。受け取りで<strong>先頭行 <math><msub><mi>K</mi><mn>1</mn></msub></math> だけ</strong>取ると</p>
+  <div class="eq">
+    <math display="block"><mrow>
+      <msup><mi>u</mi><mo>*</mo></msup><mo>(</mo><mi>k</mi><mo>)</mo><mo>=</mo>
+      <munder><munder><mrow><msub><mi>K</mi><mn>1</mn></msub><mi>R</mi></mrow><mo>⏟</mo></munder><mtext>FF（目標）</mtext></munder>
+      <mo>−</mo>
+      <munder><munder><mrow><msub><mi>K</mi><mn>1</mn></msub><msub><mi>S</mi><mi>x</mi></msub></mrow><mo>⏟</mo></munder><msub><mi>K</mi><mi>fb</mi></msub></munder>
+      <mi>x</mi><mo>(</mo><mi>k</mi><mo>)</mo>
+    </mrow></math>
+  </div>
+  <p>すなわち「<strong>状態フィードバック <math><mrow><mo>−</mo><msub><mi>K</mi><mi>fb</mi></msub><mi>x</mi></mrow></math> ＋ 目標フィードフォワード</strong>」という線形則そのもの。さらに <math><mrow><msub><mi>N</mi><mi>p</mi></msub><mo>→</mo><mi>∞</mi></mrow></math>（または終端重み）で <math><msub><mi>K</mi><mi>fb</mi></msub></math> は DARE の解＝<strong>LQR ゲイン</strong>に一致します。</p>
+  <p><strong>板書のコツ：</strong>講義ノートの 4×4 比較表（LQR／MPC 無制約／MPC 制約あり）をそのまま板書に写すのが効率的。「制御則」の行で <em>線形 → 線形 → 区分線形（非線形）</em> と移る点を強調します。演習 6 で <math><mrow><msub><mi>K</mi><mi>fb</mi></msub><mo>≈</mo><mo>[</mo><mn>1.537</mn><mo>,</mo><mn>0.748</mn><mo>]</mo></mrow></math> を実際に求めさせると「本当に固定ゲインが出る」体験になります。</p>
+  <p><strong>つまずき：</strong>「MPC は毎回最適化する＝賢い／LQR は固定ゲイン＝単純」という優劣の二項対立。→ <em>制約が無ければ両者は同じもの</em>であり、MPC の真価は<strong>制約があるとき</strong>（区分線形則）に現れる、と整理し直します。</p>
+
+  <!-- ===================== §4 ===================== -->
+  <h2 id="s4">5. デモを使った提示のコツ</h2>
+  <p>スライダーを「動かしながら問いかける」ためのライブ・シナリオ集です。各シナリオは 1〜2 分で実演できます。</p>
+
+  <h3>受け取りデモ（Step 1）</h3>
+  <table>
+    <thead><tr><th class="l">操作</th><th class="l">見せたいこと／問いかけ</th></tr></thead>
+    <tbody>
+      <tr><td class="l"><strong>λ を大 ↔ 小</strong>（スライダー右端 10 → 左端 0.001）</td><td class="l">λ 大：入力を惜しみ応答が緩慢、棒が小さい。λ 小：機敏（デッドビート的）だが入力が暴れる。「ロボットのモータをどこまで使う？」と問う。演習 3 に直結。</td></tr>
+      <tr><td class="l"><strong><math><msub><mi>N</mi><mi>p</mi></msub></math> 長 ↔ 短</strong></td><td class="l">予測の破線が伸び縮みする。短すぎると先を見られず立ち上がりが鈍る／不自然になることを見せ、「どこまで先を読むべきか」を議論。</td></tr>
+      <tr><td class="l"><strong><math><msub><mi>N</mi><mi>c</mi></msub></math> 大 ↔ 小</strong></td><td class="l">自由に動かせる入力の本数。<math><msub><mi>N</mi><mi>c</mi></msub></math> を 1 まで下げても、それなりに動くこと（受け取りが効くため）を体感。</td></tr>
+      <tr><td class="l"><strong>「1 ステップ進む」を連打</strong></td><td class="l"><em>受け取りの核</em>。濃い棒だけ実績化 → 薄い棒は破棄 → 窓が前進。「今われわれが捨てた計画は何だった？」と問い、開ループとの違いを言語化させる。</td></tr>
+      <tr><td class="l"><strong>進行中に r を動かす</strong></td><td class="l">目標を途中で変えても、次の解き直しで即座に追従し直す＝外乱・目標変化へのロバスト性。フィードバックの実感。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>制約デモ（Step 2）</h3>
+  <table>
+    <thead><tr><th class="l">操作</th><th class="l">見せたいこと／問いかけ</th></tr></thead>
+    <tbody>
+      <tr><td class="l"><strong><math><msub><mi>u</mi><mi>max</mi></msub></math> を絞る</strong>（例 1.0 → 0.4）</td><td class="l">先頭入力が飽和値（赤帯の縁）に貼り付く。KPI「有効な制約の数」が増える。塗り（制約付き）と枠線（制約なし）が乖離。「PID なら積分器がワインドアップする場面を MPC は最適にさばく」と接続。演習 5・接続。</td></tr>
+      <tr><td class="l"><strong>天井 <math><msub><mi>y</mi><mi>max</mi></msub></math> を <math><mi>r</mi></math> の下に置く</strong>（例 r=3, y_max=1.5）</td><td class="l"><em>到達不能な目標</em>。出力が天井 1.5 に貼り付いて停まり、目標 3 には決して届かない。「制約は絶対破らない」という MPC の性質を実演。演習 7 そのもの。</td></tr>
+      <tr><td class="l"><strong>天井を ON/OFF</strong></td><td class="l">チェックを外すと制約なしの軌道（点線）に戻る。制約の有無で軌道がどう曲がるかを直接比較。</td></tr>
+      <tr><td class="l"><strong><math><msub><mi>N</mi><mi>c</mi></msub></math> を 1 と大きい値で比較</strong></td><td class="l"><math><mrow><msub><mi>N</mi><mi>c</mi></msub><mo>=</mo><mn>1</mn></mrow></math> では先頭がほぼ単純クリップ、<math><mrow><msub><mi>N</mi><mi>c</mi></msub><mo>&gt;</mo><mn>1</mn></mrow></math> では QP が入力列全体を整形（後続の棒も変わる）。「クリップ＝QP ではない」誤解の解消。</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <div class="note-label">提示の段取り</div>
+    各デモとも、最初は<strong>既定値のまま「1 ステップ進む」を数回</strong>押して定常まで見せ、全体像を掴ませてから個別スライダーを振るのが鉄則。いきなりパラメータを極端値にすると因果関係が読めません。「リセット → 既定で観察 → 1 つだけ動かす → 戻す」を口頭で実況してください。
+  </div>
+
+  <!-- ===================== §5 模範解答 ===================== -->
+  <h2 id="s5">6. 演習 7 問 模範解答</h2>
+  <p>
+    以下は <a href="../content/lecture-notes.html#s7">講義ノート §7</a> の解答（数値は検証済み）の要約・転記です。各問「<strong>問題要旨</strong>／<strong>答え</strong>／<strong>指導ポイント</strong>」で構成しています。学生には「手計算 → デモで答え合わせ」を促してください。
+  </p>
+
+  <div class="exercise">
+    <div class="ex-label">演習 1<span class="ex-tag">基礎・予測方程式</span></div>
+    <p><strong>要旨：</strong>2 重積分系（<math><mrow><mi>Δt</mi><mo>=</mo><mn>0.2</mn></mrow></math>）で <math><mrow><msub><mi>N</mi><mi>p</mi></msub><mo>=</mo><mn>3</mn></mrow></math>, <math><mrow><msub><mi>N</mi><mi>c</mi></msub><mo>=</mo><mn>2</mn></mrow></math> のときの予測行列 <math><msub><mi>S</mi><mi>x</mi></msub></math>（3×2）と <math><msub><mi>S</mi><mi>u</mi></msub></math>（3×2）を求めよ。</p>
+    <div class="ex-ans">
+      <span class="ans-label">答え：</span><math><mrow><mi>C</mi><msup><mi>A</mi><mi>i</mi></msup><mo>=</mo><mo>[</mo><mn>1</mn><mo>,</mo><mn>0.2</mn><mi>i</mi><mo>]</mo></mrow></math>、<math><mrow><mi>C</mi><msup><mi>A</mi><mi>m</mi></msup><mi>B</mi><mo>=</mo><mn>0.02</mn><mo>+</mo><mn>0.04</mn><mi>m</mi></mrow></math>（<math><mrow><mi>m</mi><mo>=</mo><mi>i</mi><mo>−</mo><mn>1</mn><mo>−</mo><mi>j</mi></mrow></math>）より
+      <div class="eq"><math display="block"><mrow>
+        <msub><mi>S</mi><mi>x</mi></msub><mo>=</mo><mrow><mo>[</mo><mtable>
+          <mtr><mtd><mn>1</mn></mtd><mtd><mn>0.2</mn></mtd></mtr>
+          <mtr><mtd><mn>1</mn></mtd><mtd><mn>0.4</mn></mtd></mtr>
+          <mtr><mtd><mn>1</mn></mtd><mtd><mn>0.6</mn></mtd></mtr>
+        </mtable><mo>]</mo></mrow>
+        <mo>,</mo><mspace width="1.5em"/>
+        <msub><mi>S</mi><mi>u</mi></msub><mo>=</mo><mrow><mo>[</mo><mtable>
+          <mtr><mtd><mn>0.02</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+          <mtr><mtd><mn>0.06</mn></mtd><mtd><mn>0.02</mn></mtd></mtr>
+          <mtr><mtd><mn>0.10</mn></mtd><mtd><mn>0.06</mn></mtd></mtr>
+        </mtable><mo>]</mo></mrow>
+      </mrow></math></div>
+    </div>
+    <div class="teach-pt">
+      <div class="tp-label">指導ポイント</div>
+      右上成分が 0（下三角）であることを<strong>必ず確認させる</strong>＝因果性。誤答の多くは <math><msub><mi>S</mi><mi>u</mi></msub></math> の添字ずれ。<math><msub><mi>S</mi><mi>u</mi></msub></math> の 1 列目（<math><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow></math>, <math><mrow><mi>m</mi><mo>=</mo><mi>i</mi><mo>−</mo><mn>1</mn></mrow></math>）が <math><mrow><mn>0.02</mn><mo>,</mo><mn>0.06</mn><mo>,</mo><mn>0.10</mn></mrow></math>、2 列目（<math><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow></math>）が <math><mrow><mn>0</mn><mo>,</mo><mn>0.02</mn><mo>,</mo><mn>0.06</mn></mrow></math> と、列が右にずれるほど下に 1 段ずれることを指で追わせる。受け取りデモの破線がこの行列で描かれている点を補足。
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="ex-label">演習 2<span class="ex-tag">基礎・最適化＋定常偏差</span></div>
+    <p><strong>要旨：</strong>スカラー 1 次系 <math><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mi>a</mi><mi>x</mi><mo>+</mo><mi>b</mi><mi>u</mi></mrow></math>、<math><mrow><msub><mi>N</mi><mi>p</mi></msub><mo>=</mo><msub><mi>N</mi><mi>c</mi></msub><mo>=</mo><mn>1</mn></mrow></math>、<math><mrow><mi>J</mi><mo>=</mo><msup><mrow><mo>(</mo><mi>y</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>−</mo><mi>r</mi><mo>)</mo></mrow><mn>2</mn></msup><mo>+</mo><mi>λ</mi><msup><mi>u</mi><mn>2</mn></msup></mrow></math>。(a) 最適入力、(b) <math><mrow><mi>a</mi><mo>=</mo><mn>0.8</mn><mo>,</mo><mi>b</mi><mo>=</mo><mn>0.5</mn><mo>,</mo><mi>r</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>λ</mi><mo>=</mo><mn>0.1</mn></mrow></math> での定常値と、<math><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow></math> に届かない理由。</p>
+    <div class="ex-ans">
+      <span class="ans-label">答え (a)：</span><math><mrow><mi>d</mi><mi>J</mi><mo>/</mo><mi>d</mi><mi>u</mi><mo>=</mo><mn>2</mn><mi>b</mi><mo>(</mo><mi>a</mi><mi>x</mi><mo>+</mo><mi>b</mi><mi>u</mi><mo>−</mo><mi>r</mi><mo>)</mo><mo>+</mo><mn>2</mn><mi>λ</mi><mi>u</mi><mo>=</mo><mn>0</mn></mrow></math> より
+      <div class="eq"><math display="block"><mrow><msup><mi>u</mi><mo>*</mo></msup><mo>(</mo><mi>k</mi><mo>)</mo><mo>=</mo><mfrac><mrow><mi>b</mi><mo>(</mo><mi>r</mi><mo>−</mo><mi>a</mi><mi>x</mi><mo>(</mo><mi>k</mi><mo>)</mo><mo>)</mo></mrow><mrow><msup><mi>b</mi><mn>2</mn></msup><mo>+</mo><mi>λ</mi></mrow></mfrac></mrow></math></div>
+    </div>
+    <div class="ex-ans">
+      <span class="ans-label">答え (b)：</span>定常では <math><mrow><msub><mi>x</mi><mi>∞</mi></msub><mo>=</mo><mi>a</mi><msub><mi>x</mi><mi>∞</mi></msub><mo>+</mo><mi>b</mi><msup><mi>u</mi><mo>*</mo></msup></mrow></math> と <math><mrow><msup><mi>u</mi><mo>*</mo></msup><mo>=</mo><mi>b</mi><mo>(</mo><mi>r</mi><mo>−</mo><mi>a</mi><msub><mi>x</mi><mi>∞</mi></msub><mo>)</mo><mo>/</mo><mo>(</mo><msup><mi>b</mi><mn>2</mn></msup><mo>+</mo><mi>λ</mi><mo>)</mo></mrow></math> を連立して <strong><math><mrow><msub><mi>x</mi><mi>∞</mi></msub><mo>=</mo><mn>0.926</mn></mrow></math></strong>（&lt; 1、目標未達）。理由：入力 <math><mi>u</mi></math> 自体への罰 <math><mrow><mi>λ</mi><msup><mi>u</mi><mn>2</mn></msup></mrow></math> のため、目標保持に必要な <math><mrow><msup><mi>u</mi><mi>ss</mi></msup><mo>=</mo><mo>(</mo><mn>1</mn><mo>−</mo><mi>a</mi><mo>)</mo><mi>r</mi><mo>/</mo><mi>b</mi><mo>≠</mo><mn>0</mn></mrow></math> を「惜しんで」偏差が残る。
+    </div>
+    <div class="teach-pt">
+      <div class="tp-label">指導ポイント</div>
+      <strong>本教材の核心の罠</strong>。<math><mrow><msub><mi>x</mi><mi>∞</mi></msub><mo>=</mo><mn>0.926</mn></mrow></math> を学生に手で出させ、「なぜちょうど 1 にならないのか」を <math><mi>u</mi></math> への罰で説明させる。解消策が <strong>Δu 定式化（積分動作内蔵）</strong>であること（§3 サイドノート）に必ず接続。そして<strong>デモの 2 重積分系で偏差が出ないのは、目標保持に <math><mrow><mi>u</mi><mo>=</mo><mn>0</mn></mrow></math> でよいから</strong>——という対比を板書で締める。
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="ex-label">演習 3<span class="ex-tag">基礎・チューニング</span></div>
+    <p><strong>要旨：</strong>無制約 MPC で重み <math><mrow><mi>λ</mi><mo>=</mo><mi>R</mi><mo>/</mo><mi>Q</mi></mrow></math> を (a) <math><mrow><mi>λ</mi><mo>→</mo><mn>0</mn></mrow></math>、(b) <math><mrow><mi>λ</mi><mo>→</mo><mi>∞</mi></mrow></math> としたときの最適入力と応答を定性的に述べよ。</p>
+    <div class="ex-ans">
+      <span class="ans-label">答え (a) <math><mrow><mi>λ</mi><mo>→</mo><mn>0</mn></mrow></math>：</span>入力ペナルティが消え出力誤差のみ最小化。<math><msup><mi>U</mi><mo>*</mo></msup></math> は大きく機敏（デッドビート的）だが入力が暴れ、制約・モデル誤差に弱い。<math><mrow><msubsup><mi>S</mi><mi>u</mi><mi>⊤</mi></msubsup><msub><mi>S</mi><mi>u</mi></msub></mrow></math> が特異だと解が不定になりうる（<math><mi>λ</mi></math> が正則化として効く）。
+    </div>
+    <div class="ex-ans">
+      <span class="ans-label">答え (b) <math><mrow><mi>λ</mi><mo>→</mo><mi>∞</mi></mrow></math>：</span>入力を出し惜しみ <math><mrow><msup><mi>U</mi><mo>*</mo></msup><mo>→</mo><mn>0</mn></mrow></math>。応答は非常に遅く目標到達も遅れる（演習 2 型の系では偏差も拡大）。
+    </div>
+    <div class="teach-pt">
+      <div class="tp-label">指導ポイント</div>
+      「速さ vs 入力の大きさ（＝省エネ／アクチュエータ負荷）のトレードオフ」を <math><mi>λ</mi></math> 一個が握る、というチューニング思想を伝える。<strong>受け取りデモの λ スライダーを左右に振って実演</strong>すれば一目瞭然。PID のゲイン調整との対応（§トップの対応表）も触れる。<math><mi>λ</mi></math> が「正則化」でもある点（数値安定性）は発展。
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="ex-label">演習 4<span class="ex-tag">概念・受け取り原理</span></div>
+    <p><strong>要旨：</strong>「予測入力列を全部実行（開ループ）」vs「先頭だけ実行して毎回解き直し（受け取り）」で、ステップ <math><mi>k</mi></math> 直後に未知の外乱が入ったとき、両者の振る舞いはどう違うか。</p>
+    <div class="ex-ans">
+      <span class="ans-label">答え：</span>開ループは外乱を観測できず最初の計画を盲目的に実行し続けるため、ずれが補正されず誤差が蓄積。受け取りは次ステップで<strong>実測状態 <math><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow></math>（外乱込み）</strong>から解き直すため、ずれが即座にフィードバック補正される。<strong>受け取り＝計画を状態フィードバック化する仕組み</strong>。
+    </div>
+    <div class="teach-pt">
+      <div class="tp-label">指導ポイント</div>
+      §4 の「なぜ先頭だけ？」への決定的な答え。記述式で書かせ、キーワード「実測状態」「フィードバック補正」「開ループは誤差蓄積」が入っているかで採点。<strong>受け取りデモで進行中に r を急変させる＝擬似外乱</strong>として実演すると、口頭の説明が裏付けられる。
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="ex-label">演習 5<span class="ex-tag">応用・制約付き QP</span></div>
+    <p><strong>要旨：</strong>演習 2 の系・コストに入力制約 <math><mrow><mo>|</mo><mi>u</mi><mo>|</mo><mo>≤</mo><msub><mi>u</mi><mi>max</mi></msub></mrow></math>（<math><mrow><msub><mi>N</mi><mi>c</mi></msub><mo>=</mo><mn>1</mn></mrow></math>）。<math><mrow><mi>a</mi><mo>=</mo><mn>0.8</mn><mo>,</mo><mi>b</mi><mo>=</mo><mn>0.5</mn><mo>,</mo><mi>r</mi><mo>=</mo><mn>2</mn><mo>,</mo><mi>x</mi><mo>=</mo><mn>0</mn><mo>,</mo><mi>λ</mi><mo>=</mo><mn>0.1</mn><mo>,</mo><msub><mi>u</mi><mi>max</mi></msub><mo>=</mo><mn>1.5</mn></mrow></math> での制約付き最適 <math><msup><mi>u</mi><mo>*</mo></msup></math>。</p>
+    <div class="ex-ans">
+      <span class="ans-label">答え：</span>無制約解 <math><mrow><msup><mi>u</mi><mi>unc</mi></msup><mo>=</mo><mn>0.5</mn><mo>(</mo><mn>2</mn><mo>−</mo><mn>0</mn><mo>)</mo><mo>/</mo><mn>0.35</mn><mo>=</mo><mn>2.857</mn></mrow></math> は <math><mrow><msub><mi>u</mi><mi>max</mi></msub><mo>=</mo><mn>1.5</mn></mrow></math> 超過。コストは <math><msup><mi>u</mi><mi>unc</mi></msup></math> を頂点とする上に凸な放物線なので、実行可能区間 <math><mrow><mo>[</mo><mo>−</mo><mn>1.5</mn><mo>,</mo><mn>1.5</mn><mo>]</mo></mrow></math> 内の最小は境界。よって <strong><math><mrow><msup><mi>u</mi><mo>*</mo></msup><mo>=</mo><mtext>clip</mtext><mo>(</mo><mn>2.857</mn><mo>,</mo><mo>±</mo><mn>1.5</mn><mo>)</mo><mo>=</mo><mn>1.5</mn></mrow></math></strong>（飽和値に貼り付く）。
+    </div>
+    <div class="teach-pt">
+      <div class="tp-label">指導ポイント</div>
+      ここで<strong>「1 変数だからクリップで済む」を強調しつつ、多変数（<math><mrow><msub><mi>N</mi><mi>c</mi></msub><mo>&gt;</mo><mn>1</mn></mrow></math>）では単純クリップにならず QP が入力列全体を整形する</strong>と必ず釘を刺す（§5 のつまずき）。制約デモで <math><mrow><msub><mi>N</mi><mi>c</mi></msub><mo>=</mo><mn>1</mn></mrow></math> と大きい <math><msub><mi>N</mi><mi>c</mi></msub></math> を見比べさせると、塗りと枠線の差で違いが見える。
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="ex-label">演習 6<span class="ex-tag">応用・状態フィードバック等価</span></div>
+    <p><strong>要旨：</strong>演習 1 の <math><msub><mi>S</mi><mi>x</mi></msub><mo>,</mo><msub><mi>S</mi><mi>u</mi></msub></math> と <math><mrow><mi>λ</mi><mo>=</mo><mn>0.1</mn></mrow></math>, <math><mrow><mi>Q</mi><mo>=</mo><mn>1</mn></mrow></math> で、無制約 MPC の先頭行ゲインから状態フィードバックゲイン <math><msub><mi>K</mi><mi>fb</mi></msub></math> を求めよ（<math><mrow><mi>r</mi><mo>=</mo><mn>0</mn></mrow></math>）。</p>
+    <div class="ex-ans">
+      <span class="ans-label">答え：</span><math><mrow><mi>H</mi><mo>=</mo><msubsup><mi>S</mi><mi>u</mi><mi>⊤</mi></msubsup><msub><mi>S</mi><mi>u</mi></msub><mo>+</mo><mn>0.1</mn><mi>I</mi></mrow></math>、<math><mrow><mi>K</mi><mo>=</mo><msup><mi>H</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msubsup><mi>S</mi><mi>u</mi><mi>⊤</mi></msubsup></mrow></math>（2×3）の先頭行 <math><mrow><msub><mi>K</mi><mn>1</mn></msub><mo>≈</mo><mo>[</mo><mn>0.176</mn><mo>,</mo><mn>0.516</mn><mo>,</mo><mn>0.844</mn><mo>]</mo></mrow></math>。状態フィードバックゲインは <math><mrow><msub><mi>K</mi><mi>fb</mi></msub><mo>=</mo><msub><mi>K</mi><mn>1</mn></msub><msub><mi>S</mi><mi>x</mi></msub></mrow></math>：
+      <div class="eq"><math display="block"><mrow><msub><mi>K</mi><mi>fb</mi></msub><mo>≈</mo><mo>[</mo><mn>1.537</mn><mo>,</mo><mspace width="0.3em"/><mn>0.748</mn><mo>]</mo></mrow></math></div>
+      すなわち <strong><math><mrow><msup><mi>u</mi><mo>*</mo></msup><mo>(</mo><mi>k</mi><mo>)</mo><mo>=</mo><mo>−</mo><mn>1.537</mn><mi>p</mi><mo>−</mo><mn>0.748</mn><mi>v</mi></mrow></math></strong>。
+    </div>
+    <div class="teach-pt">
+      <div class="tp-label">指導ポイント</div>
+      <strong>§6（山場）の数値版</strong>。2×2 の逆行列 <math><msup><mi>H</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup></math> を手計算するのは骨なので、<math><msub><mi>K</mi><mn>1</mn></msub></math> は与えてもよい（要点は <math><mrow><msub><mi>K</mi><mi>fb</mi></msub><mo>=</mo><msub><mi>K</mi><mn>1</mn></msub><msub><mi>S</mi><mi>x</mi></msub></mrow></math> の合成）。<math><msub><mi>K</mi><mi>fb</mi></msub></math> の各成分は <math><mrow><mn>0.176</mn><mo>+</mo><mn>0.516</mn><mo>+</mo><mn>0.844</mn></mrow></math> と <math><mrow><mn>0.2</mn><mo>·</mo><mn>0.176</mn><mo>+</mo><mn>0.4</mn><mo>·</mo><mn>0.516</mn><mo>+</mo><mn>0.6</mn><mo>·</mo><mn>0.844</mn></mrow></math> から出る。「MPC が制約なしなら<strong>固定ゲインの状態フィードバックに過ぎない</strong>」という結論を体感させるのが目的。
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="ex-label">演習 7<span class="ex-tag">総合・デモで検証</span></div>
+    <p><strong>要旨：</strong>制約デモで <math><mrow><mi>r</mi><mo>=</mo><mn>3</mn></mrow></math>、天井 <math><mrow><msub><mi>y</mi><mi>max</mi></msub><mo>=</mo><mn>1.5</mn></mrow></math> を有効化し受け取りを最後まで回すと、出力はどこに落ち着くか予想し、デモで確認、§5・§6 の言葉で説明せよ。</p>
+    <div class="ex-ans">
+      <span class="ans-label">答え：</span>目標 <math><mrow><mi>r</mi><mo>=</mo><mn>3</mn></mrow></math> が天井 <math><mrow><msub><mi>y</mi><mi>max</mi></msub><mo>=</mo><mn>1.5</mn></mrow></math> より上のため、出力制約 <math><mrow><mi>y</mi><mo>≤</mo><mn>1.5</mn></mrow></math> が常に有効になり、<strong>出力は <math><mrow><mi>y</mi><mo>=</mo><mn>1.5</mn></mrow></math> に貼り付いて停まる</strong>（目標未到達）。「到達不能な目標でも制約は決して破らない」という MPC の性質。QP は出力制約に当たる乗数 <math><mrow><msub><mi>λ</mi><mi>i</mi></msub><mo>&gt;</mo><mn>0</mn></mrow></math> を立て、その境界上で誤差最小の解を選ぶ。制約が有効な間、制御則は状態フィードバック（線形）から外れ<strong>区分線形</strong>になっている。
+    </div>
+    <div class="teach-pt">
+      <div class="tp-label">指導ポイント</div>
+      <strong>§5（QP・有効制約）と §6（区分線形）の総合問題</strong>。予想 → 実測（KPI「有効な制約の数」が立ち続ける、出力が 1.5 で頭打ち）の順で確認させる。「制約が効く間は線形則が破れている＝表の右列『区分線形』」をデモと対応づけて締めくくると、教材全体が 1 本につながる。発展として「終端制約・明示的 MPC」へ橋渡し可。
+    </div>
+  </div>
+
+  <div class="note">
+    <div class="note-label">採点・検証の小ワザ</div>
+    全演習の数値は本教材のデモと整合します。演習 1・6 の行列／ゲイン、演習 2 の <math><mrow><msub><mi>x</mi><mi>∞</mi></msub><mo>=</mo><mn>0.926</mn></mrow></math>、演習 5 の <math><mrow><msup><mi>u</mi><mo>*</mo></msup><mo>=</mo><mn>1.5</mn></mrow></math>、演習 7 の頭打ち 1.5 は、いずれもデモのパラメータを合わせれば KPI 表示で確認できます。記述式（演習 3・4・7）はキーワードの有無で部分点を与えると採点が安定します。
+  </div>
+
+  <!-- ===================== §6 ===================== -->
+  <h2 id="s6">7. よくある質問・誤解</h2>
+
+  <h3>Q. MPC と PID の違いは？</h3>
+  <p>
+    PID は「現在の偏差」（と積分・微分）から<strong>反応的</strong>に入力を決める。MPC はモデルで<strong>未来を予測</strong>し、ホライズン全体のコストを最小化する入力列を解いて<strong>先頭だけ打つ</strong>。決定的な差は (1) <strong>予見</strong>（未来の目標・むだ時間を見越せる）、(2) <strong>多変数</strong>の相互干渉を一括で扱える、(3) <strong>制約を陽に扱える</strong>（PID の後付けアンチワインドアップが不要）こと。一方、無制約・1 入力 1 出力で予見不要なら、PID の方が軽くて十分なことも多い、と公平に伝えます。
+  </p>
+
+  <h3>Q. MPC は計算が重いのでは？（実時間で回るのか）</h3>
+  <p>
+    毎ステップ QP を解くので一見重い。しかし対策が確立しています。(1) <strong>無制約なら状態フィードバック</strong>（§6）なので、制約に当たらない領域はゲイン乗算のみで済む。(2) <strong>明示的 MPC (Explicit MPC)</strong>：制約付き解は状態空間を区分けした<strong>区分線形則</strong>になるため、これを前計算してテーブル参照すればオンライン最適化が不要。(3) <strong>高速 QP ソルバ</strong>（OSQP・qpOASES 等のウォームスタート付き）や組込み実装で、ミリ秒〜マイクロ秒級の制御周期にも乗る。応用ショーケースの「組込み高速ソルバ」に実例。
+  </p>
+
+  <h3>Q. 「モデルが要る」＝弱点では？</h3>
+  <p>
+    モデル依存は確かに代償ですが、(1) <strong>受け取り原理</strong>が毎ステップ実測状態で立て直すため、<em>多少のモデル誤差にはロバスト</em>（演習 4）。(2) 外乱モデル／積分動作（Δu 定式化）を入れれば定常偏差を消せる（演習 2）。(3) システム同定や<strong>学習ベース MPC</strong>でモデルを得る／更新する手法も発展している。むしろ「<strong>モデルがあるからこそ予見・多変数・制約を一括で扱える</strong>」という強みの裏返しだ、と位置づけます。古典制御も結局はモデル（伝達関数）に基づく点も補足。
+  </p>
+
+  <h3>Q. ホライズンや重みはどう決める？</h3>
+  <p>
+    実務的な目安として、<math><msub><mi>N</mi><mi>p</mi></msub></math> は系の整定時間をおおむねカバーする長さ、<math><msub><mi>N</mi><mi>c</mi></msub></math> はそれより短く（計算量削減）、<math><mi>λ</mi></math> は応答速度とアクチュエータ負荷のトレードオフ（演習 3）で調整。「まずデモで感覚を掴んでから実機の数値へ」と促すと納得感があります。
+  </p>
+
+  <!-- ===================== §7 ===================== -->
+  <h2 id="s7">8. 評価ルーブリック</h2>
+  <p>
+    レポート・口頭試問・デモ実演の採点用。観点ごとに 4 段階（<strong>A 優：3／B 良：2／C 可：1／D 不可：0</strong>）。
+    満点 15 点。合否ラインは各観点 C 以上（合計 5 点以上）を目安に、到達目標との対応は最右列を参照してください。
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th class="l" style="width:20%">観点</th>
+        <th class="l">A 優（3）</th>
+        <th class="l">B 良（2）</th>
+        <th class="l">C 可（1）</th>
+        <th class="l">D 不可（0）</th>
+        <th style="width:7%">目標</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="l"><strong>予測方程式の理解</strong></td>
+        <td class="l"><math><mrow><mi>Y</mi><mo>=</mo><msub><mi>S</mi><mi>x</mi></msub><mi>x</mi><mo>+</mo><msub><mi>S</mi><mi>u</mi></msub><mi>U</mi></mrow></math> を導出でき、<math><msub><mi>S</mi><mi>u</mi></msub></math> の下三角＝因果性を説明（演習 1 完答）。</td>
+        <td class="l">行列を正しく構成できるが因果性の説明がやや曖昧。</td>
+        <td class="l">形は知っているが添字や下三角で誤りがある。</td>
+        <td class="l">予測方程式の意味が把握できていない。</td>
+        <td>①</td>
+      </tr>
+      <tr>
+        <td class="l"><strong>受け取り原理の説明</strong></td>
+        <td class="l">「先頭だけ打つ」理由を<strong>外乱・フィードバック</strong>の観点で説明し、開ループとの差を明確化（演習 4 完答）。</td>
+        <td class="l">受け取りの手順は説明できるが、開ループとの差の言語化が弱い。</td>
+        <td class="l">「先頭だけ打つ」事実は言えるが理由が不正確。</td>
+        <td class="l">受け取りを誤解（全部実行と混同等）。</td>
+        <td>①</td>
+      </tr>
+      <tr>
+        <td class="l"><strong>制約と QP の意義</strong></td>
+        <td class="l">制約を線形不等式 <math><mrow><mi>M</mi><mi>U</mi><mo>≤</mo><mi>γ</mi></mrow></math>＝QP と捉え、アンチワインドアップの最適一般化として説明（演習 5 完答）。</td>
+        <td class="l">QP になることは説明できるが、PID との接続が弱い。</td>
+        <td class="l">制約を扱える利点は言えるが QP 化の理解が浅い。</td>
+        <td class="l">制約の扱い方を説明できない。</td>
+        <td>③</td>
+      </tr>
+      <tr>
+        <td class="l"><strong>MPC＝状態 FB の導出</strong></td>
+        <td class="l">無制約解の線形性から <math><msub><mi>K</mi><mi>fb</mi></msub></math> を導き、LQR との一致まで言及（演習 6 完答）。</td>
+        <td class="l">先頭行が固定ゲインになることは導けるが LQR との関係が曖昧。</td>
+        <td class="l">「無制約なら線形」という結論は知るが導出が追えない。</td>
+        <td class="l">MPC と状態 FB の関係を理解していない。</td>
+        <td>②</td>
+      </tr>
+      <tr>
+        <td class="l"><strong>デモを使った考察</strong></td>
+        <td class="l">λ・<math><msub><mi>N</mi><mi>p</mi></msub></math>・<math><msub><mi>u</mi><mi>max</mi></msub></math>・天井を操作し、観察を理論（定常偏差／区分線形等）と<strong>定量的に</strong>結びつけて考察（演習 7 完答）。</td>
+        <td class="l">デモ操作と観察を理論と関連づけられるが定量性が弱い。</td>
+        <td class="l">デモは動かせるが観察と理論の対応が表面的。</td>
+        <td class="l">デモを観察に活用できていない。</td>
+        <td>①③</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="sidenote">
+    <div class="sn-label">運用メモ</div>
+    「目標」欄は §1 の到達目標番号（①予測・最適化・受け取り／②無制約 MPC＝状態 FB／③制約と QP）。観点を全部課すと重いので、コマ数に応じて 3 観点（予測・受け取り・制約）を必修、残り 2 観点（状態 FB 導出・デモ考察）を発展として選択採点にしても構いません。
+  </div>
+
+  <div class="note" style="margin-top:30px;">
+    <div class="note-label">関連ページ</div>
+    学生配布用：<a href="../index.html">教材トップ</a>（この URL のみ案内）／<a href="../content/lecture-notes.html">講義ノート（解答は折りたたみ）</a>／<a href="../demos/mpc_receding_horizon.html">受け取りデモ</a>・<a href="../demos/mpc_constrained.html">制約デモ</a>。本ガイドの解答は講義ノート §7 と同一の検証済み数値です。
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>デモ操作ガイド — モデル予測制御 (MPC) 教材</title>
+<style>
+  :root {
+    --bg: #f6f4ee;
+    --surface: #ffffff;
+    --surface-2: #efece4;
+    --text-1: #1a1a1a;
+    --text-2: #5f5e5a;
+    --text-3: #888780;
+    --border: rgba(0,0,0,0.10);
+    --border-2: rgba(0,0,0,0.22);
+    --info-bg: #E6F1FB;
+    --info-text: #0C447C;
+    --blue: #378ADD;
+    --blue-deep: #0C447C;
+    --amber: #EF9F27;
+    --amber-bg: #FBF0DC;
+    --radius: 10px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    --font-mono: "SF Mono", "Menlo", "Consolas", monospace;
+    --font-serif: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614;
+      --surface: #1f1f1d;
+      --surface-2: #2a2a27;
+      --text-1: #f0eee8;
+      --text-2: #b4b2a9;
+      --text-3: #888780;
+      --border: rgba(255,255,255,0.10);
+      --border-2: rgba(255,255,255,0.22);
+      --info-bg: #0C447C;
+      --info-text: #B5D4F4;
+      --blue: #5BA0E8;
+      --blue-deep: #B5D4F4;
+      --amber: #EF9F27;
+      --amber-bg: #3a2f1a;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text-1); font-family: var(--font-sans); font-size: 15px; line-height: 1.72; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 32px 24px 64px; }
+  a { color: var(--blue-deep); }
+
+  h1 { font-size: 27px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .subtitle { font-size: 14px; color: var(--text-2); margin: 0 0 22px; }
+  h2 { font-size: 20px; font-weight: 600; margin: 40px 0 12px; padding-top: 14px; border-top: 2px solid var(--border); letter-spacing: -0.005em; }
+  h3 { font-size: 16px; font-weight: 600; margin: 26px 0 10px; }
+  p { margin: 12px 0; }
+  ul, ol { margin: 12px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+  strong { font-weight: 600; }
+  em { font-style: italic; color: var(--text-2); }
+
+  .note { background: var(--info-bg); border-radius: var(--radius); padding: 14px 18px; margin: 18px 0; font-size: 14px; }
+  .note .note-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--info-text); font-weight: 600; margin-bottom: 4px; }
+  .sidenote { border-left: 3px solid var(--amber); background: var(--amber-bg); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 16px 0; font-size: 13.5px; }
+  .sidenote .sn-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--amber); font-weight: 600; margin-bottom: 4px; }
+
+  .exercise { background: var(--surface); border: 0.5px solid var(--border); border-left: 3px solid var(--blue); border-radius: 0 8px 8px 0; padding: 14px 18px; margin: 16px 0; }
+  .exercise .ex-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); font-weight: 600; margin-bottom: 6px; }
+
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 13.5px; }
+  th, td { border: 0.5px solid var(--border); padding: 7px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--surface-2); font-weight: 600; }
+  code { font-family: var(--font-mono); font-size: 0.92em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+  math { font-size: 1.05em; }
+  .eq { margin: 16px 0; text-align: center; overflow-x: auto; }
+
+  /* 凡例スウォッチ（デモと同じ見た目を本文に埋め込む） */
+  .swatch { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .swatch i.line { width: 18px; height: 0; border-top-width: 2.5px; border-top-style: solid; display: inline-block; vertical-align: middle; }
+  .swatch i.box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; vertical-align: middle; }
+
+  .toc { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin: 22px 0 30px; }
+  .toc-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); font-weight: 600; margin-bottom: 8px; }
+  .toc ol { margin: 0; padding-left: 20px; }
+  .toc a { color: var(--text-1); text-decoration: none; }
+  .toc a:hover { color: var(--blue-deep); }
+
+  .lec-nav { display: flex; gap: 14px; margin-bottom: 20px; font-size: 12px; flex-wrap: wrap; align-items: center; }
+  .lec-nav a { color: var(--text-3); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 1px; }
+  .lec-nav a:hover { color: var(--text-1); border-bottom-color: var(--border-2); }
+  .lec-nav a.home { color: var(--text-2); font-weight: 500; }
+  .lec-nav .sep { color: var(--text-3); opacity: 0.5; }
+
+  @media (max-width: 640px) { .wrap { padding: 24px 18px 48px; } h1 { font-size: 23px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="lec-nav">
+    <a class="home" href="../index.html">← 教材トップ</a>
+    <span class="sep">·</span>
+    <a href="../demos/mpc_receding_horizon.html">受け取りホライズン デモ</a>
+    <a href="../demos/mpc_constrained.html">制約付き MPC デモ</a>
+    <a href="../content/lecture-notes.html">講義ノート</a>
+  </nav>
+
+  <h1>デモ操作ガイド</h1>
+  <p class="subtitle">2 つのインタラクティブ デモの「読み方」と「どこに注目するか」</p>
+
+  <p>
+    このガイドは、本教材の 2 つのデモ
+    ——<a href="../demos/mpc_receding_horizon.html">受け取りホライズン デモ</a>（Step 1）と
+    <a href="../demos/mpc_constrained.html">制約付き MPC デモ</a>（Step 2）——を
+    <strong>初めて触る人</strong>向けに、画面の各部分が何を表すか・どのスライダーが何を変えるか・
+    そして<strong>何を見れば「モデル予測制御らしさ」が分かるか</strong>を案内します。
+    数式の裏付けは<a href="../content/lecture-notes.html">講義ノート</a>に譲り、ここでは
+    <em>操作と観察</em>に集中します。デモは何度リセットしても壊れません。気軽に動かしてください。
+  </p>
+
+  <div class="toc">
+    <div class="toc-title">目次</div>
+    <ol>
+      <li><a href="#s1">Step 1：受け取りホライズン デモの使い方</a></li>
+      <li><a href="#s2">Step 2：制約付き MPC デモの使い方</a></li>
+      <li><a href="#s3">つまずきポイント / よくある質問</a></li>
+    </ol>
+  </div>
+
+  <!-- ===================== Step 1 ===================== -->
+  <h2 id="s1">1. Step 1：受け取りホライズン デモの使い方</h2>
+  <p>
+    制約のない最小構成のデモです。現在の状態から未来を予測し、コストが最小になる入力列を求め、
+    その<strong>先頭だけ</strong>を打って 1 ステップ進む——MPC の心臓部
+    「<strong>受け取りホライズン (receding horizon)</strong>」を 1 画面で体感します。
+    扱うのは <strong>2 重積分系</strong>（質点の位置制御）。出力 <math><mi>y</mi></math> は位置、入力 <math><mi>u</mi></math> は加速度指令です。
+  </p>
+
+  <h3>1.1 画面の見方</h3>
+  <p>画面上部に <strong>4 つの KPI カード</strong>、その下に <strong>2 段のグラフ</strong>（左）と <strong>操作・パラメータ パネル</strong>（右）が並びます。</p>
+  <p><strong>上段の 4 つの KPI カード</strong>（いまの状況を数値で示します）</p>
+  <table>
+    <thead><tr><th style="width:34%">KPI</th><th>意味</th></tr></thead>
+    <tbody>
+      <tr><td><strong>出力 y（位置）</strong></td><td>いまの実際の出力（質点の位置）。これを目標 <math><mi>r</mi></math> に近づけるのがゴール。</td></tr>
+      <tr><td><strong>適用入力 u(k)</strong></td><td>このステップで実際に打つ入力（最適入力列の<em>先頭</em> <math><mrow><msup><mi>u</mi><mo>*</mo></msup><mo>(</mo><mi>k</mi><mo>)</mo></mrow></math>）。下段グラフの濃い棒と一致します。</td></tr>
+      <tr><td><strong>予測コスト J</strong>（青いカード）</td><td>いまの予測のもとでの二次コスト <math><mrow><mi>J</mi><mo>=</mo><mo>∑</mo><msup><mrow><mo>(</mo><mover><mi>y</mi><mo>^</mo></mover><mo>−</mo><mi>r</mi><mo>)</mo></mrow><mn>2</mn></msup><mo>+</mo><mi>λ</mi><mo>∑</mo><msup><mi>u</mi><mn>2</mn></msup></mrow></math>。これを最小化する入力列が解かれています。</td></tr>
+      <tr><td><strong>時刻 k</strong></td><td>いま何ステップ目か。「1 ステップ進む」を押すたびに 1 ずつ増えます。</td></tr>
+    </tbody>
+  </table>
+
+  <p><strong>上のグラフ「予測と受け取り — 出力 y(k+i)」</strong>（時間に対する出力の動き）</p>
+  <ul>
+    <li><span class="swatch"><i class="line" style="border-top-color: var(--blue);"></i></span> <strong>実線（青）＝過去の実績</strong>：これまで実際にたどってきた出力。</li>
+    <li><span class="swatch"><i class="line" style="border-top-color: var(--blue); border-top-style: dashed;"></i></span> <strong>破線（青）＝いまの予測 <math><mrow><mover><mi>y</mi><mo>^</mo></mover><mo>(</mo><mi>k</mi><mo>+</mo><mi>i</mi><mo>∣</mo><mi>k</mi><mo>)</mo></mrow></math></strong>：モデルが「このまま計画どおり打てばこう動くはず」と予言した未来。<em>まだ確定していません。</em></li>
+    <li><span class="swatch"><i class="line" style="border-top-color: var(--red);"></i></span> <strong>赤い破線＝目標 <math><mi>r</mi></math></strong>：到達したい位置。</li>
+    <li><strong>「いま」の縦の点線</strong>：現在時刻 <math><mi>k</mi></math> の位置。左が過去（実線）、右が未来（予測の破線）。右側はうっすら網掛けされ「これから」を示します。</li>
+  </ul>
+
+  <p><strong>下のグラフ「最適入力列 U* — 先頭だけを実際に打つ」</strong>（求まった入力の計画を棒で表示）</p>
+  <ul>
+    <li><strong>濃い棒（オレンジ）＝次に適用する <math><mrow><msup><mi>u</mi><mo>*</mo></msup><mo>(</mo><mi>k</mi><mo>)</mo></mrow></math></strong>：計画の先頭。<strong>これだけが実際に打たれます。</strong></li>
+    <li><strong>薄い棒（青）＝残りの計画</strong>：先頭以降の入力。いまは計算されていますが、次のステップで<strong>破棄</strong>され、解き直されます。<math><msub><mi>N</mi><mi>c</mi></msub></math> 本目までが自由変数、それ以降は <math><mrow><mi>u</mi><mo>=</mo><mn>0</mn></mrow></math>（コースティング）でさらに薄く描かれます。</li>
+    <li>左側の薄い棒は<strong>過去に実際に打った入力</strong>の履歴です。</li>
+  </ul>
+
+  <h3>1.2 操作</h3>
+  <p><strong>ボタン</strong>（右上「操作」パネル）</p>
+  <ul>
+    <li><strong>「1 ステップ進む ▶」</strong>：先頭 <math><mrow><msup><mi>u</mi><mo>*</mo></msup><mo>(</mo><mi>k</mi><mo>)</mo></mrow></math> を打って時刻を 1 つ進め、新しい状態から計画を解き直します。<strong>このデモの主役ボタン</strong>です。</li>
+    <li><strong>「自動再生」</strong>：上の操作を一定間隔で自動的に繰り返します（押すと「一時停止」に変わります）。目標に落ち着くか一定ステップで自動停止します。</li>
+    <li><strong>「リセット」</strong>：時刻 <math><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow></math>・初期状態に戻します。</li>
+  </ul>
+  <p><strong>スライダー</strong>（右下「パラメータ」パネル）</p>
+  <table>
+    <thead><tr><th style="width:32%">スライダー</th><th>変えるもの</th></tr></thead>
+    <tbody>
+      <tr><td><strong>目標値 r（位置）</strong></td><td>到達したい位置。赤い破線が動きます。</td></tr>
+      <tr><td><strong>予測ホライズン <math><msub><mi>N</mi><mi>p</mi></msub></math></strong></td><td>何ステップ先まで予測するか。破線（予測）の長さが変わります。</td></tr>
+      <tr><td><strong>制御ホライズン <math><msub><mi>N</mi><mi>c</mi></msub></math></strong></td><td>自由に動かせる入力の本数。これより先は <math><mrow><mi>u</mi><mo>=</mo><mn>0</mn></mrow></math> 固定です（<math><msub><mi>N</mi><mi>c</mi></msub></math> は <math><msub><mi>N</mi><mi>p</mi></msub></math> を超えません）。</td></tr>
+      <tr><td><strong>入力重み <math><mrow><mi>λ</mi><mo>=</mo><mi>R</mi><mo>/</mo><mi>Q</mi></mrow></math></strong></td><td>入力を使うことへの「罰」の強さ。大きいほど入力を惜しみ、応答が穏やかになります。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.3 観察ポイント</h3>
+  <div class="note">
+    <div class="note-label">まずこれを見る — receding horizon</div>
+    <strong>「1 ステップ進む」を何度も押してみましょう。</strong>押すたびに、
+    下段の<strong>濃い（オレンジの）棒 1 本だけが実績に変わり</strong>、薄い棒（残りの計画）は<strong>破棄</strong>され、
+    新しい位置から計画がやり直されます。上段では「いま」の縦線が右へ進み、
+    予測の窓（破線）が時間とともに<strong>前へずれていく</strong>——これが「受け取り（receding）」です。
+    計画を全部実行せず、毎回先頭だけ打って解き直しているのを目で確かめてください。
+  </div>
+  <div class="sidenote">
+    <div class="sn-label">パラメータをいじって観察 — チューニングの勘どころ</div>
+    <ul style="margin:6px 0;">
+      <li><strong><math><msub><mi>N</mi><mi>p</mi></msub></math> を伸ばす</strong>と、破線（予測）が長くなり、遠い未来まで見越して計画を立てます。</li>
+      <li><strong><math><mi>λ</mi></math> を上げる</strong>と、入力（棒）が小さく穏やかになり、目標到達がゆっくりになります。下げると機敏になる代わりに入力が暴れます。</li>
+      <li><strong><math><msub><mi>N</mi><mi>c</mi></msub></math> を変える</strong>と、自由に動かせる入力の本数（濃さのある棒の数）が増減します。<math><msub><mi>N</mi><mi>c</mi></msub></math> を超えた棒は <math><mrow><mi>u</mi><mo>=</mo><mn>0</mn></mrow></math> でさらに薄く描かれます。</li>
+      <li><strong><math><mi>r</mi></math> を動かす</strong>と赤い破線が動き、予測がそれを追いに行く様子が見えます。</li>
+    </ul>
+  </div>
+
+  <!-- ===================== Step 2 ===================== -->
+  <h2 id="s2">2. Step 2：制約付き MPC デモの使い方</h2>
+  <p>
+    Step 1 に<strong>制約</strong>を加えたデモです。入力には上下限（飽和）、出力には天井（上限）を課せます。
+    これらを<strong>二次計画 (QP)</strong> として最適化の中で陽に処理し、
+    「制約があると最適入力列がどう変形するか」を、<strong>制約なしの参考解と並べて</strong>目で比べられます。
+    プラントは Step 1 と同じ 2 重積分系です。
+  </p>
+
+  <h3>2.1 画面の見方</h3>
+  <p>レイアウトは Step 1 とほぼ同じですが、<strong>禁止域の赤い帯</strong>と <strong>参考用の「制約なし解」</strong>が加わるのが要点です。</p>
+  <p><strong>KPI カード</strong>は Step 1 とほぼ同じですが、3 枚目が変わります。</p>
+  <table>
+    <thead><tr><th style="width:34%">KPI</th><th>意味</th></tr></thead>
+    <tbody>
+      <tr><td><strong>出力 y（位置）</strong> / <strong>適用入力 u(k)</strong> / <strong>時刻 k</strong></td><td>Step 1 と同じ。</td></tr>
+      <tr><td><strong>有効な制約の数</strong>（青いカード）</td><td>いま<em>等号で当たっている</em>（効いている）制約の本数。<strong>0 なら制約は効いておらず</strong>、解は制約なしと一致します。1 以上になると、その分だけ解が制約に押さえられています。</td></tr>
+    </tbody>
+  </table>
+
+  <p><strong>上のグラフ「予測出力 y(k+i) と 出力制約」</strong></p>
+  <ul>
+    <li><span class="swatch"><i class="line" style="border-top-color: var(--blue);"></i></span> <strong>実線（青）＝実績</strong>、<span class="swatch"><i class="line" style="border-top-color: var(--blue); border-top-style: dashed;"></i></span> <strong>破線（青）＝予測（制約付き）</strong>：Step 1 と同じく、いま実際に解かれている計画。</li>
+    <li><span class="swatch"><i class="line" style="border-top-color: var(--text-3); border-top-style: dotted;"></i></span> <strong>細い点線（灰）＝制約なし（参考）</strong>：「もし制約が無ければこう動くはず」という<em>参考の予測</em>。制約付き解（破線）とどれだけズレるかを見るための比較線です。</li>
+    <li><span class="swatch"><i class="box" style="background: var(--red); opacity:0.13;"></i></span> <strong>赤い帯＝禁止域</strong>：天井 <math><msub><mi>y</mi><mi>max</mi></msub></math> より上の、出力が入ってはいけない領域。境界に <math><mrow><msub><mi>y</mi><mi>max</mi></msub></mrow></math> の赤い点線が引かれます。</li>
+    <li><span class="swatch"><i class="line" style="border-top-color: var(--red);"></i></span> <strong>赤い破線＝目標 <math><mi>r</mi></math></strong>、<strong>「いま」の縦線</strong>：Step 1 と同じ。</li>
+  </ul>
+
+  <p><strong>下のグラフ「最適入力列 U* — 制約が QP で入力を整形」</strong></p>
+  <ul>
+    <li><strong>塗りの棒＝制約付き解</strong>：実際に採用される入力列（先頭はオレンジで強調）。</li>
+    <li><strong>枠線（破線の輪郭）の棒＝制約が無ければ（参考）</strong>：制約なし解の入力列。塗りと枠線が<strong>ズレている棒</strong>＝そこで制約が入力を曲げた証拠です。</li>
+    <li><strong>上下の赤い帯と <math><mrow><mo>±</mo><msub><mi>u</mi><mi>max</mi></msub></mrow></math> の赤い点線</strong>：入力の禁止域。棒がこの線に貼り付くと「飽和」です。</li>
+  </ul>
+
+  <h3>2.2 操作</h3>
+  <p><strong>「制約」パネル</strong>（Step 2 で追加された操作）</p>
+  <table>
+    <thead><tr><th style="width:36%">操作</th><th>変えるもの</th></tr></thead>
+    <tbody>
+      <tr><td><strong>入力上限 <math><mrow><mo>|</mo><mi>u</mi><mo>|</mo><mo>≤</mo><msub><mi>u</mi><mi>max</mi></msub></mrow></math></strong>（スライダー）</td><td>入力の振れ幅の上限。下段グラフの赤い帯がこれに合わせて広がり／狭まります。</td></tr>
+      <tr><td><strong>「出力上限（天井）を有効化」</strong>（チェックボックス）</td><td>出力の天井制約の ON / OFF。OFF にすると上段の赤い帯が消えます。</td></tr>
+      <tr><td><strong>出力上限 <math><mrow><mi>y</mi><mo>≤</mo><msub><mi>y</mi><mi>max</mi></msub></mrow></math></strong>（スライダー）</td><td>天井の高さ。チェックを入れているときだけ効きます。</td></tr>
+    </tbody>
+  </table>
+  <p>
+    <strong>「操作」「パラメータ」パネル</strong>（ボタン 3 つ、および <math><mi>r</mi></math> / <math><msub><mi>N</mi><mi>p</mi></msub></math> / <math><msub><mi>N</mi><mi>c</mi></msub></math> / <math><mi>λ</mi></math> のスライダー）は <strong>Step 1 と同じ</strong>です。
+  </p>
+
+  <h3>2.3 観察ポイント</h3>
+  <div class="note">
+    <div class="note-label">制約を効かせて見る — QP が入力を整形する</div>
+    <ul style="margin:6px 0;">
+      <li><strong><math><msub><mi>u</mi><mi>max</mi></msub></math> を下げる</strong>と、下段で<strong>先頭の入力が飽和値（赤い線）に貼り付き</strong>ます。KPI「適用入力 u(k)」がちょうど <math><mrow><mo>±</mo><msub><mi>u</mi><mi>max</mi></msub></mrow></math> になるのを確認してください。</li>
+      <li><strong>天井 <math><msub><mi>y</mi><mi>max</mi></msub></math> を目標 <math><mi>r</mi></math> より下げる</strong>と、上段で<strong>出力がそこで頭打ち</strong>になり、目標に届かないまま赤い帯の手前で停まります（到達不能でも制約は決して破りません）。</li>
+      <li><strong>制約が効くと、塗り（制約付き）と枠線（制約なし参考）がズレ</strong>ます。これが「QP が入力列を整形した分」。単純なクリップではなく、入力列<em>全体</em>が組み替わる点に注目。</li>
+      <li><strong>KPI「有効な制約の数」</strong>を見ながらスライダーを動かすと、制約がきつくなるほど数が増え、緩めると 0 に戻る様子が分かります。<strong>0 のときは塗りと枠線（破線と点線）がぴたりと重なります</strong>＝制約なし解と一致。</li>
+    </ul>
+  </div>
+  <div class="sidenote">
+    <div class="sn-label">古典制御との対比 — アンチワインドアップの一般化</div>
+    入力が飽和に貼り付く場面は、PID では積分器が<em>ワインドアップ</em>して後付けの対策が要るところです。
+    MPC はその飽和を<strong>最適化の中で最初から考慮</strong>し、残りの入力列まで賢く組み替えます。
+    枠線（制約なし）と塗り（制約付き）の差は、まさに「飽和を見越して最適にさばいた」結果です。
+  </div>
+
+  <!-- ===================== FAQ ===================== -->
+  <h2 id="s3">3. つまずきポイント / よくある質問</h2>
+
+  <h3>予測（破線）と実績（実線）は何が違うの？</h3>
+  <p>
+    <strong>実線は「もう確定した過去」</strong>、<strong>破線は「モデルが立てた未来の予言」</strong>です。
+    破線はあくまで<em>予測</em>で、まだ実際には起きていません。「1 ステップ進む」を押すと、
+    破線の<strong>先頭 1 点だけ</strong>が実現して実線に加わり、残りの破線は捨てられて新しい予測が引き直されます。
+    だから破線は押すたびに少しずつ描き換わります。
+  </p>
+
+  <h3>なぜ計画（入力列）を全部実行しないの？</h3>
+  <p>
+    せっかく未来 <math><msub><mi>N</mi><mi>p</mi></msub></math> ステップ分の計画を解いたのに、MPC は<strong>先頭の <math><mrow><msup><mi>u</mi><mo>*</mo></msup><mo>(</mo><mi>k</mi><mo>)</mo></mrow></math> だけ</strong>を打って、また解き直します。
+    理由は <strong>毎回いまの実際の状態から解き直すことで、計画が「フィードバック」になる</strong>からです。
+    予測がずれても、外乱が入っても、次のステップで実測値から立て直せます。
+    この「なぜ全部実行しないのか」の理屈は、<a href="../content/lecture-notes.html#s4">講義ノート §4「受け取りホライズン原理」</a>で詳しく説明しています。
+  </p>
+
+  <h3>スライダーを動かしてもグラフがあまり変わりません</h3>
+  <p>
+    値によっては変化が小さいことがあります。たとえば <math><mi>λ</mi></math> は対数スケールなので両端まで大きく振ってみてください。
+    <math><msub><mi>N</mi><mi>c</mi></msub></math> は <math><msub><mi>N</mi><mi>p</mi></msub></math> を超えられないため、<math><msub><mi>N</mi><mi>p</mi></msub></math> が小さいと <math><msub><mi>N</mi><mi>c</mi></msub></math> の可動域も狭まります。
+    Step 2 で「有効な制約の数」が 0 のままなら、まだ制約が緩すぎます。<math><msub><mi>u</mi><mi>max</mi></msub></math> や <math><msub><mi>y</mi><mi>max</mi></msub></math> をぐっと下げてみましょう。
+  </p>
+
+  <h3>「制約なし（参考）」の線は何のためにある？（Step 2）</h3>
+  <p>
+    比較のための<em>ものさし</em>です。制約付きの解（破線・塗り）が、制約のせいで<strong>本来の最適解（点線・枠線）からどれだけ離れたか</strong>を一目で見せます。
+    両者が重なっていれば制約は効いておらず、離れていればそこで制約が解を曲げている、という読み方をします。
+  </p>
+
+  <div class="note" style="margin-top:30px;">
+    <div class="note-label">次は数式の裏付けを</div>
+    デモで「予測 → 最適化 → 受け取り」と「制約 → QP」の動きをつかんだら、
+    <a href="../content/lecture-notes.html">講義ノート</a>で数式の裏付けを確認しましょう。
+    予測方程式（<a href="../content/lecture-notes.html#s2">§2</a>）、無制約最適解（<a href="../content/lecture-notes.html#s3">§3</a>）、
+    受け取り原理（<a href="../content/lecture-notes.html#s4">§4</a>）、制約と QP（<a href="../content/lecture-notes.html#s5">§5</a>）が、
+    いま見た画面とそのまま対応します。各節末の演習を「デモで答え合わせ」すると、いっそう定着します。
+  </div>
+
+</div>
+</body>
+</html>

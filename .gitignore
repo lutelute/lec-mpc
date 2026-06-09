@@ -1,0 +1,9 @@
+# 個人の作業記録・無関係ファイル（公開しない）
+.claude/
+logs/
+
+# OS / エディタ
+.DS_Store
+*.swp
+.idea/
+.vscode/

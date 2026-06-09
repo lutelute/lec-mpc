@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>モデル予測制御 (MPC) — 制御理論教科書 併用教材</title>
+<style>
+  :root {
+    --bg: #f6f4ee;
+    --surface: #ffffff;
+    --surface-2: #efece4;
+    --text-1: #1a1a1a;
+    --text-2: #5f5e5a;
+    --text-3: #888780;
+    --border: rgba(0,0,0,0.10);
+    --border-2: rgba(0,0,0,0.22);
+    --info-bg: #E6F1FB;
+    --info-text: #0C447C;
+    --blue: #378ADD;
+    --blue-deep: #0C447C;
+    --amber: #EF9F27;
+    --red: #E24B4A;
+    --radius: 10px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    --font-mono: "SF Mono", "Menlo", "Consolas", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614;
+      --surface: #1f1f1d;
+      --surface-2: #2a2a27;
+      --text-1: #f0eee8;
+      --text-2: #b4b2a9;
+      --text-3: #888780;
+      --border: rgba(255,255,255,0.10);
+      --border-2: rgba(255,255,255,0.22);
+      --info-bg: #0C447C;
+      --info-text: #B5D4F4;
+      --blue: #5BA0E8;
+      --blue-deep: #B5D4F4;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text-1); font-family: var(--font-sans); font-size: 14px; line-height: 1.6; }
+  .app { max-width: 1080px; margin: 0 auto; padding: 22px 20px 40px; }
+  a { color: var(--blue-deep); }
+
+  /* hero */
+  .hero { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 26px 28px; margin-bottom: 16px; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); font-weight: 500; margin: 0 0 8px; }
+  h1 { font-size: 26px; font-weight: 600; margin: 0 0 10px; letter-spacing: -0.01em; }
+  .lead { font-size: 15px; color: var(--text-2); margin: 0 0 14px; max-width: 70ch; }
+  .meta-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .tag { font-size: 11px; padding: 4px 10px; border-radius: 20px; background: var(--surface-2); color: var(--text-2); border: 0.5px solid var(--border); }
+  .tag.accent { background: var(--info-bg); color: var(--info-text); border-color: transparent; }
+
+  /* section */
+  section { margin-top: 26px; }
+  .sec-hdr { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .sec-hdr h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin: 0; color: var(--text-1); }
+  .sec-hdr .sec-sub { font-size: 11px; color: var(--text-3); }
+
+  /* flow cards */
+  .flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+  .step { display: flex; flex-direction: column; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 16px 14px; text-decoration: none; color: inherit; transition: transform 0.08s, border-color 0.12s, box-shadow 0.12s; }
+  .step:hover { transform: translateY(-2px); border-color: var(--border-2); box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+  .step-num { font-size: 11px; font-weight: 600; color: var(--blue); letter-spacing: 0.1em; }
+  .step-title { font-size: 15px; font-weight: 600; margin: 6px 0 6px; }
+  .step-desc { font-size: 12.5px; color: var(--text-2); flex: 1; }
+  .step-go { font-size: 11px; color: var(--blue-deep); margin-top: 12px; font-weight: 500; }
+
+  /* table */
+  .table-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 0.5px solid var(--border); vertical-align: top; }
+  thead th { background: var(--surface-2); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-2); font-weight: 600; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.classic { color: var(--text-1); font-weight: 500; }
+  td.mpc { color: var(--text-2); }
+  td.where { color: var(--text-3); font-size: 12px; white-space: nowrap; }
+  td.where a { color: var(--blue-deep); text-decoration: none; border-bottom: 1px solid transparent; }
+  td.where a:hover { border-bottom-color: var(--border-2); }
+  math { font-size: 1.02em; }
+
+  /* map / positioning */
+  .map { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .map-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .map-card.hot { border-color: var(--blue); border-width: 1px; background: var(--info-bg); }
+  .map-card h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 8px; color: var(--text-2); }
+  .map-card.hot h3 { color: var(--info-text); }
+  .map-card ul { margin: 0; padding-left: 18px; color: var(--text-2); font-size: 13px; }
+  .map-card.hot ul { color: var(--info-text); }
+  .map-card li { margin-bottom: 4px; }
+  .map-note { font-size: 12.5px; color: var(--text-2); margin-top: 12px; line-height: 1.7; max-width: 78ch; }
+
+  /* files */
+  .files { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .file { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 13px 15px; text-decoration: none; color: inherit; transition: border-color 0.12s; }
+  .file:hover { border-color: var(--border-2); }
+  .file-ico { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); margin-top: 1px; min-width: 18px; }
+  .file-name { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; color: var(--text-1); }
+  .file-desc { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+
+  .footer { font-size: 11px; color: var(--text-3); text-align: center; margin-top: 34px; line-height: 1.8; }
+
+  @media (max-width: 860px) {
+    .flow { grid-template-columns: 1fr; }
+    .map { grid-template-columns: 1fr; }
+    .files { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hero">
+    <p class="eyebrow">制御工学 補助教材 · インタラクティブ</p>
+    <h1>モデル予測制御 (MPC) を「動かして」理解する</h1>
+    <p class="lead">
+      制御理論の教科書で <strong>PID 制御・状態空間・最適制御 (LQR)</strong> までを学んだ人を対象に、
+      モデル予測制御 (Model Predictive Control) を
+      <strong>予測 → 最適化 → 受け取り (receding horizon)</strong> の流れに沿って体験する教材です。
+      「未来をモデルで予測し、コストが最小になる入力列を毎ステップ解き直し、その先頭だけを実際に打つ」という
+      MPC の中心アイデアを、ブラウザだけで動くインタラクティブなデモで確かめます。
+      制約を陽に扱える点が古典制御との決定的な違いです。教科書の最適制御と対比しながら読み進めてください。
+    </p>
+    <div class="meta-row">
+      <span class="tag accent">前提: 古典制御（PID）＋状態空間・LQR の基礎</span>
+      <span class="tag">所要 70–110 分</span>
+      <span class="tag">依存ライブラリなし（HTML を開くだけ）</span>
+      <span class="tag">日本語</span>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-hdr">
+      <h2>学習の流れ</h2>
+      <span class="sec-sub">易しい順に進み、最後に応用へ。デモは何度でも触って構いません</span>
+    </div>
+    <div class="flow">
+      <a class="step" href="demos/mpc_receding_horizon.html">
+        <span class="step-num">STEP 1</span>
+        <span class="step-title">受け取りホライズン デモ</span>
+        <span class="step-desc">制約なしの最小構成。現在状態から未来 <math><msub><mi>N</mi><mi>p</mi></msub></math> ステップを予測し、二次コストを最小化する入力列を求め、その<em>先頭だけ</em>を打って 1 ステップ進む——MPC の心臓部「receding horizon」を 1 画面で体感する章。</span>
+        <span class="step-go">予測と受け取りを開く →</span>
+      </a>
+      <a class="step" href="demos/mpc_constrained.html">
+        <span class="step-num">STEP 2</span>
+        <span class="step-title">制約付き MPC デモ</span>
+        <span class="step-desc">入力 <math><mrow><msub><mi>u</mi><mi>min</mi></msub><mo>≤</mo><mi>u</mi><mo>≤</mo><msub><mi>u</mi><mi>max</mi></msub></mrow></math> や出力の制約を <strong>二次計画 (QP)</strong> で陽に処理。制約に当たると最適入力列がどう変形するかを目で確かめ、PID のアンチワインドアップとの違いを掴みます。</span>
+        <span class="step-go">制約と QP を開く →</span>
+      </a>
+      <a class="step" href="content/lecture-notes.html">
+        <span class="step-num">STEP 3</span>
+        <span class="step-title">講義ノート</span>
+        <span class="step-desc">デモで見た内容を数式で整理します。予測モデル・予測方程式・二次コスト・受け取り原理・制約と QP を定義し、無制約 MPC が状態フィードバックに一致することを導出。各節に教科書併用のサイドノートと演習問題を用意。</span>
+        <span class="step-go">理論と演習へ →</span>
+      </a>
+      <a class="step" href="content/mpc-applications.html">
+        <span class="step-num">発展</span>
+        <span class="step-title">応用ショーケース</span>
+        <span class="step-desc">世の中の実用例（石油化学プロセス・自動車 ACC・ドローン/ロケット着陸・電力/HVAC）と最新動向（非線形 MPC・明示的 MPC・学習ベース MPC・組込み高速ソルバ）を一望。触って試せるミニデモつき。</span>
+        <span class="step-go">実用例と最新動向へ →</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-hdr">
+      <h2>制御理論の教科書との対応</h2>
+      <span class="sec-sub">古典・現代制御で学んだ概念が、MPC のどこに対応するか</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:34%">教科書（古典・現代制御）で学ぶ概念</th>
+            <th style="width:42%">MPC での対応</th>
+            <th style="width:24%">この教材で触れる場所</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="classic">偏差 <math><mrow><mi>e</mi><mo>=</mo><mi>r</mi><mo>−</mo><mi>y</mi></mrow></math></td>
+            <td class="mpc">予測偏差 <math><mrow><mi>r</mi><mo>−</mo><mover><mi>y</mi><mo>^</mo></mover><mo>(</mo><mi>k</mi><mo>+</mo><mi>i</mi><mo>∣</mo><mi>k</mi><mo>)</mo></mrow></math> をホライズン全体にわたり評価</td>
+            <td class="where"><a href="demos/mpc_receding_horizon.html">受け取りデモ</a> / §3</td>
+          </tr>
+          <tr>
+            <td class="classic">最適レギュレータ <math><mrow><mi>J</mi><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><mo>(</mo><msup><mi>x</mi><mi>⊤</mi></msup><mi>Q</mi><mi>x</mi><mo>+</mo><msup><mi>u</mi><mi>⊤</mi></msup><mi>R</mi><mi>u</mi><mo>)</mo></mrow></math> (LQR)</td>
+            <td class="mpc"><em>有限</em>ホライズンの二次コスト <math><mrow><mi>J</mi><mo>=</mo><mo>∑</mo><msup><mrow><mo>∥</mo><mover><mi>y</mi><mo>^</mo></mover><mo>−</mo><mi>r</mi><mo>∥</mo></mrow><mn>2</mn></msup><mi>Q</mi><mo>+</mo><msup><mrow><mo>∥</mo><mi>Δ</mi><mi>u</mi><mo>∥</mo></mrow><mn>2</mn></msup><mi>R</mi></mrow></math></td>
+            <td class="where"><a href="demos/mpc_receding_horizon.html">受け取りデモ</a> / §3</td>
+          </tr>
+          <tr>
+            <td class="classic">状態フィードバック <math><mrow><mi>u</mi><mo>=</mo><mo>−</mo><mi>K</mi><mi>x</mi></mrow></math></td>
+            <td class="mpc">無制約 MPC ＝ 時不変な状態フィードバック（最適入力列の<em>先頭行</em>が <math><mi>K</mi></math> を与える）</td>
+            <td class="where">§6</td>
+          </tr>
+          <tr>
+            <td class="classic">積分器ワインドアップ / アンチワインドアップ</td>
+            <td class="mpc">入力・入力変化率・出力の制約を最適化の<em>中で</em>陽に満たす</td>
+            <td class="where"><a href="demos/mpc_constrained.html">制約デモ</a> / §5</td>
+          </tr>
+          <tr>
+            <td class="classic">むだ時間補償 / 予見制御</td>
+            <td class="mpc">予測ホライズンで未来の参照・むだ時間を<em>見越して</em>先回り</td>
+            <td class="where">§2, §4</td>
+          </tr>
+          <tr>
+            <td class="classic">プラントモデル <math><mrow><mi>G</mi><mo>(</mo><mi>s</mi><mo>)</mo></mrow></math> / 状態空間 <math><mrow><mo>(</mo><mi>A</mi><mo>,</mo><mi>B</mi><mo>,</mo><mi>C</mi><mo>)</mo></mrow></math></td>
+            <td class="mpc">予測モデルとして<strong>必須</strong>（MPC はモデルベース制御）</td>
+            <td class="where">§2</td>
+          </tr>
+          <tr>
+            <td class="classic">PID ゲイン <math><mrow><msub><mi>K</mi><mi>p</mi></msub><mo>,</mo><msub><mi>K</mi><mi>i</mi></msub><mo>,</mo><msub><mi>K</mi><mi>d</mi></msub></mrow></math> の調整</td>
+            <td class="mpc">ホライズン <math><mrow><msub><mi>N</mi><mi>p</mi></msub><mo>,</mo><msub><mi>N</mi><mi>c</mi></msub></mrow></math> と重み <math><mrow><mi>Q</mi><mo>/</mo><mi>R</mi></mrow></math> のチューニング</td>
+            <td class="where">両デモ / §3</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-hdr">
+      <h2>制御方式の地図の中の位置づけ</h2>
+      <span class="sec-sub">MPC は最適制御をオンライン・有限ホライズン・制約付きに拡張したもの</span>
+    </div>
+    <div class="map">
+      <div class="map-card">
+        <h3>古典・現代制御（教科書の主軸）</h3>
+        <ul>
+          <li>フィードバック制御：PID・周波数応答・根軌跡</li>
+          <li>状態空間・最適制御：LQR / LQG（無限ホライズン・制約なし・解析解）</li>
+          <li>強み：線形・制約なしなら安定性と性能を理論保証</li>
+        </ul>
+      </div>
+      <div class="map-card hot">
+        <h3>モデル予測制御（この教材）</h3>
+        <ul>
+          <li>有限ホライズンの最適化を<strong>毎ステップ解き直す</strong> ← <strong>ここ</strong></li>
+          <li>入力・状態・出力の<strong>制約を陽に</strong>扱える</li>
+          <li>強み：制約・多変数・むだ時間・予見をまとめて扱える</li>
+        </ul>
+      </div>
+    </div>
+    <p class="map-note">
+      LQR が「無限の未来を一度だけ解いて固定ゲイン <math><mrow><mi>u</mi><mo>=</mo><mo>−</mo><mi>K</mi><mi>x</mi></mrow></math> を得る」のに対し、
+      MPC は「有限の未来 <math><msub><mi>N</mi><mi>p</mi></msub></math> ステップ分だけを毎回オンラインで最適化し、得られた入力列の<strong>先頭だけ</strong>を打って、
+      次の時刻にまた解き直す」アプローチです。両者は対立せず、<strong>制約が無ければ MPC は LQR と同じ状態フィードバックに帰着</strong>します。
+      この接続を §6 と受け取りデモで確かめ、制約があるときに MPC が真価を発揮する様子を制約デモで体感するのが、本教材の山場です。
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-hdr">
+      <h2>教材ファイル一覧</h2>
+      <span class="sec-sub">すべて同じフォルダに置けば相互リンクで行き来できます</span>
+    </div>
+    <div class="files">
+      <a class="file" href="demos/mpc_receding_horizon.html">
+        <span class="file-ico">1D</span>
+        <span>
+          <span class="file-name">mpc_receding_horizon.html</span>
+          <span class="file-desc">Step 1：受け取りホライズン デモ（予測・最適化・receding horizon）</span>
+        </span>
+      </a>
+      <a class="file" href="demos/mpc_constrained.html">
+        <span class="file-ico">QP</span>
+        <span>
+          <span class="file-name">mpc_constrained.html</span>
+          <span class="file-desc">Step 2：制約付き MPC デモ（入力/出力制約・QP）</span>
+        </span>
+      </a>
+      <a class="file" href="content/lecture-notes.html">
+        <span class="file-ico">§</span>
+        <span>
+          <span class="file-name">lecture-notes.html</span>
+          <span class="file-desc">Step 3：講義ノート（理論・数式・教科書サイドノート・演習）</span>
+        </span>
+      </a>
+      <a class="file" href="content/mpc-applications.html">
+        <span class="file-ico">★</span>
+        <span>
+          <span class="file-name">mpc-applications.html</span>
+          <span class="file-desc">発展：応用ショーケース（実用例・最新動向・ミニデモ）</span>
+        </span>
+      </a>
+      <a class="file" href="guides/how-to-use.html">
+        <span class="file-ico">?</span>
+        <span>
+          <span class="file-name">how-to-use.html</span>
+          <span class="file-desc">デモ操作ガイド（学生向け・観察ポイント）</span>
+        </span>
+      </a>
+      <a class="file" href="guides/teacher-guide.html">
+        <span class="file-ico">T</span>
+        <span>
+          <span class="file-name">teacher-guide.html</span>
+          <span class="file-desc">教員用ガイド＋模範解答（授業展開・時間配分）</span>
+        </span>
+      </a>
+      <a class="file" href="guides/overview.html">
+        <span class="file-ico">1p</span>
+        <span>
+          <span class="file-name">overview.html</span>
+          <span class="file-desc">配布用サマリー1枚（印刷対応）</span>
+        </span>
+      </a>
+      <a class="file" href="README.md">
+        <span class="file-ico">md</span>
+        <span>
+          <span class="file-name">README.md</span>
+          <span class="file-desc">教材構成・使い方・対象読者</span>
+        </span>
+      </a>
+    </div>
+  </section>
+
+  <div class="footer">
+    モデル予測制御 (MPC) インタラクティブ教材 · 制御理論教科書 併用版<br>
+    予測モデル（状態空間）· 二次コスト · receding horizon · 制約付き QP（Hildreth 法）· 教育用・外部依存なし
+  </div>
+
+</div>
+</body>
+</html>

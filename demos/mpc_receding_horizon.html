@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Receding Horizon Demo (Unconstrained MPC, double integrator)</title>
+<style>
+  :root {
+    --bg: #f6f4ee;
+    --surface: #ffffff;
+    --surface-2: #efece4;
+    --text-1: #1a1a1a;
+    --text-2: #5f5e5a;
+    --text-3: #888780;
+    --border: rgba(0,0,0,0.10);
+    --border-2: rgba(0,0,0,0.22);
+    --info-bg: #E6F1FB;
+    --info-text: #0C447C;
+    --blue: #378ADD;
+    --blue-deep: #0C447C;
+    --amber: #EF9F27;
+    --red: #E24B4A;
+    --green: #3DA35D;
+    --radius: 10px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    --font-mono: "SF Mono", "Menlo", "Consolas", monospace;
+    /* SVG 描画で参照するエイリアス */
+    --text-primary: var(--text-1);
+    --text-secondary: var(--text-2);
+    --border-strong: var(--border-2);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614;
+      --surface: #1f1f1d;
+      --surface-2: #2a2a27;
+      --text-1: #f0eee8;
+      --text-2: #b4b2a9;
+      --text-3: #888780;
+      --border: rgba(255,255,255,0.10);
+      --border-2: rgba(255,255,255,0.22);
+      --info-bg: #0C447C;
+      --info-text: #B5D4F4;
+      --blue: #5BA0E8;
+      --blue-deep: #B5D4F4;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text-1); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
+  .app { max-width: 1320px; margin: 0 auto; padding: 16px 18px 28px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 0 2px; margin-bottom: 12px; flex-wrap: wrap; }
+  h1 { font-size: 16px; font-weight: 500; margin: 0; letter-spacing: -0.005em; }
+  .subtitle { font-size: 11px; color: var(--text-3); margin: 0; }
+  svg { display: block; }
+
+  /* KPI strip */
+  .kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+  .kpi-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 14px; }
+  .kpi-card.accent { background: var(--info-bg); border-color: transparent; }
+  .kpi-label { font-size: 10px; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; }
+  .kpi-card.accent .kpi-label { color: var(--info-text); opacity: 0.8; }
+  .kpi-val { font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; margin-top: 6px; }
+  .kpi-card.accent .kpi-val { color: var(--info-text); }
+  .kpi-unit { font-size: 11px; color: var(--text-3); font-weight: 400; }
+
+  /* main grid */
+  .main-grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 10px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 10px; }
+
+  /* panels */
+  .panel { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .panel-hdr { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; gap: 8px; flex-wrap: wrap; }
+  .panel-title { font-size: 11px; font-weight: 500; color: var(--text-1); text-transform: uppercase; letter-spacing: 0.08em; }
+  .panel-hint, .panel-stat { font-size: 10px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+
+  /* sliders */
+  .ctrl { margin: 12px 0; }
+  .ctrl-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+  .ctrl-name { font-size: 12px; color: var(--text-2); }
+  .ctrl-val { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-1); font-weight: 500; }
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 3px; background: var(--border-2); border-radius: 2px; }
+  input[type="range"]::-moz-range-track { height: 3px; background: var(--border-2); border-radius: 2px; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; background: var(--text-1); border-radius: 50%; margin-top: -5.5px; cursor: pointer; }
+  input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; background: var(--text-1); border: none; border-radius: 50%; cursor: pointer; }
+
+  /* buttons */
+  .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .btn { font-size: 12px; padding: 7px 12px; background: transparent; border: 0.5px solid var(--border-2); border-radius: 6px; cursor: pointer; color: var(--text-2); font-family: inherit; transition: background 0.1s, color 0.1s; }
+  .btn:hover { background: var(--surface-2); color: var(--text-1); }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { background: var(--blue); color: #fff; border-color: transparent; }
+  .btn.primary:hover { background: var(--blue-deep); color: #fff; }
+
+  /* explain */
+  .explain { font-size: 12.5px; color: var(--text-2); line-height: 1.7; }
+  .explain b { color: var(--text-1); font-weight: 600; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--text-2); margin-top: 4px; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .swatch { width: 16px; height: 0; border-top-width: 2.5px; border-top-style: solid; display: inline-block; }
+
+  /* lecture nav */
+  .lec-nav { display: flex; gap: 14px; margin-bottom: 10px; padding: 2px 4px; font-size: 11px; flex-wrap: wrap; align-items: center; }
+  .lec-nav a { color: var(--text-3); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 1px; transition: color 0.1s, border-color 0.1s; }
+  .lec-nav a:hover { color: var(--text-1); border-bottom-color: var(--border-2); }
+  .lec-nav a.home { color: var(--text-2); font-weight: 500; }
+  .lec-nav .sep { color: var(--text-3); opacity: 0.5; }
+
+  .footer { font-size: 10px; color: var(--text-3); text-align: center; margin-top: 14px; line-height: 1.7; }
+
+  @media (max-width: 980px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .kpi { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="lec-nav">
+    <a class="home" href="../index.html">← 教材トップ</a>
+    <span class="sep">·</span>
+    <a href="../content/lecture-notes.html">講義ノート</a>
+    <a href="mpc_constrained.html">制約付き MPC デモ</a>
+    <span class="sep">·</span>
+    <span style="color:var(--text-3)">Step 1 / 2 — 受け取りホライズン</span>
+  </nav>
+
+  <header>
+    <h1>Receding Horizon Demo</h1>
+    <p class="subtitle">無制約 MPC · 2 重積分系（質点の位置制御）· 二次コスト最小化（解析解）</p>
+  </header>
+
+  <section class="kpi">
+    <div class="kpi-card">
+      <div class="kpi-label">出力 y（位置）</div>
+      <div class="kpi-val" id="kpi-y">0.00</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">適用入力 u(k)</div>
+      <div class="kpi-val" id="kpi-u">+0.00</div>
+    </div>
+    <div class="kpi-card accent">
+      <div class="kpi-label">予測コスト J</div>
+      <div class="kpi-val" id="kpi-j">0.00</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">時刻 k</div>
+      <div class="kpi-val" id="kpi-k">0 <span class="kpi-unit">step</span></div>
+    </div>
+  </section>
+
+  <div class="main-grid">
+    <div class="col">
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title">予測と受け取り — 出力 y(k+i)</div>
+          <div class="panel-hint">実線=過去の実績 / 破線=いまの予測 / 縦線=現在時刻</div>
+        </div>
+        <svg id="plot-y" viewBox="0 0 720 340" style="width: 100%;" role="img"></svg>
+        <div class="legend">
+          <span><i class="swatch" style="border-top-color: var(--blue);"></i>実績 y</span>
+          <span><i class="swatch" style="border-top-color: var(--blue); border-top-style: dashed;"></i>予測 ŷ(k+i∣k)</span>
+          <span><i class="swatch" style="border-top-color: var(--red);"></i>目標 r</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title">最適入力列 U* — 先頭だけを実際に打つ</div>
+          <div class="panel-hint">濃い棒=次に適用 u*(k) / 薄い棒=計画（破棄して再計算）</div>
+        </div>
+        <svg id="plot-u" viewBox="0 0 720 180" style="width: 100%;" role="img"></svg>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">操作</div></div>
+        <div class="btn-row">
+          <button class="btn primary" id="btn-step">1 ステップ進む ▶</button>
+          <button class="btn" id="btn-play">自動再生</button>
+          <button class="btn" id="btn-reset">リセット</button>
+        </div>
+        <p class="explain" id="explain" style="margin-top:12px;"></p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">パラメータ</div></div>
+
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-name">目標値 r（位置）</span><span class="ctrl-val" id="v-r">+2.0</span></div>
+          <input type="range" id="s-r" min="-4" max="4" step="0.1" value="2">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-name">予測ホライズン N<sub>p</sub></span><span class="ctrl-val" id="v-np">12</span></div>
+          <input type="range" id="s-np" min="3" max="30" step="1" value="12">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-name">制御ホライズン N<sub>c</sub></span><span class="ctrl-val" id="v-nc">4</span></div>
+          <input type="range" id="s-nc" min="1" max="12" step="1" value="4">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-name">入力重み λ = R/Q</span><span class="ctrl-val" id="v-lam">0.100</span></div>
+          <input type="range" id="s-lam" min="-3" max="1" step="0.05" value="-1">
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">予測モデル（離散時間 状態空間）</div></div>
+        <p class="explain" style="font-size:12px;">
+          状態 <math><mrow><mi>x</mi><mo>=</mo><mo>[</mo><mi>p</mi><mo>,</mo><mi>v</mi><mo>]</mo></mrow></math>（位置・速度）、入力 <math><mi>u</mi></math>（加速度指令）。<br>
+          <math display="block"><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo>
+          <mrow><mo>[</mo><mtable><mtr><mtd><mn>1</mn></mtd><mtd><mi>Δt</mi></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr></mtable><mo>]</mo></mrow>
+          <mi>x</mi><mo>(</mo><mi>k</mi><mo>)</mo><mo>+</mo>
+          <mrow><mo>[</mo><mtable><mtr><mtd><mfrac><msup><mi>Δt</mi><mn>2</mn></msup><mn>2</mn></mfrac></mtd></mtr><mtr><mtd><mi>Δt</mi></mtd></mtr></mtable><mo>]</mo></mrow>
+          <mi>u</mi><mo>(</mo><mi>k</mi><mo>)</mo></mrow></math>
+          <span style="color:var(--text-3)">Δt = 0.2 s, y = p</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    無制約 MPC: U* = (SuᵀSu + λI)⁻¹ Suᵀ(Rs − Sx·x) を毎ステップ解き、先頭 u*(k) のみ適用（receding horizon）<br>
+    制御ホライズン超過後は u = 0（コースティング）と仮定 · コスト J = Σ‖ŷ−r‖² + λΣu²
+  </div>
+
+</div>
+
+<script>
+(function() {
+  "use strict";
+
+  // ===== 線形代数ヘルパ（小規模・密行列） =====
+  function zeros(r, c) { return Array.from({length: r}, () => new Array(c).fill(0)); }
+  function matmul(A, B) {
+    const n = A.length, m = B[0].length, p = B.length;
+    const C = zeros(n, m);
+    for (let i = 0; i < n; i++)
+      for (let k = 0; k < p; k++) {
+        const a = A[i][k];
+        if (a === 0) continue;
+        for (let j = 0; j < m; j++) C[i][j] += a * B[k][j];
+      }
+    return C;
+  }
+  function transpose(A) {
+    const n = A.length, m = A[0].length, T = zeros(m, n);
+    for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) T[j][i] = A[i][j];
+    return T;
+  }
+  // Gauss-Jordan 逆行列（対称正定値を想定、小サイズ）
+  function inv(A) {
+    const n = A.length;
+    const M = A.map((row, i) => row.concat(Array.from({length: n}, (_, j) => (i === j ? 1 : 0))));
+    for (let col = 0; col < n; col++) {
+      let piv = col;
+      for (let r = col + 1; r < n; r++) if (Math.abs(M[r][col]) > Math.abs(M[piv][col])) piv = r;
+      if (Math.abs(M[piv][col]) < 1e-12) M[piv][col] += 1e-9;
+      [M[col], M[piv]] = [M[piv], M[col]];
+      const d = M[col][col];
+      for (let j = 0; j < 2 * n; j++) M[col][j] /= d;
+      for (let r = 0; r < n; r++) {
+        if (r === col) continue;
+        const f = M[r][col];
+        if (f === 0) continue;
+        for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[col][j];
+      }
+    }
+    return M.map(row => row.slice(n));
+  }
+
+  // ===== プラント（2重積分系の厳密 ZOH 離散化） =====
+  const dt = 0.2;
+  const A = [[1, dt], [0, 1]];
+  const B = [[0.5 * dt * dt], [dt]];
+  const C = [[1, 0]];
+
+  function applyDynamics(x, u) {
+    return [
+      A[0][0] * x[0] + A[0][1] * x[1] + B[0][0] * u,
+      A[1][0] * x[0] + A[1][1] * x[1] + B[1][0] * u,
+    ];
+  }
+
+  // ===== 予測行列の構築（Np, Nc 依存） =====
+  // 出力予測 Y(k+1..k+Np) = Sx·x(k) + Su·U,  U = [u(k)..u(k+Nc-1)]
+  function buildPrediction(Np, Nc) {
+    // A^i を逐次計算
+    const Apow = [[[1, 0], [0, 1]]]; // A^0
+    for (let i = 1; i <= Np; i++) Apow.push(matmul(Apow[i - 1], A));
+    const Sx = zeros(Np, 2);
+    const Su = zeros(Np, Nc);
+    for (let i = 1; i <= Np; i++) {
+      // Sx 行 = C·A^i
+      const CA = matmul(C, Apow[i]); // 1x2
+      Sx[i - 1][0] = CA[0][0];
+      Sx[i - 1][1] = CA[0][1];
+      // Su[i-1][j] = C·A^{i-1-j}·B,  0<=j<=i-1, j<Nc
+      for (let j = 0; j < Nc; j++) {
+        if (j > i - 1) break;
+        const CAB = matmul(matmul(C, Apow[i - 1 - j]), B); // 1x1
+        Su[i - 1][j] = CAB[0][0];
+      }
+    }
+    return { Sx, Su };
+  }
+
+  function solveU(x, r, Np, Nc, lam) {
+    const { Sx, Su } = buildPrediction(Np, Nc);
+    const SuT = transpose(Su);
+    // H = SuᵀSu + λI
+    const H = matmul(SuT, Su);
+    for (let i = 0; i < Nc; i++) H[i][i] += lam;
+    // g = Suᵀ (Rs - Sx x)
+    const Sxx = matmul(Sx, [[x[0]], [x[1]]]); // Npx1
+    const diff = Array.from({length: Np}, (_, i) => [r - Sxx[i][0]]);
+    const g = matmul(SuT, diff); // Ncx1
+    const Hinv = inv(H);
+    const U = matmul(Hinv, g); // Ncx1
+    return U.map(row => row[0]);
+  }
+
+  // 計画入力（j<Nc は U、以降は 0）でシミュレートし予測軌道とコストを得る
+  function predictTrajectory(x, U, r, Np, Nc, lam) {
+    const ys = [];
+    let xi = x.slice();
+    let cost = 0;
+    for (let i = 0; i < Np; i++) {
+      const u = i < Nc ? U[i] : 0;
+      xi = applyDynamics(xi, u);
+      const y = xi[0];
+      ys.push(y);
+      cost += (y - r) * (y - r);
+      if (i < Nc) cost += lam * u * u;
+    }
+    return { ys, cost };
+  }
+
+  // ===== 状態 =====
+  let state = { x: [0, 0], k: 0, histY: [0], histU: [], plan: null };
+
+  function currentParams() {
+    return {
+      r: +document.getElementById('s-r').value,
+      Np: +document.getElementById('s-np').value,
+      Nc: Math.min(+document.getElementById('s-nc').value, +document.getElementById('s-np').value),
+      lam: Math.pow(10, +document.getElementById('s-lam').value),
+    };
+  }
+
+  function recompute() {
+    const { r, Np, Nc, lam } = currentParams();
+    const U = solveU(state.x, r, Np, Nc, lam);
+    const { ys, cost } = predictTrajectory(state.x, U, r, Np, Nc, lam);
+    state.plan = { U, ys, cost, r, Np, Nc, lam };
+    return state.plan;
+  }
+
+  // ===== 描画ユーティリティ =====
+  function niceRange(vals, pad, sym) {
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (sym) { const m = Math.max(Math.abs(lo), Math.abs(hi), 1e-6); lo = -m; hi = m; }
+    if (hi - lo < 1e-6) { hi += 1; lo -= 1; }
+    const d = (hi - lo) * pad;
+    return [lo - d, hi + d];
+  }
+
+  function drawY() {
+    const p = state.plan;
+    const W = 720, H = 340, m = { l: 42, r: 14, t: 16, b: 28 };
+    const pw = W - m.l - m.r, ph = H - m.t - m.b;
+    const k = state.k, Np = p.Np;
+    const PAST = 16;
+    const tL = Math.max(0, k - PAST), tR = k + Np;
+    const xs = t => m.l + (t - tL) / (tR - tL) * pw;
+    // y 範囲
+    const allY = state.histY.concat(p.ys).concat([p.r]);
+    const [yLo, yHi] = niceRange(allY, 0.12, false);
+    const ys = v => m.t + (1 - (v - yLo) / (yHi - yLo)) * ph;
+
+    let s = '';
+    // grid（横）
+    for (let g = 0; g <= 4; g++) {
+      const v = yLo + (yHi - yLo) * g / 4;
+      const yy = ys(v);
+      s += `<line x1="${m.l}" y1="${yy}" x2="${m.l + pw}" y2="${yy}" stroke="var(--border)" stroke-width="0.5"/>`;
+      s += `<text x="${m.l - 6}" y="${yy + 3}" text-anchor="end" font-size="10" fill="var(--text-secondary)">${v.toFixed(1)}</text>`;
+    }
+    // x 軸目盛
+    for (let t = Math.ceil(tL); t <= tR; t++) {
+      if (t % 4 !== 0 && t !== k) continue;
+      const xx = xs(t);
+      s += `<line x1="${xx}" y1="${m.t + ph}" x2="${xx}" y2="${m.t + ph + 4}" stroke="var(--border-strong)" stroke-width="0.5"/>`;
+      s += `<text x="${xx}" y="${m.t + ph + 16}" text-anchor="middle" font-size="10" fill="var(--text-secondary)">${t}</text>`;
+    }
+    s += `<text x="${m.l + pw / 2}" y="${H - 2}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">時刻 k（step）</text>`;
+    // 目標線 r
+    s += `<line x1="${m.l}" y1="${ys(p.r)}" x2="${m.l + pw}" y2="${ys(p.r)}" stroke="var(--red)" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.85"/>`;
+    s += `<text x="${m.l + pw - 2}" y="${ys(p.r) - 5}" text-anchor="end" font-size="10" fill="var(--red)" font-weight="500">r = ${p.r.toFixed(1)}</text>`;
+    // 現在時刻の縦線＋網掛（未来側）
+    const xk = xs(k);
+    s += `<rect x="${xk}" y="${m.t}" width="${m.l + pw - xk}" height="${ph}" fill="var(--blue)" opacity="0.04"/>`;
+    s += `<line x1="${xk}" y1="${m.t}" x2="${xk}" y2="${m.t + ph}" stroke="var(--text-primary)" stroke-width="1" stroke-dasharray="2,2" opacity="0.55"/>`;
+    s += `<text x="${xk}" y="${m.t - 4}" text-anchor="middle" font-size="10" fill="var(--text-2)">いま</text>`;
+    // 実績（過去）実線
+    let pts = [];
+    for (let t = Math.max(0, Math.floor(tL)); t <= k; t++) pts.push(`${xs(t)},${ys(state.histY[t])}`);
+    s += `<polyline points="${pts.join(' ')}" fill="none" stroke="var(--blue)" stroke-width="2"/>`;
+    // 予測（未来）破線
+    let fpts = [`${xs(k)},${ys(state.histY[k])}`];
+    for (let i = 0; i < p.ys.length; i++) fpts.push(`${xs(k + 1 + i)},${ys(p.ys[i])}`);
+    s += `<polyline points="${fpts.join(' ')}" fill="none" stroke="var(--blue)" stroke-width="1.6" stroke-dasharray="5,3" opacity="0.85"/>`;
+    for (let i = 0; i < p.ys.length; i++)
+      s += `<circle cx="${xs(k + 1 + i)}" cy="${ys(p.ys[i])}" r="2" fill="var(--blue)" opacity="0.7"/>`;
+    // 現在点
+    s += `<circle cx="${xs(k)}" cy="${ys(state.histY[k])}" r="4.5" fill="var(--surface)" stroke="var(--blue)" stroke-width="2"/>`;
+    document.getElementById('plot-y').innerHTML = s;
+  }
+
+  function drawU() {
+    const p = state.plan;
+    const W = 720, H = 180, m = { l: 42, r: 14, t: 14, b: 26 };
+    const pw = W - m.l - m.r, ph = H - m.t - m.b;
+    const k = state.k, Np = p.Np;
+    const PAST = 16;
+    const tL = Math.max(0, k - PAST), tR = k + Np;
+    const xs = t => m.l + (t - tL) / (tR - tL) * pw;
+    const bw = pw / (tR - tL) * 0.7;
+    // u 範囲（対称）
+    const planFull = [];
+    for (let i = 0; i < Np; i++) planFull.push(i < p.Nc ? p.U[i] : 0);
+    const allU = state.histU.concat(planFull).concat([0.5, -0.5]);
+    const [uLo, uHi] = niceRange(allU, 0.15, true);
+    const us = v => m.t + (1 - (v - uLo) / (uHi - uLo)) * ph;
+    let s = '';
+    // 0 線
+    s += `<line x1="${m.l}" y1="${us(0)}" x2="${m.l + pw}" y2="${us(0)}" stroke="var(--border-strong)" stroke-width="0.5"/>`;
+    for (const v of [uHi, uLo]) s += `<text x="${m.l - 6}" y="${us(v) + 3}" text-anchor="end" font-size="10" fill="var(--text-secondary)">${v.toFixed(1)}</text>`;
+    s += `<text x="${m.l - 6}" y="${us(0) + 3}" text-anchor="end" font-size="10" fill="var(--text-secondary)">0</text>`;
+    // 過去に適用した入力（実線棒）
+    for (let t = Math.max(0, Math.floor(tL)); t < k; t++) {
+      const u = state.histU[t];
+      if (u === undefined) continue;
+      const x0 = xs(t) - bw / 2;
+      const y0 = Math.min(us(0), us(u));
+      s += `<rect x="${x0}" y="${y0}" width="${bw}" height="${Math.abs(us(u) - us(0))}" fill="var(--blue)" opacity="0.32"/>`;
+    }
+    // 計画入力（未来）：先頭は濃く、残りは薄く
+    for (let i = 0; i < Np; i++) {
+      const u = planFull[i];
+      const x0 = xs(k + i) - bw / 2;
+      const y0 = Math.min(us(0), us(u));
+      const hh = Math.abs(us(u) - us(0));
+      const head = (i === 0);
+      const col = head ? 'var(--amber)' : 'var(--blue)';
+      const op = head ? 1 : (i < p.Nc ? 0.5 : 0.18);
+      s += `<rect x="${x0}" y="${y0}" width="${bw}" height="${hh}" fill="${col}" opacity="${op}" rx="1"/>`;
+    }
+    // 現在時刻線
+    s += `<line x1="${xs(k) - bw / 2 - 2}" y1="${m.t}" x2="${xs(k) - bw / 2 - 2}" y2="${m.t + ph}" stroke="var(--text-primary)" stroke-width="1" stroke-dasharray="2,2" opacity="0.4"/>`;
+    s += `<text x="${xs(k)}" y="${m.t + 9}" text-anchor="middle" font-size="9" fill="var(--amber)" font-weight="600">u*(k)</text>`;
+    s += `<text x="${m.l + pw / 2}" y="${H - 2}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">入力 u（加速度指令）</text>`;
+    document.getElementById('plot-u').innerHTML = s;
+  }
+
+  function refreshKPI() {
+    const p = state.plan;
+    document.getElementById('kpi-y').textContent = state.x[0].toFixed(2);
+    const u0 = p.U[0];
+    document.getElementById('kpi-u').textContent = (u0 >= 0 ? '+' : '') + u0.toFixed(2);
+    document.getElementById('kpi-j').textContent = p.cost.toFixed(2);
+    document.getElementById('kpi-k').innerHTML = state.k + ' <span class="kpi-unit">step</span>';
+    const err = Math.abs(state.x[0] - p.r);
+    let msg;
+    if (state.k === 0) {
+      msg = `<b>予測モデル</b>で未来 ${p.Np} ステップ先まで出力を予測し、コスト <b>J</b> を最小化する入力列 <b>U*</b> を求めました。これから先頭 <b>u*(k)</b> だけを打って 1 ステップ進みます。`;
+    } else if (err < 0.05) {
+      msg = `目標に到達。誤差 ${err.toFixed(3)}。毎ステップ予測を更新し続けても入力はほぼ 0 で、この状態が保たれます。`;
+    } else {
+      msg = `先頭 <b>u*(k)=${(u0 >= 0 ? '+' : '') + u0.toFixed(2)}</b> を適用 → 状態が変化 → <b>残りの計画は破棄</b>してこの位置から再び全体を解き直しました（receding horizon）。目標まで誤差 ${err.toFixed(2)}。`;
+    }
+    document.getElementById('explain').innerHTML = msg;
+  }
+
+  function render() { recompute(); drawY(); drawU(); refreshKPI(); }
+
+  function step() {
+    const p = state.plan || recompute();
+    const u0 = p.U[0];
+    state.histU[state.k] = u0;
+    state.x = applyDynamics(state.x, u0);
+    state.k += 1;
+    state.histY[state.k] = state.x[0];
+    render();
+  }
+
+  function reset() {
+    pause();
+    state = { x: [0, 0], k: 0, histY: [0], histU: [], plan: null };
+    render();
+  }
+
+  // ===== 自動再生 =====
+  let timer = null;
+  function play() {
+    if (timer) return;
+    document.getElementById('btn-play').textContent = '一時停止';
+    timer = setInterval(() => {
+      const err = Math.abs(state.x[0] - currentParams().r);
+      step();
+      if (state.k > 80 || (err < 0.02 && Math.abs(state.x[1]) < 0.02 && state.k > 4)) pause();
+    }, 350);
+  }
+  function pause() {
+    if (timer) { clearInterval(timer); timer = null; }
+    document.getElementById('btn-play').textContent = '自動再生';
+  }
+
+  // ===== イベント =====
+  function bindSlider(id, valId, fmt) {
+    const el = document.getElementById(id), out = document.getElementById(valId);
+    el.addEventListener('input', () => { out.textContent = fmt(+el.value); render(); });
+    out.textContent = fmt(+el.value);
+  }
+  bindSlider('s-r', 'v-r', v => (v >= 0 ? '+' : '') + v.toFixed(1));
+  bindSlider('s-np', 'v-np', v => v.toFixed(0));
+  bindSlider('s-nc', 'v-nc', v => v.toFixed(0));
+  bindSlider('s-lam', 'v-lam', v => Math.pow(10, v).toFixed(3));
+  // Nc は Np を超えないよう同期
+  document.getElementById('s-np').addEventListener('input', () => {
+    const np = +document.getElementById('s-np').value;
+    const sc = document.getElementById('s-nc');
+    sc.max = np;
+    if (+sc.value > np) { sc.value = np; document.getElementById('v-nc').textContent = np; }
+  });
+
+  document.getElementById('btn-step').addEventListener('click', () => { pause(); step(); });
+  document.getElementById('btn-play').addEventListener('click', () => { if (timer) pause(); else play(); });
+  document.getElementById('btn-reset').addEventListener('click', reset);
+
+  render();
+})();
+</script>
+</body>
+</html>

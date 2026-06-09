@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: "モデル予測制御 (MPC) インタラクティブ教材（制御理論教科書 併用版）"
+message: "この教材を利用・引用される場合は、以下の情報をご記載ください。"
+type: software
+authors:
+  - name: "lutelute (PWS Lab)"
+repository-code: "https://github.com/lutelute/lec-mpc"
+url: "https://lutelute.github.io/lec-mpc/"
+abstract: >-
+  制御工学の教科書で PID 制御・状態空間・最適制御 (LQR) まで学んだ学習者向けに、
+  モデル予測制御 (Model Predictive Control) を「予測 → 最適化 → 受け取り
+  (receding horizon)」の流れで体験するインタラクティブ教材スイート。無制約 MPC
+  の受け取りデモと、二次計画 (QP, Hildreth 法) による制約付き MPC デモ、講義ノート・
+  応用ショーケース・教員ガイドを含み、すべて単一 HTML・外部依存なしで動作する。
+keywords:
+  - model predictive control
+  - receding horizon control
+  - quadratic programming
+  - constrained control
+  - control engineering
+  - educational material
+  - interactive demo
+license: CC-BY-4.0
+date-released: 2026-06-09

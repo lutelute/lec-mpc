@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Constrained MPC Demo (QP / Hildreth, double integrator)</title>
+<style>
+  :root {
+    --bg: #f6f4ee;
+    --surface: #ffffff;
+    --surface-2: #efece4;
+    --text-1: #1a1a1a;
+    --text-2: #5f5e5a;
+    --text-3: #888780;
+    --border: rgba(0,0,0,0.10);
+    --border-2: rgba(0,0,0,0.22);
+    --info-bg: #E6F1FB;
+    --info-text: #0C447C;
+    --blue: #378ADD;
+    --blue-deep: #0C447C;
+    --amber: #EF9F27;
+    --red: #E24B4A;
+    --radius: 10px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    --font-mono: "SF Mono", "Menlo", "Consolas", monospace;
+    --text-primary: var(--text-1);
+    --text-secondary: var(--text-2);
+    --border-strong: var(--border-2);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614;
+      --surface: #1f1f1d;
+      --surface-2: #2a2a27;
+      --text-1: #f0eee8;
+      --text-2: #b4b2a9;
+      --text-3: #888780;
+      --border: rgba(255,255,255,0.10);
+      --border-2: rgba(255,255,255,0.22);
+      --info-bg: #0C447C;
+      --info-text: #B5D4F4;
+      --blue: #5BA0E8;
+      --blue-deep: #B5D4F4;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text-1); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
+  .app { max-width: 1320px; margin: 0 auto; padding: 16px 18px 28px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 0 2px; margin-bottom: 12px; flex-wrap: wrap; }
+  h1 { font-size: 16px; font-weight: 500; margin: 0; letter-spacing: -0.005em; }
+  .subtitle { font-size: 11px; color: var(--text-3); margin: 0; }
+  svg { display: block; }
+
+  .kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+  .kpi-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 14px; }
+  .kpi-card.accent { background: var(--info-bg); border-color: transparent; }
+  .kpi-label { font-size: 10px; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; }
+  .kpi-card.accent .kpi-label { color: var(--info-text); opacity: 0.8; }
+  .kpi-val { font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; margin-top: 6px; }
+  .kpi-card.accent .kpi-val { color: var(--info-text); }
+  .kpi-unit { font-size: 11px; color: var(--text-3); font-weight: 400; }
+
+  .main-grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 10px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 10px; }
+
+  .panel { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .panel-hdr { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; gap: 8px; flex-wrap: wrap; }
+  .panel-title { font-size: 11px; font-weight: 500; color: var(--text-1); text-transform: uppercase; letter-spacing: 0.08em; }
+  .panel-hint { font-size: 10px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+
+  .ctrl { margin: 12px 0; }
+  .ctrl-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+  .ctrl-name { font-size: 12px; color: var(--text-2); }
+  .ctrl-val { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-1); font-weight: 500; }
+  .ctrl.disabled { opacity: 0.4; }
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 3px; background: var(--border-2); border-radius: 2px; }
+  input[type="range"]::-moz-range-track { height: 3px; background: var(--border-2); border-radius: 2px; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; background: var(--text-1); border-radius: 50%; margin-top: -5.5px; cursor: pointer; }
+  input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; background: var(--text-1); border: none; border-radius: 50%; cursor: pointer; }
+
+  .chk-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); margin-bottom: 4px; }
+  .chk-row input { width: 14px; height: 14px; accent-color: var(--blue); }
+
+  .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .btn { font-size: 12px; padding: 7px 12px; background: transparent; border: 0.5px solid var(--border-2); border-radius: 6px; cursor: pointer; color: var(--text-2); font-family: inherit; transition: background 0.1s, color 0.1s; }
+  .btn:hover { background: var(--surface-2); color: var(--text-1); }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { background: var(--blue); color: #fff; border-color: transparent; }
+  .btn.primary:hover { background: var(--blue-deep); color: #fff; }
+
+  .explain { font-size: 12.5px; color: var(--text-2); line-height: 1.7; }
+  .explain b { color: var(--text-1); font-weight: 600; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--text-2); margin-top: 4px; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .swatch { width: 16px; height: 0; border-top-width: 2.5px; border-top-style: solid; display: inline-block; }
+  .box { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+
+  .lec-nav { display: flex; gap: 14px; margin-bottom: 10px; padding: 2px 4px; font-size: 11px; flex-wrap: wrap; align-items: center; }
+  .lec-nav a { color: var(--text-3); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 1px; transition: color 0.1s, border-color 0.1s; }
+  .lec-nav a:hover { color: var(--text-1); border-bottom-color: var(--border-2); }
+  .lec-nav a.home { color: var(--text-2); font-weight: 500; }
+  .lec-nav .sep { color: var(--text-3); opacity: 0.5; }
+
+  .footer { font-size: 10px; color: var(--text-3); text-align: center; margin-top: 14px; line-height: 1.7; }
+
+  @media (max-width: 980px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .kpi { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="lec-nav">
+    <a class="home" href="../index.html">← 教材トップ</a>
+    <span class="sep">·</span>
+    <a href="../content/lecture-notes.html">講義ノート</a>
+    <a href="mpc_receding_horizon.html">受け取りホライズン デモ</a>
+    <span class="sep">·</span>
+    <span style="color:var(--text-3)">Step 2 / 2 — 制約付き MPC</span>
+  </nav>
+
+  <header>
+    <h1>Constrained MPC Demo</h1>
+    <p class="subtitle">制約付き MPC · 二次計画 (QP, Hildreth 法) · 入力飽和 + 出力天井</p>
+  </header>
+
+  <section class="kpi">
+    <div class="kpi-card">
+      <div class="kpi-label">出力 y（位置）</div>
+      <div class="kpi-val" id="kpi-y">0.00</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">適用入力 u(k)</div>
+      <div class="kpi-val" id="kpi-u">+0.00</div>
+    </div>
+    <div class="kpi-card accent">
+      <div class="kpi-label">有効な制約の数</div>
+      <div class="kpi-val" id="kpi-act">0</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">時刻 k</div>
+      <div class="kpi-val" id="kpi-k">0 <span class="kpi-unit">step</span></div>
+    </div>
+  </section>
+
+  <div class="main-grid">
+    <div class="col">
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title">予測出力 y(k+i) と 出力制約</div>
+          <div class="panel-hint">破線=制約付き予測 / 細い点線=制約が無ければ（参考）</div>
+        </div>
+        <svg id="plot-y" viewBox="0 0 720 320" style="width: 100%;" role="img"></svg>
+        <div class="legend">
+          <span><i class="swatch" style="border-top-color: var(--blue);"></i>実績 y</span>
+          <span><i class="swatch" style="border-top-color: var(--blue); border-top-style: dashed;"></i>予測（制約付き）</span>
+          <span><i class="swatch" style="border-top-color: var(--text-3); border-top-style: dotted;"></i>制約なし（参考）</span>
+          <span><i class="swatch" style="border-top-color: var(--red);"></i>目標 r</span>
+          <span><i class="box" style="background: var(--red); opacity:0.13;"></i>禁止域</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title">最適入力列 U* — 制約が QP で入力を整形</div>
+          <div class="panel-hint">塗り=制約付き解 / 枠線=制約が無ければ（参考）</div>
+        </div>
+        <svg id="plot-u" viewBox="0 0 720 200" style="width: 100%;" role="img"></svg>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">操作</div></div>
+        <div class="btn-row">
+          <button class="btn primary" id="btn-step">1 ステップ進む ▶</button>
+          <button class="btn" id="btn-play">自動再生</button>
+          <button class="btn" id="btn-reset">リセット</button>
+        </div>
+        <p class="explain" id="explain" style="margin-top:12px;"></p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">制約</div></div>
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-name">入力上限 |u| ≤ u<sub>max</sub></span><span class="ctrl-val" id="v-umax">1.00</span></div>
+          <input type="range" id="s-umax" min="0.3" max="6" step="0.1" value="1.0">
+        </div>
+        <div class="chk-row"><input type="checkbox" id="c-ceil" checked><label for="c-ceil">出力上限（天井）を有効化</label></div>
+        <div class="ctrl" id="ceil-ctrl">
+          <div class="ctrl-row"><span class="ctrl-name">出力上限 y ≤ y<sub>max</sub></span><span class="ctrl-val" id="v-ymax">2.20</span></div>
+          <input type="range" id="s-ymax" min="0.5" max="4" step="0.1" value="2.2">
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">パラメータ</div></div>
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-name">目標値 r（位置）</span><span class="ctrl-val" id="v-r">+2.0</span></div>
+          <input type="range" id="s-r" min="-4" max="4" step="0.1" value="2">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-name">予測ホライズン N<sub>p</sub></span><span class="ctrl-val" id="v-np">15</span></div>
+          <input type="range" id="s-np" min="3" max="30" step="1" value="15">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-name">制御ホライズン N<sub>c</sub></span><span class="ctrl-val" id="v-nc">6</span></div>
+          <input type="range" id="s-nc" min="1" max="12" step="1" value="6">
+        </div>
+        <div class="ctrl">
+          <div class="ctrl-row"><span class="ctrl-name">入力重み λ = R/Q</span><span class="ctrl-val" id="v-lam">0.100</span></div>
+          <input type="range" id="s-lam" min="-3" max="1" step="0.05" value="-1">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    制約付き MPC: min UᵀHU − 2gᵀU s.t. |u|≤u<sub>max</sub>, y≤y<sub>max</sub> を Hildreth 双対法で解き、先頭 u*(k) のみ適用<br>
+    H = SuᵀSu + λI · 制約なしなら無制約 MPC（解析解）に一致 · 入力飽和を最適に処理＝アンチワインドアップの一般化
+  </div>
+
+</div>
+
+<script>
+(function() {
+  "use strict";
+
+  // ===== 線形代数 =====
+  function zeros(r, c) { return Array.from({length: r}, () => new Array(c).fill(0)); }
+  function matmul(A, B) {
+    const n = A.length, m = B[0].length, p = B.length, C = zeros(n, m);
+    for (let i = 0; i < n; i++) for (let k = 0; k < p; k++) { const a = A[i][k]; if (a === 0) continue; for (let j = 0; j < m; j++) C[i][j] += a * B[k][j]; }
+    return C;
+  }
+  function transpose(A) { const n = A.length, m = A[0].length, T = zeros(m, n); for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) T[j][i] = A[i][j]; return T; }
+  function inv(A) {
+    const n = A.length;
+    const M = A.map((row, i) => row.concat(Array.from({length: n}, (_, j) => (i === j ? 1 : 0))));
+    for (let col = 0; col < n; col++) {
+      let piv = col;
+      for (let r = col + 1; r < n; r++) if (Math.abs(M[r][col]) > Math.abs(M[piv][col])) piv = r;
+      if (Math.abs(M[piv][col]) < 1e-12) M[piv][col] += 1e-9;
+      [M[col], M[piv]] = [M[piv], M[col]];
+      const d = M[col][col];
+      for (let j = 0; j < 2 * n; j++) M[col][j] /= d;
+      for (let r = 0; r < n; r++) { if (r === col) continue; const f = M[r][col]; if (f === 0) continue; for (let j = 0; j < 2 * n; j++) M[r][j] -= f * M[col][j]; }
+    }
+    return M.map(row => row.slice(n));
+  }
+
+  // ===== Hildreth 双対 QP: min (1/2)UᵀE U + UᵀF s.t. M U <= γ =====
+  function hildrethQP(E, F, M, gam, iters) {
+    const Einv = inv(E);
+    const Uunc = matmul(Einv, F.map(v => [-v])).map(r => r[0]);
+    if (M.length === 0) return { U: Uunc, active: 0 };
+    const Mu = matmul(M, Uunc.map(v => [v]));
+    let feasible = true;
+    for (let i = 0; i < M.length; i++) if (Mu[i][0] - gam[i] > 1e-9) { feasible = false; break; }
+    if (feasible) return { U: Uunc, active: 0 };
+    const P = matmul(matmul(M, Einv), transpose(M));
+    const MEinvF = matmul(M, matmul(Einv, F.map(v => [v])));
+    const K = gam.map((g, i) => g + MEinvF[i][0]);
+    const m = M.length;
+    let lam = new Array(m).fill(0);
+    for (let it = 0; it < iters; it++) {
+      let maxd = 0;
+      for (let i = 0; i < m; i++) {
+        let sm = K[i];
+        for (let j = 0; j < m; j++) if (j !== i) sm += P[i][j] * lam[j];
+        const w = -sm / P[i][i];
+        const old = lam[i];
+        lam[i] = Math.max(0, w);
+        maxd = Math.max(maxd, Math.abs(lam[i] - old));
+      }
+      if (maxd < 1e-10) break;
+    }
+    const MtL = matmul(transpose(M), lam.map(v => [v]));
+    const U = matmul(Einv, F.map((v, i) => [-(v + MtL[i][0])])).map(r => r[0]);
+    return { U, active: lam.filter(v => v > 1e-7).length };
+  }
+
+  // ===== プラント（2重積分系） =====
+  const dt = 0.2;
+  const A = [[1, dt], [0, 1]];
+  const B = [[0.5 * dt * dt], [dt]];
+  const C = [[1, 0]];
+  function applyDynamics(x, u) { return [x[0] + dt * x[1] + 0.5 * dt * dt * u, x[1] + dt * u]; }
+
+  function buildPrediction(Np, Nc) {
+    const Apow = [[[1, 0], [0, 1]]];
+    for (let i = 1; i <= Np; i++) Apow.push(matmul(Apow[i - 1], A));
+    const Sx = zeros(Np, 2), Su = zeros(Np, Nc);
+    for (let i = 1; i <= Np; i++) {
+      const CA = matmul(C, Apow[i]); Sx[i - 1][0] = CA[0][0]; Sx[i - 1][1] = CA[0][1];
+      for (let j = 0; j < Nc; j++) { if (j > i - 1) break; Su[i - 1][j] = matmul(matmul(C, Apow[i - 1 - j]), B)[0][0]; }
+    }
+    return { Sx, Su };
+  }
+
+  // 無制約解（参考ゴースト用）
+  function solveUnc(Sx, Su, x, r, Np, Nc, lam) {
+    const SuT = transpose(Su);
+    const H = matmul(SuT, Su); for (let i = 0; i < Nc; i++) H[i][i] += lam;
+    const Sxx = matmul(Sx, [[x[0]], [x[1]]]);
+    const diff = Array.from({length: Np}, (_, i) => [r - Sxx[i][0]]);
+    return matmul(inv(H), matmul(SuT, diff)).map(rr => rr[0]);
+  }
+
+  // 制約付き解
+  function solveCon(Sx, Su, x, r, Np, Nc, lam, umax, ymax) {
+    const SuT = transpose(Su);
+    const H = matmul(SuT, Su); for (let i = 0; i < Nc; i++) H[i][i] += lam;
+    const Sxx = matmul(Sx, [[x[0]], [x[1]]]);
+    const diff = Array.from({length: Np}, (_, i) => [r - Sxx[i][0]]);
+    const g = matmul(SuT, diff).map(rr => rr[0]);
+    const E = H.map(row => row.map(v => 2 * v));
+    const F = g.map(v => -2 * v);
+    const M = [], gam = [];
+    for (let j = 0; j < Nc; j++) {
+      const e = new Array(Nc).fill(0); e[j] = 1; M.push(e); gam.push(umax);
+      const e2 = new Array(Nc).fill(0); e2[j] = -1; M.push(e2); gam.push(umax);
+    }
+    if (isFinite(ymax)) for (let i = 0; i < Np; i++) { M.push(Su[i].slice()); gam.push(ymax - Sxx[i][0]); }
+    return hildrethQP(E, F, M, gam, 250);
+  }
+
+  function simulate(x, U, Np, Nc) {
+    const ys = []; let xi = x.slice();
+    for (let i = 0; i < Np; i++) { xi = applyDynamics(xi, i < Nc ? U[i] : 0); ys.push(xi[0]); }
+    return ys;
+  }
+
+  // ===== 状態 =====
+  let state = { x: [0, 0], k: 0, histY: [0], histU: [], plan: null };
+
+  function params() {
+    const np = +document.getElementById('s-np').value;
+    return {
+      r: +document.getElementById('s-r').value,
+      Np: np,
+      Nc: Math.min(+document.getElementById('s-nc').value, np),
+      lam: Math.pow(10, +document.getElementById('s-lam').value),
+      umax: +document.getElementById('s-umax').value,
+      ymax: document.getElementById('c-ceil').checked ? +document.getElementById('s-ymax').value : Infinity,
+    };
+  }
+
+  function recompute() {
+    const P = params();
+    const { Sx, Su } = buildPrediction(P.Np, P.Nc);
+    const con = solveCon(Sx, Su, state.x, P.r, P.Np, P.Nc, P.lam, P.umax, P.ymax);
+    const Uunc = solveUnc(Sx, Su, state.x, P.r, P.Np, P.Nc, P.lam);
+    state.plan = {
+      U: con.U, active: con.active, Uunc,
+      ys: simulate(state.x, con.U, P.Np, P.Nc),
+      ysUnc: simulate(state.x, Uunc, P.Np, P.Nc),
+      ...P,
+    };
+    return state.plan;
+  }
+
+  // ===== 描画 =====
+  function niceRange(vals, pad, sym) {
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (sym) { const m = Math.max(Math.abs(lo), Math.abs(hi), 1e-6); lo = -m; hi = m; }
+    if (hi - lo < 1e-6) { hi += 1; lo -= 1; }
+    const d = (hi - lo) * pad; return [lo - d, hi + d];
+  }
+
+  function drawY() {
+    const p = state.plan, k = state.k, Np = p.Np;
+    const W = 720, H = 320, m = { l: 42, r: 14, t: 16, b: 28 };
+    const pw = W - m.l - m.r, ph = H - m.t - m.b;
+    const PAST = 14, tL = Math.max(0, k - PAST), tR = k + Np;
+    const xs = t => m.l + (t - tL) / (tR - tL) * pw;
+    const allY = state.histY.concat(p.ys).concat(p.ysUnc).concat([p.r]);
+    if (isFinite(p.ymax)) allY.push(p.ymax);
+    const [yLo, yHi] = niceRange(allY, 0.12, false);
+    const ys = v => m.t + (1 - (v - yLo) / (yHi - yLo)) * ph;
+    let s = '';
+    // 禁止域（天井より上）
+    if (isFinite(p.ymax) && ys(p.ymax) > m.t) {
+      s += `<rect x="${m.l}" y="${m.t}" width="${pw}" height="${Math.max(0, ys(p.ymax) - m.t)}" fill="var(--red)" opacity="0.10"/>`;
+      s += `<line x1="${m.l}" y1="${ys(p.ymax)}" x2="${m.l + pw}" y2="${ys(p.ymax)}" stroke="var(--red)" stroke-width="1" stroke-dasharray="2,2" opacity="0.7"/>`;
+      s += `<text x="${m.l + 4}" y="${ys(p.ymax) + 12}" font-size="10" fill="var(--red)">y_max = ${p.ymax.toFixed(1)}</text>`;
+    }
+    for (let g = 0; g <= 4; g++) { const v = yLo + (yHi - yLo) * g / 4, yy = ys(v); s += `<line x1="${m.l}" y1="${yy}" x2="${m.l + pw}" y2="${yy}" stroke="var(--border)" stroke-width="0.5"/><text x="${m.l - 6}" y="${yy + 3}" text-anchor="end" font-size="10" fill="var(--text-secondary)">${v.toFixed(1)}</text>`; }
+    for (let t = Math.ceil(tL); t <= tR; t++) { if (t % 4 !== 0 && t !== k) continue; const xx = xs(t); s += `<text x="${xx}" y="${m.t + ph + 16}" text-anchor="middle" font-size="10" fill="var(--text-secondary)">${t}</text>`; }
+    s += `<text x="${m.l + pw / 2}" y="${H - 2}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">時刻 k（step）</text>`;
+    // 目標
+    s += `<line x1="${m.l}" y1="${ys(p.r)}" x2="${m.l + pw}" y2="${ys(p.r)}" stroke="var(--red)" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.85"/><text x="${m.l + pw - 2}" y="${ys(p.r) - 5}" text-anchor="end" font-size="10" fill="var(--red)" font-weight="500">r = ${p.r.toFixed(1)}</text>`;
+    // 現在時刻
+    const xk = xs(k);
+    s += `<line x1="${xk}" y1="${m.t}" x2="${xk}" y2="${m.t + ph}" stroke="var(--text-primary)" stroke-width="1" stroke-dasharray="2,2" opacity="0.55"/><text x="${xk}" y="${m.t - 4}" text-anchor="middle" font-size="10" fill="var(--text-2)">いま</text>`;
+    // 制約なし予測（参考・点線）
+    let g0 = [`${xs(k)},${ys(state.histY[k])}`];
+    for (let i = 0; i < p.ysUnc.length; i++) g0.push(`${xs(k + 1 + i)},${ys(p.ysUnc[i])}`);
+    s += `<polyline points="${g0.join(' ')}" fill="none" stroke="var(--text-3)" stroke-width="1.2" stroke-dasharray="1,3" opacity="0.75"/>`;
+    // 実績
+    let pts = [];
+    for (let t = Math.max(0, Math.floor(tL)); t <= k; t++) pts.push(`${xs(t)},${ys(state.histY[t])}`);
+    s += `<polyline points="${pts.join(' ')}" fill="none" stroke="var(--blue)" stroke-width="2"/>`;
+    // 制約付き予測
+    let fpts = [`${xs(k)},${ys(state.histY[k])}`];
+    for (let i = 0; i < p.ys.length; i++) fpts.push(`${xs(k + 1 + i)},${ys(p.ys[i])}`);
+    s += `<polyline points="${fpts.join(' ')}" fill="none" stroke="var(--blue)" stroke-width="1.6" stroke-dasharray="5,3" opacity="0.9"/>`;
+    for (let i = 0; i < p.ys.length; i++) s += `<circle cx="${xs(k + 1 + i)}" cy="${ys(p.ys[i])}" r="2" fill="var(--blue)" opacity="0.7"/>`;
+    s += `<circle cx="${xs(k)}" cy="${ys(state.histY[k])}" r="4.5" fill="var(--surface)" stroke="var(--blue)" stroke-width="2"/>`;
+    document.getElementById('plot-y').innerHTML = s;
+  }
+
+  function drawU() {
+    const p = state.plan, k = state.k, Np = p.Np;
+    const W = 720, H = 200, m = { l: 42, r: 14, t: 16, b: 26 };
+    const pw = W - m.l - m.r, ph = H - m.t - m.b;
+    const PAST = 14, tL = Math.max(0, k - PAST), tR = k + Np;
+    const xs = t => m.l + (t - tL) / (tR - tL) * pw;
+    const bw = pw / (tR - tL) * 0.7;
+    const planC = [], planU = [];
+    for (let i = 0; i < Np; i++) { planC.push(i < p.Nc ? p.U[i] : 0); planU.push(i < p.Nc ? p.Uunc[i] : 0); }
+    const allU = state.histU.concat(planC).concat(planU).concat([p.umax, -p.umax]);
+    const [uLo, uHi] = niceRange(allU, 0.18, true);
+    const us = v => m.t + (1 - (v - uLo) / (uHi - uLo)) * ph;
+    let s = '';
+    // 禁止域（|u|>umax）
+    if (us(p.umax) > m.t) s += `<rect x="${m.l}" y="${m.t}" width="${pw}" height="${us(p.umax) - m.t}" fill="var(--red)" opacity="0.09"/>`;
+    if (m.t + ph > us(-p.umax)) s += `<rect x="${m.l}" y="${us(-p.umax)}" width="${pw}" height="${m.t + ph - us(-p.umax)}" fill="var(--red)" opacity="0.09"/>`;
+    s += `<line x1="${m.l}" y1="${us(p.umax)}" x2="${m.l + pw}" y2="${us(p.umax)}" stroke="var(--red)" stroke-width="1" stroke-dasharray="2,2" opacity="0.7"/>`;
+    s += `<line x1="${m.l}" y1="${us(-p.umax)}" x2="${m.l + pw}" y2="${us(-p.umax)}" stroke="var(--red)" stroke-width="1" stroke-dasharray="2,2" opacity="0.7"/>`;
+    s += `<text x="${m.l + 4}" y="${us(p.umax) - 4}" font-size="9" fill="var(--red)">+u_max</text>`;
+    s += `<text x="${m.l + 4}" y="${us(-p.umax) + 11}" font-size="9" fill="var(--red)">−u_max</text>`;
+    s += `<line x1="${m.l}" y1="${us(0)}" x2="${m.l + pw}" y2="${us(0)}" stroke="var(--border-strong)" stroke-width="0.5"/>`;
+    // 過去入力
+    for (let t = Math.max(0, Math.floor(tL)); t < k; t++) { const u = state.histU[t]; if (u === undefined) continue; const x0 = xs(t) - bw / 2; s += `<rect x="${x0}" y="${Math.min(us(0), us(u))}" width="${bw}" height="${Math.abs(us(u) - us(0))}" fill="var(--blue)" opacity="0.3"/>`; }
+    // 制約なし計画（枠線のみ）
+    for (let i = 0; i < Np; i++) { const u = planU[i]; const x0 = xs(k + i) - bw / 2; s += `<rect x="${x0}" y="${Math.min(us(0), us(u))}" width="${bw}" height="${Math.abs(us(u) - us(0))}" fill="none" stroke="var(--text-3)" stroke-width="0.75" stroke-dasharray="2,1.5" opacity="0.7"/>`; }
+    // 制約付き計画（塗り、先頭強調）
+    for (let i = 0; i < Np; i++) { const u = planC[i]; const x0 = xs(k + i) - bw / 2; const head = (i === 0); s += `<rect x="${x0}" y="${Math.min(us(0), us(u))}" width="${bw}" height="${Math.abs(us(u) - us(0))}" fill="${head ? 'var(--amber)' : 'var(--blue)'}" opacity="${head ? 1 : (i < p.Nc ? 0.5 : 0.16)}" rx="1"/>`; }
+    s += `<text x="${xs(k)}" y="${m.t + 9}" text-anchor="middle" font-size="9" fill="var(--amber)" font-weight="600">u*(k)</text>`;
+    s += `<text x="${m.l + pw / 2}" y="${H - 2}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">入力 u（加速度指令）</text>`;
+    document.getElementById('plot-u').innerHTML = s;
+  }
+
+  function refreshKPI() {
+    const p = state.plan;
+    document.getElementById('kpi-y').textContent = state.x[0].toFixed(2);
+    document.getElementById('kpi-u').textContent = (p.U[0] >= 0 ? '+' : '') + p.U[0].toFixed(2);
+    document.getElementById('kpi-act').textContent = p.active;
+    document.getElementById('kpi-k').innerHTML = state.k + ' <span class="kpi-unit">step</span>';
+    const uSat = Math.abs(Math.abs(p.U[0]) - p.umax) < 1e-3;
+    const diff = p.U.reduce((a, v, i) => a + Math.abs(v - p.Uunc[i]), 0);
+    let msg;
+    if (p.active === 0) {
+      msg = `いまは<b>制約が効いていません</b>（有効な制約 0）。制約付き解は<b>制約なしの最適解と一致</b>します（点線と破線が重なる）。u<sub>max</sub> を下げるか天井を下げて制約を効かせてみましょう。`;
+    } else {
+      msg = `<b>${p.active} 個の制約が有効</b>。QP は禁止域に踏み込まないよう入力列 U* を整形しました${uSat ? '（先頭入力が飽和値に貼り付き）' : ''}。参考の「制約なし解」（枠線/点線）との差 ${diff.toFixed(2)} が、制約が曲げた分です。PID なら積分器がワインドアップする場面を、MPC は<b>最適に</b>さばきます。`;
+    }
+    document.getElementById('explain').innerHTML = msg;
+  }
+
+  function render() { recompute(); drawY(); drawU(); refreshKPI(); }
+
+  function step() {
+    const p = state.plan || recompute();
+    state.histU[state.k] = p.U[0];
+    state.x = applyDynamics(state.x, p.U[0]);
+    state.k += 1;
+    state.histY[state.k] = state.x[0];
+    render();
+  }
+
+  function reset() { pause(); state = { x: [0, 0], k: 0, histY: [0], histU: [], plan: null }; render(); }
+
+  let timer = null;
+  function play() {
+    if (timer) return;
+    document.getElementById('btn-play').textContent = '一時停止';
+    timer = setInterval(() => {
+      const P = params();
+      const err = Math.abs(state.x[0] - (isFinite(P.ymax) ? Math.min(P.r, P.ymax) : P.r));
+      step();
+      if (state.k > 90 || (err < 0.02 && Math.abs(state.x[1]) < 0.02 && state.k > 4)) pause();
+    }, 350);
+  }
+  function pause() { if (timer) { clearInterval(timer); timer = null; } document.getElementById('btn-play').textContent = '自動再生'; }
+
+  function bindSlider(id, valId, fmt) { const el = document.getElementById(id), out = document.getElementById(valId); el.addEventListener('input', () => { out.textContent = fmt(+el.value); render(); }); out.textContent = fmt(+el.value); }
+  bindSlider('s-r', 'v-r', v => (v >= 0 ? '+' : '') + v.toFixed(1));
+  bindSlider('s-np', 'v-np', v => v.toFixed(0));
+  bindSlider('s-nc', 'v-nc', v => v.toFixed(0));
+  bindSlider('s-lam', 'v-lam', v => Math.pow(10, v).toFixed(3));
+  bindSlider('s-umax', 'v-umax', v => v.toFixed(2));
+  bindSlider('s-ymax', 'v-ymax', v => v.toFixed(2));
+  document.getElementById('s-np').addEventListener('input', () => { const np = +document.getElementById('s-np').value; const sc = document.getElementById('s-nc'); sc.max = np; if (+sc.value > np) { sc.value = np; document.getElementById('v-nc').textContent = np; } });
+  document.getElementById('c-ceil').addEventListener('change', () => { document.getElementById('ceil-ctrl').classList.toggle('disabled', !document.getElementById('c-ceil').checked); render(); });
+
+  document.getElementById('btn-step').addEventListener('click', () => { pause(); step(); });
+  document.getElementById('btn-play').addEventListener('click', () => { if (timer) pause(); else play(); });
+  document.getElementById('btn-reset').addEventListener('click', reset);
+
+  render();
+})();
+</script>
+</body>
+</html>
