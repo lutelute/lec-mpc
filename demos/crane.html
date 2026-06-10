@@ -124,7 +124,7 @@
     <div>
       <div class="panel">
         <div class="panel-hdr"><div class="panel-title">操作</div></div>
-        <div class="chk-row"><input type="checkbox" id="c-mpc" checked><label for="c-mpc">揺れ抑制（MPC）を有効化</label></div>
+        <div class="chk-row"><input type="checkbox" id="c-mpc" checked><label for="c-mpc">PID を同時比較（薄い橙で重ねる）</label></div>
         <div class="btn-row">
           <button class="btn" id="b-auto" style="background:linear-gradient(90deg,var(--blue),var(--blue-deep));color:#fff;border-color:transparent;">▶ オート上映</button>
           <button class="btn warn" id="b-kick">揺らす（外乱）</button>
@@ -189,8 +189,9 @@
     const Gain=mm(inv(H),SuTQ);const K1=Gain[0];Kfb=[0,0,0,0];Kr=0;for(let i=0;i<Np*4;i++){for(let c=0;c<4;c++)Kfb[c]+=K1[i]*Sx[i][c];if(i%4===0)Kr+=K1[i];}}
   rebuildGain();
 
-  let st=[0,0,0,0],target=0,Fmax=8,useMPC=true,lastF=0;
-  function force(){let u;if(useMPC){u=Kr*target;for(let c=0;c<4;c++)u-=Kfb[c]*st[c];}else{u=3.0*(target-st[0])-2.0*st[1];}return Math.max(-Fmax,Math.min(Fmax,u));}
+  let st=[0,0,0,0],stP=[0,0,0,0],target=0,Fmax=8,showPID=true,lastF=0,lastFP=0;
+  function force(){let u=Kr*target;for(let c=0;c<4;c++)u-=Kfb[c]*st[c];return Math.max(-Fmax,Math.min(Fmax,u));}
+  function pidForce(s){let u=3.0*(target-s[0])-2.0*s[1];return Math.max(-Fmax,Math.min(Fmax,u));}
 
   const NS='http://www.w3.org/2000/svg';const stage=document.getElementById('stage');
   const W=760,H=360,railY=70,scale=110,cx=W/2,TH=2.6;
@@ -213,10 +214,18 @@
   stage.appendChild(cable);const trG=el('g',{});trG.appendChild(trolley);stage.appendChild(trG);const ldG=el('g',{});ldG.appendChild(load);stage.appendChild(ldG);
   const bob=load;bob.setAttribute('filter','url(#cglow)');  // 吊り荷にグロー適用
   const bobTrail=[];
+  // PID 比較ゴースト（薄い橙のアウトライン）
+  const ghostG=el('g',{opacity:'0.5'});
+  const gcable=el('line',{x1:0,y1:0,x2:0,y2:0,stroke:'var(--amber)','stroke-width':1.4,'stroke-dasharray':'3,2'});
+  const gtrolley=el('rect',{x:-30,y:-14,width:60,height:24,rx:4,fill:'none',stroke:'var(--amber)','stroke-width':1.6});
+  const gload=el('rect',{x:-16,y:-16,width:32,height:32,rx:4,fill:'none',stroke:'var(--amber)','stroke-width':2});
+  const gtrG=el('g',{}),gldG=el('g',{});gtrG.appendChild(gtrolley);gldG.appendChild(gload);
+  ghostG.appendChild(gcable);ghostG.appendChild(gtrG);ghostG.appendChild(gldG);stage.appendChild(ghostG);
+  const glabel=el('text',{'font-size':9,fill:'var(--amber)','text-anchor':'middle'});glabel.textContent='PID';ghostG.appendChild(glabel);
 
   // ===== 時系列ロガー =====
   const $=id=>document.getElementById(id);
-  const phHist=[],FHist=[],xHist=[];const HIST=240; // 12s @ ctrlDt
+  const phHist=[],FHist=[],xHist=[],phHistP=[];const HIST=240; // 12s @ ctrlDt
   const strip=$('strip');
   function drawStrip(){
     const W2=760,topH=92,botH=88,m={l:42,r:10,t:8,gap:12};const pw=W2-m.l-m.r;
@@ -229,9 +238,10 @@
     s+=`<line x1="${m.l}" y1="${phY(0)}" x2="${m.l+pw}" y2="${phY(0)}" stroke="var(--border-strong)" stroke-width="0.5"/>`;
     s+=`<text x="${m.l-5}" y="${ty0+9}" text-anchor="end" font-size="9" fill="var(--text-secondary)">+${phMax.toFixed(0)}°</text>`;
     s+=`<text x="${m.l-5}" y="${ty1}" text-anchor="end" font-size="9" fill="var(--text-secondary)">-${phMax.toFixed(0)}°</text>`;
-    s+=`<text x="${m.l+4}" y="${ty0+10}" font-size="9" fill="var(--red)">φ 振れ角</text>`;
-    if(n>1){let p1='',p2='';for(let i=0;i<n;i++){p1+=`${xAt(i+HIST-n).toFixed(1)},${phY(phHist[i]).toFixed(1)} `;p2+=`${xAt(i+HIST-n).toFixed(1)},${phY((xHist[i])*15).toFixed(1)} `;}
+    s+=`<text x="${m.l+4}" y="${ty0+10}" font-size="9" fill="var(--red)">φ 振れ角（<tspan fill="var(--red)">MPC</tspan>${showPID?` / <tspan fill="var(--amber)">PID</tspan>`:''}）</text>`;
+    if(n>1){let p1='',p2='',pP='';for(let i=0;i<n;i++){const xx=xAt(i+HIST-n).toFixed(1);p1+=`${xx},${phY(phHist[i]).toFixed(1)} `;p2+=`${xx},${phY((xHist[i])*15).toFixed(1)} `;if(!isNaN(phHistP[i]))pP+=`${xx},${phY(phHistP[i]).toFixed(1)} `;}
       s+=`<polyline points="${p2}" fill="none" stroke="var(--blue)" stroke-width="1" opacity="0.5"/>`;
+      if(pP)s+=`<polyline points="${pP}" fill="none" stroke="var(--amber)" stroke-width="1.4" stroke-dasharray="4,3" opacity="0.95"/>`;
       s+=`<polyline points="${p1}" fill="none" stroke="var(--red)" stroke-width="1.6"/>`;}
     // 下: F(N)
     const by0=ty1+m.gap,by1=by0+botH;const fY=v=>by0+(1-(v+Fmax)/(2*Fmax))*botH;
@@ -266,14 +276,16 @@
     tgt.setAttribute('transform',`translate(${cx+target*scale},0)`);
     const fy=railY-30,flen=Math.max(-55,Math.min(55,lastF*4));fLine.setAttribute('x1',px);fLine.setAttribute('y1',fy);fLine.setAttribute('x2',px+flen);fLine.setAttribute('y2',fy);
     if(Math.abs(flen)>4){const d=Math.sign(flen);fHead.setAttribute('d',`M${px+flen},${fy} L${px+flen-d*7},${fy-4} L${px+flen-d*7},${fy+4} Z`);}else fHead.setAttribute('d','');
+    // PID 比較ゴースト
+    if(showPID){ghostG.style.display='';const gpx=cx+stP[0]*scale;gtrG.setAttribute('transform',`translate(${gpx},${railY})`);const gplen=L*scale*1.5;const gbx=gpx+gplen*Math.sin(stP[2]),gby=railY+gplen*Math.cos(stP[2]);gcable.setAttribute('x1',gpx);gcable.setAttribute('y1',railY);gcable.setAttribute('x2',gbx);gcable.setAttribute('y2',gby);gldG.setAttribute('transform',`translate(${gbx},${gby})`);glabel.setAttribute('x',gbx);glabel.setAttribute('y',gby+28);}else ghostG.style.display='none';
     document.getElementById('k-x').textContent=st[0].toFixed(2)+' m';
     document.getElementById('k-ph').textContent=(st[2]*180/Math.PI).toFixed(1)+'°';
     document.getElementById('k-f').textContent=lastF.toFixed(1)+' N';
-    document.getElementById('k-md').textContent=useMPC?'MPC 揺れ抑制':'PD（位置のみ）';
-    const sw=Math.abs(st[2]*180/Math.PI);
+    document.getElementById('k-md').textContent=showPID?'MPC vs PID':'MPC 揺れ抑制';
+    const sw=Math.abs(st[2]*180/Math.PI),swP=Math.abs(stP[2]*180/Math.PI);
     let msg;
-    if(Math.abs(target-st[0])>0.1)msg=useMPC?`目標へ<b>運搬中</b>。MPC は到着時に振れが消えるよう加減速を整形しています。`:`<b>位置だけ</b>追う PD で運搬中。積み荷の揺れは無視されます。`;
-    else if(sw>3)msg=useMPC?`到着。残り振れを<b>能動的に抑制中</b>。`:`到着したが<b style="color:var(--red)">積み荷が ${sw.toFixed(0)}° 揺れている</b>（PD は揺れを抑えない）。「揺れ抑制」を ON にして比べてみてください。`;
+    if(Math.abs(target-st[0])>0.1)msg=showPID?`運搬中。<b style="color:var(--blue)">MPC</b> は振れが消えるよう加減速を整形、<b style="color:var(--amber)">PID（薄色）</b>は位置だけ追って揺れを置き去り。`:`目標へ<b>運搬中</b>。MPC は到着時に振れが消えるよう加減速を整形しています。`;
+    else if(sw>3||(showPID&&swP>3))msg=showPID?`到着。<b style="color:var(--blue)">MPC は残り振れを能動抑制</b>、<b style="color:var(--amber)">PID は ${swP.toFixed(0)}° 揺れたまま</b>——同じ力上限でこの差。`:`到着。残り振れを<b>能動的に抑制中</b>。`;
     else msg=`<b>静止・直下。</b>天井レールをクリックで目標移動、「揺らす」で外乱を与えられます。`;
     document.getElementById('explain').innerHTML=msg;
     refreshReadouts();if((frame++ %2)===0)drawStrip();
@@ -281,19 +293,21 @@
 
   let acc=0,prev=performance.now(),auto=false,autoAcc=0;
   function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;
-    if(auto){autoAcc+=dtr;if(autoAcc>3.2){autoAcc=0;if(Math.random()<0.6){target=Math.round((Math.random()*4-2)*10)/10;}else{st[3]+=(Math.random()<0.5?-1:1)*1.6;}}}
+    if(auto){autoAcc+=dtr;if(autoAcc>3.2){autoAcc=0;if(Math.random()<0.6){target=Math.round((Math.random()*4-2)*10)/10;}else{const k=(Math.random()<0.5?-1:1)*1.6;st[3]+=k;stP[3]+=k;}}}
     acc+=dtr;let guard=0;
-    while(acc>=ctrlDt&&guard<10){const F=force();lastF=F;for(let i=0;i<4;i++)st=rk4(st,F,ctrlDt/4);acc-=ctrlDt;guard++;
-      phHist.push(st[2]*180/Math.PI);FHist.push(F);xHist.push(st[0]);if(phHist.length>HIST){phHist.shift();FHist.shift();xHist.shift();}}
+    while(acc>=ctrlDt&&guard<10){const F=force();lastF=F;for(let i=0;i<4;i++)st=rk4(st,F,ctrlDt/4);
+      if(showPID){const FP=pidForce(stP);lastFP=FP;for(let i=0;i<4;i++)stP=rk4(stP,FP,ctrlDt/4);}
+      acc-=ctrlDt;guard++;
+      phHist.push(st[2]*180/Math.PI);FHist.push(F);xHist.push(st[0]);phHistP.push(showPID?stP[2]*180/Math.PI:NaN);if(phHist.length>HIST){phHist.shift();FHist.shift();xHist.shift();phHistP.shift();}}
     render();requestAnimationFrame(loop);}
   requestAnimationFrame(loop);
 
   function clientToX(cxp){const r=stage.getBoundingClientRect();const vx=(cxp-r.left)*(W/r.width);return Math.max(-TH,Math.min(TH,(vx-cx)/scale));}
   stage.addEventListener('pointerdown',e=>{target=Math.round(clientToX(e.clientX)*100)/100;});
-  document.getElementById('c-mpc').addEventListener('change',e=>{useMPC=e.target.checked;});
-  document.getElementById('b-kick').addEventListener('click',()=>{st[3]+=(Math.random()<0.5?-1:1)*2.5;});
-  document.getElementById('b-auto').addEventListener('click',e=>{auto=!auto;e.target.textContent=auto?'■ オート停止':'▶ オート上映';if(auto){useMPC=true;document.getElementById('c-mpc').checked=true;autoAcc=2.6;}});
-  document.getElementById('b-reset').addEventListener('click',()=>{st=[0,0,0,0];target=0;lastF=0;phHist.length=0;FHist.length=0;xHist.length=0;bobTrail.length=0;auto=false;autoAcc=0;document.getElementById('b-auto').textContent='▶ オート上映';});
+  document.getElementById('c-mpc').addEventListener('change',e=>{showPID=e.target.checked;if(showPID){stP=st.slice();phHistP.length=0;}});
+  document.getElementById('b-kick').addEventListener('click',()=>{const k=(Math.random()<0.5?-1:1)*2.5;st[3]+=k;stP[3]+=k;});
+  document.getElementById('b-auto').addEventListener('click',e=>{auto=!auto;e.target.textContent=auto?'■ オート停止':'▶ オート上映';if(auto){showPID=true;document.getElementById('c-mpc').checked=true;autoAcc=2.6;}});
+  document.getElementById('b-reset').addEventListener('click',()=>{st=[0,0,0,0];stP=[0,0,0,0];target=0;lastF=0;lastFP=0;phHist.length=0;FHist.length=0;xHist.length=0;phHistP.length=0;bobTrail.length=0;auto=false;autoAcc=0;document.getElementById('b-auto').textContent='▶ オート上映';});
   document.getElementById('s-len').addEventListener('input',e=>{L=+e.target.value;document.getElementById('v-len').textContent=L.toFixed(2)+' m';rebuildGain();});
   document.getElementById('s-fmax').addEventListener('input',e=>{Fmax=+e.target.value;document.getElementById('v-fmax').textContent=Fmax+' N';});
   if(location.search.indexOf('show')>=0){const b=document.getElementById('b-auto');if(b)b.click();}
