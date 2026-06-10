@@ -114,7 +114,7 @@
       <div class="panel">
         <div class="panel-hdr"><div class="panel-title">ステップ応答 y(t)</div><div class="panel-hint" id="step-hint">目標へ追従 / 外乱への復帰</div></div>
         <svg id="plot-y" viewBox="0 0 720 300" style="width:100%;" role="img"></svg>
-        <div class="legend">
+        <div class="legend" id="leg-y">
           <span><i class="sw" style="border-top-color:var(--blue);"></i>MPC</span>
           <span><i class="sw" style="border-top-color:var(--amber);"></i>PID</span>
           <span><i class="sw" style="border-top-color:var(--red);border-top-style:dashed;"></i>目標 r</span>
@@ -156,6 +156,7 @@
           <input type="range" id="s-r" min="-2" max="2" step="0.1" value="1">
         </div>
         <div class="chk-row"><input type="checkbox" id="c-dist"><label for="c-dist">外乱を加える（途中で入力に一定外乱）</label></div>
+        <div class="chk-row"><input type="checkbox" id="c-multi"><label for="c-multi">複数手法を重ねる（最良＝濃色 / 他＝薄いシルエット）</label></div>
 
         <div class="grp-label grp-mpc">MPC パラメータ</div>
         <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">予測ホライズン N<sub>p</sub></span><span class="ctrl-val" id="v-np">20</span></div><input class="mpc" type="range" id="s-np" min="2" max="30" step="1" value="20"></div>
@@ -276,6 +277,25 @@
     s+=poly(yM,'var(--blue)',2);
     $('plot-y').innerHTML=s;
   }
+  // 複数手法を重ね描き（最良＝濃太・他＝薄いシルエット）
+  function drawYmulti(methods,r,dist){
+    const W=720,H=300,m={l:44,r:54,t:14,b:30},pw=W-m.l-m.r,ph=H-m.t-m.b;
+    const T=STEPS*dt;const xs=t=>m.l+t/T*pw;
+    const base=[r,0];const cap=10*Math.max(1,Math.abs(r))+5;
+    methods.forEach(me=>{if(me.best||me.name==='MPC'||me.name==='PID')me.ys.forEach(v=>{if(Math.abs(v)<cap)base.push(v);});});
+    const[lo,hi]=niceRange(base,0.14);const cl=v=>Math.max(lo,Math.min(hi,v));const ys=v=>m.t+(1-(cl(v)-lo)/(hi-lo))*ph;
+    let s='';
+    for(let g=0;g<=4;g++){const v=lo+(hi-lo)*g/4,yy=ys(v);s+=`<line x1="${m.l}" y1="${yy}" x2="${m.l+pw}" y2="${yy}" stroke="var(--border)" stroke-width="0.5"/><text x="${m.l-6}" y="${yy+3}" text-anchor="end" font-size="10" fill="var(--text-secondary)">${v.toFixed(1)}</text>`;}
+    for(let tt=0;tt<=Math.floor(T);tt+=2){const xx=xs(tt);s+=`<text x="${xx}" y="${m.t+ph+16}" text-anchor="middle" font-size="10" fill="var(--text-secondary)">${tt}</text>`;}
+    s+=`<text x="${m.l+pw/2}" y="${H-2}" text-anchor="middle" font-size="11" fill="var(--text-secondary)">時間 t (s)</text>`;
+    s+=`<line x1="${m.l}" y1="${ys(r)}" x2="${m.l+pw}" y2="${ys(r)}" stroke="var(--red)" stroke-width="1.4" stroke-dasharray="6,3" opacity="0.85"/>`;
+    if(dist){const dx=xs(DIST_STEP*dt);s+=`<line x1="${dx}" y1="${m.t}" x2="${dx}" y2="${m.t+ph}" stroke="var(--text-3)" stroke-width="1" stroke-dasharray="2,3"/>`;}
+    const poly=(arr,col,w,op)=>{let pts=[];for(let i=0;i<arr.length;i++)pts.push(`${xs((i+1)*dt)},${ys(arr[i])}`);return `<polyline points="${pts.join(' ')}" fill="none" stroke="${col}" stroke-width="${w}" opacity="${op}"/>`;};
+    methods.filter(me=>!me.best).forEach(me=>{s+=poly(me.ys,me.col,1.3,0.30);});       // 薄いシルエット
+    const best=methods.find(me=>me.best);if(best)s+=poly(best.ys,best.col,2.8,1);        // 最良＝濃太
+    methods.forEach(me=>{const yv=ys(me.ys[me.ys.length-1]);s+=`<text x="${m.l+pw+4}" y="${yv+3}" font-size="9.5" fill="${me.col}" font-weight="${me.best?'700':'400'}" opacity="${me.best?'1':'0.55'}">${me.name}${me.best?' ★':''}</text>`;});
+    $('plot-y').innerHTML=s;
+  }
   function drawU(uM,uP){
     const W=720,H=170,m={l:44,r:14,t:12,b:26},pw=W-m.l-m.r,ph=H-m.t-m.b;
     const T=STEPS*dt;const xs=t=>m.l+t/T*pw;
@@ -322,7 +342,17 @@
     const ol=eig(p.A);
     const {Acl}=mpcAug(p,q.Np,q.Nc,q.lam);
     const cl=eig(Acl);
-    drawBlock(); drawY(M.ys,Pd.ys,q.r,q.dist); drawU(M.us,Pd.us); drawZ(ol,cl);
+    drawBlock(); drawU(M.us,Pd.us); drawZ(ol,cl);
+    if(document.getElementById('c-multi').checked){
+      const Pm=simPID(p,q.Kp,0,0,q.r,q.dist), PDm=simPID(p,q.Kp,0,q.Kd,q.r,q.dist);
+      const list=[{name:'P',ys:Pm.ys,col:'#9aa0a6'},{name:'PD',ys:PDm.ys,col:'#3DA35D'},{name:'PID',ys:Pd.ys,col:'var(--amber)'},{name:'MPC',ys:M.ys,col:'var(--blue)'}];
+      const ise=a=>a.reduce((s2,v)=>s2+(v-q.r)*(v-q.r),0);let bi=0,bv=Infinity;list.forEach((me,i)=>{const e=ise(me.ys);if(e<bv){bv=e;bi=i;}});list[bi].best=true;
+      drawYmulti(list,q.r,q.dist);
+      $('leg-y').innerHTML='<span><i class="sw" style="border-top-color:var(--blue);"></i>MPC</span><span><i class="sw" style="border-top-color:var(--amber);"></i>PID</span><span><i class="sw" style="border-top-color:#3DA35D;"></i>PD</span><span><i class="sw" style="border-top-color:#9aa0a6;"></i>P</span><span><i class="sw" style="border-top-color:var(--red);border-top-style:dashed;"></i>目標</span><span style="font-weight:600">★＝最良（積分二乗誤差 ISE 最小・濃色）／他＝薄いシルエット</span>';
+    } else {
+      drawY(M.ys,Pd.ys,q.r,q.dist);
+      $('leg-y').innerHTML='<span><i class="sw" style="border-top-color:var(--blue);"></i>MPC</span><span><i class="sw" style="border-top-color:var(--amber);"></i>PID</span><span><i class="sw" style="border-top-color:var(--red);border-top-style:dashed;"></i>目標 r</span><span><i class="sw" style="border-top-color:var(--text-3);border-top-style:dotted;"></i>外乱注入</span>';
+    }
     // metrics（r=1換算でMp/essはそのまま比率/絶対、見やすさ優先で表示）
     $('m-mp').textContent=fmt(mM.Mp,1)+'%'; $('m-ts').textContent=fmt(mM.Ts,2)+'s'; $('m-ess').textContent=fmt(mM.ess,3); $('m-u').textContent=fmt(Math.max(...M.us.map(Math.abs)),2);
     $('p-mp').textContent=fmt(mP.Mp,1)+'%'; $('p-ts').textContent=fmt(mP.Ts,2)+'s'; $('p-ess').textContent=fmt(mP.ess,3); $('p-u').textContent=fmt(Math.max(...Pd.us.map(Math.abs)),2);
@@ -342,6 +372,7 @@
   bind('s-kd','v-kd',v=>v.toFixed(1));
   $('s-np').addEventListener('input',()=>{const np=+$('s-np').value,nc=$('s-nc');nc.max=np;if(+nc.value>np){nc.value=np;$('v-nc').textContent=np;}});
   $('c-dist').addEventListener('change',update);
+  $('c-multi').addEventListener('change',update);
   // plant select → PID 既定値に更新
   document.querySelectorAll('.pbtn').forEach(b=>b.addEventListener('click',()=>{
     document.querySelectorAll('.pbtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');cur=b.dataset.p;
