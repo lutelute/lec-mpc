@@ -7,3 +7,7 @@ logs/
 *.swp
 .idea/
 .vscode/
+
+# 一時ファイル（ブラウザ確認・パッチのバックアップ）
+.playwright-mcp/
+*.orig
