@@ -320,12 +320,12 @@
             <defs><marker id="ahig" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#7d7c75"/></marker></defs>
             <text x="2" y="43" font-size="10" fill="#56554f">d*</text>
             <circle cx="30" cy="39" r="11" fill="#fff" stroke="#222" stroke-width="1"/><text x="30" y="44" text-anchor="middle" font-size="13">⊕</text>
-            <text x="17" y="60" font-size="11" fill="#D8423F">−</text>
+            <text x="17" y="60" font-size="11" fill="#C0392B">−</text>
             <!-- 制御器：状態フィードバック -->
             <rect x="52" y="25" width="44" height="28" rx="3" fill="#eaf2fb" stroke="#2F7DD1" stroke-width="1.2"/>
             <text x="74" y="39" text-anchor="middle" font-weight="700" fill="#0C447C" font-size="13">−K</text>
             <text x="74" y="49" text-anchor="middle" font-size="7.5" fill="#0C447C">状態FB</text>
-            <text x="74" y="68" text-anchor="middle" font-size="8" fill="#D8423F">制約 |u|≤a_max</text>
+            <text x="74" y="68" text-anchor="middle" font-size="8" fill="#C0392B">制約 |u|≤a_max</text>
             <!-- プラント（伝達関数の要素分解） -->
             <rect x="116" y="20" width="218" height="40" rx="3" fill="none" stroke="#c3bdae" stroke-width="1" stroke-dasharray="3,2"/>
             <text x="225" y="16" text-anchor="middle" font-size="8" fill="#8c8b84">プラント（自車の縦運動）</text>
@@ -374,7 +374,7 @@
         <div class="leg">
           <span><i style="border-top-color:#2F7DD1;"></i>MPC</span>
           <span><i style="border-top-color:#DD901C;border-top-style:dashed;"></i>PID</span>
-          <span><i style="border-top-color:#D8423F;border-top-style:dotted;"></i>目標 / 上限</span>
+          <span><i style="border-top-color:#C0392B;border-top-style:dotted;"></i>目標 / 上限</span>
         </div>
         <div class="figbox plain">
           <svg id="acc_gap" viewBox="0 0 380 132" role="img" aria-label="車間の時間応答"></svg>
@@ -606,27 +606,27 @@ DEMOS.acc=function(){
   (function(){const W=380,H=132,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const gMax=Math.max(22,...mpc.gap,...pid.gap),gMin=Math.min(0,...pid.gap);
     const yhi=Math.ceil(gMax/5)*5,ylo=Math.min(0,Math.floor(gMin/5)*5);const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s='';
-    s+=`<rect x="${xPx(brakeT0,pw)}" y="${M.t}" width="${xPx(brakeT1,pw)-xPx(brakeT0,pw)}" height="${ph}" fill="#D8423F" opacity="0.08"/>`;
+    s+=`<rect x="${xPx(brakeT0,pw)}" y="${M.t}" width="${xPx(brakeT1,pw)-xPx(brakeT0,pw)}" height="${ph}" fill="#C0392B" opacity="0.08"/>`;
     for(let tk=3;tk<T;tk+=3){const x=xPx(tk,pw);s+=`<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}
     for(let g=ylo;g<=yhi;g+=5){const y=yPx(g);s+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="rgba(0,0,0,.06)"/>`;s+=`<text x="${M.l-5}" y="${y+3}" text-anchor="end" font-size="8.5" fill="#9a988e">${g}</text>`;}
     s+=`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
-    s+=`<line x1="${M.l}" y1="${yPx(dstar)}" x2="${W-M.r}" y2="${yPx(dstar)}" stroke="#D8423F" stroke-width="1" stroke-dasharray="3,3" opacity=".7"/>`;
-    s+=`<text x="${W-M.r}" y="${yPx(dstar)-3}" text-anchor="end" font-size="9" fill="#D8423F">目標 d*=${dstar}</text>`;
-    if(ylo<0){s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="#D8423F" opacity=".5"/>`;s+=`<text x="${M.l+2}" y="${yPx(0)-3}" font-size="8.5" fill="#D8423F">追突</text>`;}
+    s+=`<line x1="${M.l}" y1="${yPx(dstar)}" x2="${W-M.r}" y2="${yPx(dstar)}" stroke="#C0392B" stroke-width="1" stroke-dasharray="3,3" opacity=".7"/>`;
+    s+=`<text x="${W-M.r}" y="${yPx(dstar)-3}" text-anchor="end" font-size="9" fill="#C0392B">目標 d*=${dstar}</text>`;
+    if(ylo<0){s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="#C0392B" opacity=".5"/>`;s+=`<text x="${M.l+2}" y="${yPx(0)-3}" font-size="8.5" fill="#C0392B">追突</text>`;}
     s+=`<polyline points="${poly(pid.gap,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
     s+=`<polyline points="${poly(mpc.gap,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;
     el('acc_gap').innerHTML=s;})();
   // 下段：加速度
   (function(){const W=380,H=110,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const aHi=Math.max(aMax,1)+0.6,aLo=Math.min(aMin,-1)-0.6;const yPx=v=>M.t+(1-(v-aLo)/(aHi-aLo))*ph;let s='';
-    s+=`<rect x="${xPx(brakeT0,pw)}" y="${M.t}" width="${xPx(brakeT1,pw)-xPx(brakeT0,pw)}" height="${ph}" fill="#D8423F" opacity="0.08"/>`;
+    s+=`<rect x="${xPx(brakeT0,pw)}" y="${M.t}" width="${xPx(brakeT1,pw)-xPx(brakeT0,pw)}" height="${ph}" fill="#C0392B" opacity="0.08"/>`;
     for(let tk=3;tk<T;tk+=3){const x=xPx(tk,pw);s+=`<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}
     s+=`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
     s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="rgba(0,0,0,.22)"/>`;
-    s+=`<line x1="${M.l}" y1="${yPx(aMax)}" x2="${W-M.r}" y2="${yPx(aMax)}" stroke="#2E9457" stroke-dasharray="3,3" opacity=".7"/>`;
-    s+=`<text x="${W-M.r}" y="${yPx(aMax)-3}" text-anchor="end" font-size="9" fill="#2E9457">a_max ${aMax}</text>`;
-    s+=`<line x1="${M.l}" y1="${yPx(aMin)}" x2="${W-M.r}" y2="${yPx(aMin)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".7"/>`;
-    s+=`<text x="${W-M.r}" y="${yPx(aMin)+10}" text-anchor="end" font-size="9" fill="#D8423F">a_min ${aMin}</text>`;
+    s+=`<line x1="${M.l}" y1="${yPx(aMax)}" x2="${W-M.r}" y2="${yPx(aMax)}" stroke="#1f7a47" stroke-dasharray="3,3" opacity=".7"/>`;
+    s+=`<text x="${W-M.r}" y="${yPx(aMax)-3}" text-anchor="end" font-size="9" fill="#1f7a47">a_max ${aMax}</text>`;
+    s+=`<line x1="${M.l}" y1="${yPx(aMin)}" x2="${W-M.r}" y2="${yPx(aMin)}" stroke="#C0392B" stroke-dasharray="3,3" opacity=".7"/>`;
+    s+=`<text x="${W-M.r}" y="${yPx(aMin)+10}" text-anchor="end" font-size="9" fill="#C0392B">a_min ${aMin}</text>`;
     s+=`<polyline points="${poly(pid.acc,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
     s+=`<polyline points="${poly(mpc.acc,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;
     for(let tk=0;tk<=T;tk+=3){s+=`<text x="${xPx(tk,pw)}" y="${H-3}" text-anchor="middle" font-size="9" fill="#8c8b84">${tk}s</text>`;}

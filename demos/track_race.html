@@ -236,11 +236,11 @@
         <div class="figbox">
           <svg viewBox="0 0 360 116" role="img" aria-label="台車プラント図">
             <line x1="14" y1="86" x2="346" y2="86" stroke="#9b988e" stroke-width="3"/>
-            <rect x="300" y="30" width="46" height="56" fill="#D8423F" opacity="0.10"/>
-            <line x1="300" y1="28" x2="300" y2="90" stroke="#D8423F" stroke-width="2.5"/>
+            <rect x="300" y="30" width="46" height="56" fill="#C0392B" opacity="0.10"/>
+            <line x1="300" y1="28" x2="300" y2="90" stroke="#C0392B" stroke-width="2.5"/>
             <text x="303" y="24" font-size="10" fill="#b9322f" font-weight="600">壁 x ≤ x_wall</text>
-            <line x1="252" y1="34" x2="252" y2="90" stroke="#2E9457" stroke-width="1.5" stroke-dasharray="5,4"/>
-            <text x="252" y="28" text-anchor="middle" font-size="10" fill="#2E9457" font-weight="600">目標 r</text>
+            <line x1="252" y1="34" x2="252" y2="90" stroke="#1f7a47" stroke-width="1.5" stroke-dasharray="5,4"/>
+            <text x="252" y="28" text-anchor="middle" font-size="10" fill="#1f7a47" font-weight="600">目標 r</text>
             <g transform="translate(96,86)">
               <rect x="-30" y="-23" width="60" height="23" rx="6" fill="#2F7DD1"/>
               <circle cx="-17" cy="6" r="6" fill="#1d1d1d"/><circle cx="17" cy="6" r="6" fill="#1d1d1d"/>
@@ -345,7 +345,7 @@
         <div class="leg">
           <span><i style="border-top-color:#2F7DD1;"></i>MPC</span>
           <span><i style="border-top-color:#DD901C;border-top-style:dashed;"></i>PID（同じ F_max）</span>
-          <span><i style="border-top-color:#D8423F;border-top-style:dotted;"></i>壁 / 上限</span>
+          <span><i style="border-top-color:#C0392B;border-top-style:dotted;"></i>壁 / 上限</span>
         </div>
         <div class="figbox plain">
           <svg id="tr_pos" viewBox="0 0 380 110" role="img" aria-label="位置の時間応答"></svg>
@@ -562,14 +562,14 @@ DEMOS.track=function(){
   (function(){const W=380,H=110,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const pMax=Math.max(target,wall,...mpc.pos,...pid.pos),pMin=Math.min(X0,...mpc.pos,...pid.pos);
     const yhi=Math.ceil((pMax+0.2)*2)/2,ylo=Math.floor((pMin-0.2)*2)/2;const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s='';
-    s+=`<rect x="${M.l}" y="${M.t}" width="${pw}" height="${Math.max(0,yPx(wall)-M.t)}" fill="#D8423F" opacity="0.08"/>`;
+    s+=`<rect x="${M.l}" y="${M.t}" width="${pw}" height="${Math.max(0,yPx(wall)-M.t)}" fill="#C0392B" opacity="0.08"/>`;
     for(let tk=3;tk<T;tk+=3){const x=xPx(tk,pw);s+=`<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}
     for(let g=Math.ceil(ylo);g<=Math.floor(yhi);g+=1){const y=yPx(g);s+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="rgba(0,0,0,.06)"/>`;s+=`<text x="${M.l-5}" y="${y+3}" text-anchor="end" font-size="8.5" fill="#9a988e">${g}</text>`;}
     s+=`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
-    s+=`<line x1="${M.l}" y1="${yPx(wall)}" x2="${W-M.r}" y2="${yPx(wall)}" stroke="#D8423F" stroke-width="1.4" stroke-dasharray="2,2"/>`;
-    s+=`<text x="${W-M.r}" y="${yPx(wall)-3}" text-anchor="end" font-size="9" fill="#D8423F">壁 ${wall.toFixed(1)}</text>`;
-    s+=`<line x1="${M.l}" y1="${yPx(target)}" x2="${W-M.r}" y2="${yPx(target)}" stroke="#2E9457" stroke-width="1" stroke-dasharray="5,4" opacity=".8"/>`;
-    s+=`<text x="${W-M.r}" y="${yPx(target)+11}" text-anchor="end" font-size="9" fill="#2E9457">目標 ${target.toFixed(1)}</text>`;
+    s+=`<line x1="${M.l}" y1="${yPx(wall)}" x2="${W-M.r}" y2="${yPx(wall)}" stroke="#C0392B" stroke-width="1.4" stroke-dasharray="2,2"/>`;
+    s+=`<text x="${W-M.r}" y="${yPx(wall)-3}" text-anchor="end" font-size="9" fill="#C0392B">壁 ${wall.toFixed(1)}</text>`;
+    s+=`<line x1="${M.l}" y1="${yPx(target)}" x2="${W-M.r}" y2="${yPx(target)}" stroke="#1f7a47" stroke-width="1" stroke-dasharray="5,4" opacity=".8"/>`;
+    s+=`<text x="${W-M.r}" y="${yPx(target)+11}" text-anchor="end" font-size="9" fill="#1f7a47">目標 ${target.toFixed(1)}</text>`;
     s+=`<polyline points="${poly(pid.pos,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
     s+=`<polyline points="${poly(mpc.pos,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;
     el('tr_pos').innerHTML=s;})();

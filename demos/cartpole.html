@@ -269,8 +269,8 @@
         <div class="figbox">
           <svg viewBox="0 0 360 110" role="img" aria-label="倒立振子のプラント図">
             <line x1="20" y1="88" x2="340" y2="88" stroke="#9a978d" stroke-width="2.5"/>
-            <line x1="180" y1="88" x2="180" y2="96" stroke="#D8423F" stroke-width="1.4" stroke-dasharray="4,3"/>
-            <text x="180" y="106" text-anchor="middle" font-size="9.5" fill="#D8423F">目標 x*=0</text>
+            <line x1="180" y1="88" x2="180" y2="96" stroke="#C0392B" stroke-width="1.4" stroke-dasharray="4,3"/>
+            <text x="180" y="106" text-anchor="middle" font-size="9.5" fill="#C0392B">目標 x*=0</text>
             <g transform="translate(150,88)">
               <rect x="-32" y="-20" width="64" height="19" rx="5" fill="#2F7DD1"/>
               <circle cx="-18" cy="2" r="5.5" fill="#0C447C"/><circle cx="18" cy="2" r="5.5" fill="#0C447C"/>
@@ -284,10 +284,10 @@
               <path d="M0,-43 A23,23 0 0 1 8,-41" fill="none" stroke="#56554f" stroke-width="1"/>
               <line x1="0" y1="-20" x2="0" y2="-49" stroke="#56554f" stroke-width="0.8" stroke-dasharray="3,2"/>
               <text x="13" y="-45" font-size="11" fill="#b9760f" font-weight="600">θ</text>
-              <line x1="32" y1="-10" x2="68" y2="-10" stroke="#2E9457" stroke-width="3" marker-end="url(#cpf)"/>
-              <text x="50" y="-15" text-anchor="middle" font-size="10" fill="#2E9457" font-weight="600">F</text>
+              <line x1="32" y1="-10" x2="68" y2="-10" stroke="#1f7a47" stroke-width="3" marker-end="url(#cpf)"/>
+              <text x="50" y="-15" text-anchor="middle" font-size="10" fill="#1f7a47" font-weight="600">F</text>
             </g>
-            <defs><marker id="cpf" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2E9457"/></marker></defs>
+            <defs><marker id="cpf" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#1f7a47"/></marker></defs>
             <text x="298" y="28" text-anchor="middle" font-size="9.5" fill="#8c8b84">棒長 2L</text>
             <text x="298" y="42" text-anchor="middle" font-size="9.5" fill="#8c8b84">g = 9.81</text>
           </svg>
@@ -319,12 +319,12 @@
             <defs><marker id="cptfahig" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#7d7c75"/></marker></defs>
             <text x="2" y="43" font-size="10" fill="#56554f">x*</text>
             <circle cx="28" cy="39" r="11" fill="#fff" stroke="#222" stroke-width="1"/><text x="28" y="44" text-anchor="middle" font-size="13">⊕</text>
-            <text x="15" y="60" font-size="11" fill="#D8423F">−</text>
+            <text x="15" y="60" font-size="11" fill="#C0392B">−</text>
             <!-- 制御器：状態フィードバック -->
             <rect x="50" y="25" width="44" height="28" rx="3" fill="#eaf2fb" stroke="#2F7DD1" stroke-width="1.2"/>
             <text x="72" y="39" text-anchor="middle" font-weight="700" fill="#0C447C" font-size="13">−K</text>
             <text x="72" y="49" text-anchor="middle" font-size="7.5" fill="#0C447C">状態FB</text>
-            <text x="72" y="68" text-anchor="middle" font-size="8" fill="#D8423F">制約 |F|≤F_max</text>
+            <text x="72" y="68" text-anchor="middle" font-size="8" fill="#C0392B">制約 |F|≤F_max</text>
             <!-- プラント（伝達関数の要素分解） -->
             <rect x="112" y="18" width="222" height="74" rx="3" fill="none" stroke="#c3bdae" stroke-width="1" stroke-dasharray="3,2"/>
             <text x="223" y="14" text-anchor="middle" font-size="8" fill="#8c8b84">プラント（台車＋倒立振子）</text>
@@ -381,7 +381,7 @@
         <div class="leg">
           <span><i style="border-top-color:#2F7DD1;"></i>MPC</span>
           <span><i style="border-top-color:#DD901C;border-top-style:dashed;"></i>PID</span>
-          <span><i style="border-top-color:#D8423F;border-top-style:dotted;"></i>目標 / 上限</span>
+          <span><i style="border-top-color:#C0392B;border-top-style:dotted;"></i>目標 / 上限</span>
         </div>
         <div class="figbox plain">
           <svg id="cp_th" viewBox="0 0 380 95" role="img" aria-label="振れ角の時間応答"></svg>
@@ -622,7 +622,7 @@ DEMOS.cartpole=function(){
   const xResMpc=Math.abs(mpc.x[mpc.x.length-1]),xResPid=Math.abs(pid.x[pid.x.length-1]);
   const M={l:32,r:8,t:8,b:16};const xPx=(tk,pw)=>M.l+(tk/T)*pw;
   const poly=(arr,t,yfn,pw)=>{let p='';for(let i=0;i<arr.length;i++)p+=`${xPx(t[i],pw).toFixed(1)},${yfn(arr[i]).toFixed(1)} `;return p;};
-  const brake=(pw,ph)=>{const x0=xPx(tKick,pw),x1=xPx(tKick+0.18,pw);return `<rect x="${x0.toFixed(1)}" y="${M.t}" width="${(x1-x0).toFixed(1)}" height="${ph}" fill="#D8423F" opacity="0.14"/>`;};
+  const brake=(pw,ph)=>{const x0=xPx(tKick,pw),x1=xPx(tKick+0.18,pw);return `<rect x="${x0.toFixed(1)}" y="${M.t}" width="${(x1-x0).toFixed(1)}" height="${ph}" fill="#C0392B" opacity="0.14"/>`;};
   // 上段：振れ角 θ
   (function(){const W=380,H=95,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const lim=Math.max(10,...mpc.th.map(Math.abs),...pid.th.map(Math.abs));const hi=Math.ceil(lim/5)*5;const yPx=v=>M.t+(1-(v+hi)/(2*hi))*ph;let s=brake(pw,ph);
@@ -636,7 +636,7 @@ DEMOS.cartpole=function(){
   (function(){const W=380,H=88,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const lim=Math.max(1,...mpc.x.map(Math.abs),...pid.x.map(Math.abs));const hi=Math.ceil(lim*2)/2;const yPx=v=>M.t+(1-(v+hi)/(2*hi))*ph;let s=brake(pw,ph);
     for(let tk=1;tk<T;tk+=1){const x=xPx(tk,pw);s+=`<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}
-    s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${yPx(0)-3}" text-anchor="end" font-size="9" fill="#D8423F">目標 x*=0</text>`;
+    s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="#C0392B" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${yPx(0)-3}" text-anchor="end" font-size="9" fill="#C0392B">目標 x*=0</text>`;
     s+=`<text x="${M.l-4}" y="${yPx(hi)+3}" text-anchor="end" font-size="8.5" fill="#9a988e">+${hi}</text>`;
     s+=`<text x="${M.l-4}" y="${yPx(-hi)+3}" text-anchor="end" font-size="8.5" fill="#9a988e">-${hi}</text>`;
     s+=`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
@@ -648,8 +648,8 @@ DEMOS.cartpole=function(){
     for(let tk=1;tk<T;tk+=1){const x=xPx(tk,pw);s+=`<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}
     s+=`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
     s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="rgba(0,0,0,.25)"/>`;
-    s+=`<line x1="${M.l}" y1="${yPx(Fmax)}" x2="${W-M.r}" y2="${yPx(Fmax)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${yPx(Fmax)-3}" text-anchor="end" font-size="9" fill="#D8423F">+F_max ${Fmax}</text>`;
-    s+=`<line x1="${M.l}" y1="${yPx(-Fmax)}" x2="${W-M.r}" y2="${yPx(-Fmax)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${yPx(-Fmax)+10}" text-anchor="end" font-size="9" fill="#D8423F">−F_max</text>`;
+    s+=`<line x1="${M.l}" y1="${yPx(Fmax)}" x2="${W-M.r}" y2="${yPx(Fmax)}" stroke="#C0392B" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${yPx(Fmax)-3}" text-anchor="end" font-size="9" fill="#C0392B">+F_max ${Fmax}</text>`;
+    s+=`<line x1="${M.l}" y1="${yPx(-Fmax)}" x2="${W-M.r}" y2="${yPx(-Fmax)}" stroke="#C0392B" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${yPx(-Fmax)+10}" text-anchor="end" font-size="9" fill="#C0392B">−F_max</text>`;
     s+=`<polyline points="${poly(pid.F,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
     s+=`<polyline points="${poly(mpc.F,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;
     for(let tk=0;tk<=T;tk+=2){s+=`<text x="${xPx(tk,pw)}" y="${H-3}" text-anchor="middle" font-size="9" fill="#8c8b84">${tk}s</text>`;}el('cp_f').innerHTML=s;})();
