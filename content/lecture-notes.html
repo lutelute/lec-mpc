@@ -104,6 +104,7 @@
     <a href="../demos/mpc_constrained.html">制約デモ</a>
     <a href="../demos/mpc_vs_pid.html">制御として見る</a>
     <a href="worked-examples.html">例題集</a>
+    <a href="modeling-notes.html">モデリング</a>
   </nav>
 
   <h1>モデル予測制御 講義ノート</h1>
@@ -178,7 +179,7 @@
 
   <!-- ===================== §2 ===================== -->
   <h2 id="s2">2. 予測モデルと予測方程式</h2>
-  <p>MPC は<strong>モデルベース</strong>制御である。離散時間の状態空間モデルを予測に使う。</p>
+  <p>MPC は<strong>モデルベース</strong>制御である。離散時間の状態空間モデルを予測に使う。この <math><mrow><mi>A</mi><mo>,</mo><mi>B</mi><mo>,</mo><mi>C</mi></mrow></math> が<strong>物理からどう導かれるか</strong>（DC モータ・姿勢制御の連続系モデル → 線形化 → 離散化）は <a href="modeling-notes.html">技術ノート：モデリング</a> にまとめた。</p>
   <div class="eq">
     <math display="block"><mrow>
       <mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mi>A</mi><mi>x</mi><mo>(</mo><mi>k</mi><mo>)</mo><mo>+</mo><mi>B</mi><mi>u</mi><mo>(</mo><mi>k</mi><mo>)</mo>

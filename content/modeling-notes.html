@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>技術ノート：モデリング — DC モータと姿勢制御</title>
+<style>
+  :root {
+    --bg:#f6f4ee;--surface:#fff;--surface-2:#efece4;--text-1:#1a1a1a;--text-2:#5f5e5a;--text-3:#888780;
+    --border:rgba(0,0,0,0.10);--border-2:rgba(0,0,0,0.22);--info-bg:#E6F1FB;--info-text:#0C447C;
+    --blue:#378ADD;--blue-deep:#0C447C;--amber:#EF9F27;--amber-bg:#FBF0DC;--red:#E24B4A;--green:#3DA35D;--radius:10px;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    --font-mono:"SF Mono","Menlo","Consolas",monospace;
+  }
+  @media (prefers-color-scheme: dark){:root{--bg:#161614;--surface:#1f1f1d;--surface-2:#2a2a27;--text-1:#f0eee8;--text-2:#b4b2a9;--text-3:#888780;--border:rgba(255,255,255,0.10);--border-2:rgba(255,255,255,0.22);--info-bg:#0C447C;--info-text:#B5D4F4;--blue:#5BA0E8;--blue-deep:#B5D4F4;--amber-bg:#3a2f1a;}}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text-1);font-family:var(--font-sans);font-size:15px;line-height:1.72;}
+  .wrap{max-width:820px;margin:0 auto;padding:32px 24px 64px;}
+  a{color:var(--blue-deep);}
+  h1{font-size:27px;font-weight:600;letter-spacing:-0.01em;margin:0 0 6px;}
+  .subtitle{font-size:14px;color:var(--text-2);margin:0 0 22px;}
+  h2{font-size:20px;font-weight:600;margin:40px 0 12px;padding-top:14px;border-top:2px solid var(--border);}
+  h3{font-size:16px;font-weight:600;margin:24px 0 10px;}
+  p{margin:12px 0;} ul,ol{margin:12px 0;padding-left:24px;} li{margin:5px 0;} strong{font-weight:600;} em{font-style:italic;color:var(--text-2);}
+  .note{background:var(--info-bg);border-radius:var(--radius);padding:14px 18px;margin:18px 0;font-size:14px;}
+  .note .note-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--info-text);font-weight:600;margin-bottom:4px;}
+  .sidenote{border-left:3px solid var(--amber);background:var(--amber-bg);border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;font-size:13.5px;}
+  .sidenote .sn-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--amber);font-weight:600;margin-bottom:4px;}
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:13.5px;}
+  th,td{border:0.5px solid var(--border);padding:7px 12px;text-align:left;}
+  th{background:var(--surface-2);font-weight:600;}
+  code{font-family:var(--font-mono);font-size:0.92em;background:var(--surface-2);padding:1px 5px;border-radius:4px;}
+  math{font-size:1.05em;} .eq{margin:16px 0;text-align:center;overflow-x:auto;}
+  .toc{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin:22px 0 30px;}
+  .toc-title{font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);font-weight:600;margin-bottom:8px;}
+  .toc ol{margin:0;padding-left:20px;} .toc a{color:var(--text-1);text-decoration:none;} .toc a:hover{color:var(--blue-deep);}
+  .lec-nav{display:flex;gap:14px;margin-bottom:20px;font-size:12px;flex-wrap:wrap;align-items:center;}
+  .lec-nav a{color:var(--text-3);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:1px;}
+  .lec-nav a:hover{color:var(--text-1);border-bottom-color:var(--border-2);} .lec-nav a.home{color:var(--text-2);font-weight:500;} .lec-nav .sep{color:var(--text-3);opacity:0.5;}
+  @media (max-width:640px){.wrap{padding:24px 18px 48px;}h1{font-size:23px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="lec-nav">
+    <a class="home" href="../index.html">← 教材トップ</a>
+    <span class="sep">·</span>
+    <a href="lecture-notes.html">講義ノート</a>
+    <a href="../demos/drone.html">2D ドローン</a>
+    <a href="../demos/rocket.html">ロケット着陸</a>
+    <a href="../demos/acc.html">車間制御 ACC</a>
+  </nav>
+
+  <h1>技術ノート：モデリング</h1>
+  <p class="subtitle">DC モータと姿勢制御 — デモの状態空間モデルの「出どころ」</p>
+
+  <div class="note">
+    <div class="note-label">なぜモデリングか</div>
+    MPC は<strong>モデルベース制御</strong>。予測には「入力→状態」の数式モデルが要ります。本ノートは、デモが使う線形状態空間モデルが
+    <strong>物理（電気・力学）からどう導かれるか</strong>を、DC モータ（アクチュエータ）と姿勢系（ドローン・ロケット）について示します。
+    導出は <a href="lecture-notes.html#s2">講義ノート §2 予測モデル</a> の前提になります。
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">目次</div>
+    <ol>
+      <li><a href="#s1">DC モータのモデリング</a></li>
+      <li><a href="#s2">姿勢制御のモデリング（剛体回転・クアッドロータ）</a></li>
+      <li><a href="#s3">線形化と離散化 — MPC で使う形へ</a></li>
+    </ol>
+  </div>
+
+  <!-- ===================== §1 DC motor ===================== -->
+  <h2 id="s1">1. DC モータのモデリング</h2>
+  <p>アクチュエータの代表が DC モータ。<strong>電気系</strong>と<strong>機械系</strong>が逆起電力で結合した 2 次系です。入力は電圧 <math><mi>V</mi></math>、出力は角速度 <math><mi>ω</mi></math>。</p>
+
+  <h3>1.1 支配方程式</h3>
+  <p><strong>電気系</strong>（キルヒホッフ）: 巻線抵抗 <math><mi>R</mi></math>・インダクタンス <math><mi>L</mi></math>・逆起電力定数 <math><msub><mi>K</mi><mi>e</mi></msub></math></p>
+  <div class="eq"><math display="block"><mrow><mi>L</mi><mfrac><mrow><mi>d</mi><mi>i</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mi>V</mi><mo>−</mo><mi>R</mi><mi>i</mi><mo>−</mo><msub><mi>K</mi><mi>e</mi></msub><mi>ω</mi></mrow></math></div>
+  <p><strong>機械系</strong>（ニュートン・オイラー）: 慣性 <math><mi>J</mi></math>・粘性摩擦 <math><mi>b</mi></math>・トルク定数 <math><msub><mi>K</mi><mi>t</mi></msub></math>・負荷トルク <math><msub><mi>τ</mi><mi>L</mi></msub></math></p>
+  <div class="eq"><math display="block"><mrow><mi>J</mi><mfrac><mrow><mi>d</mi><mi>ω</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><msub><mi>K</mi><mi>t</mi></msub><mi>i</mi><mo>−</mo><mi>b</mi><mi>ω</mi><mo>−</mo><msub><mi>τ</mi><mi>L</mi></msub></mrow></math></div>
+
+  <h3>1.2 状態空間表現</h3>
+  <p>状態を <math><mrow><mi>x</mi><mo>=</mo><msup><mrow><mo>[</mo><mi>i</mi><mo>,</mo><mi>ω</mi><mo>]</mo></mrow><mi>⊤</mi></msup></mrow></math>、入力 <math><mi>V</mi></math>、負荷を外乱とすると</p>
+  <div class="eq"><math display="block"><mrow>
+    <mfrac><mi>d</mi><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mrow><mo>[</mo><mtable><mtr><mtd><mi>i</mi></mtd></mtr><mtr><mtd><mi>ω</mi></mtd></mtr></mtable><mo>]</mo></mrow>
+    <mo>=</mo>
+    <mrow><mo>[</mo><mtable>
+      <mtr><mtd><mrow><mo>−</mo><mi>R</mi><mo>/</mo><mi>L</mi></mrow></mtd><mtd><mrow><mo>−</mo><msub><mi>K</mi><mi>e</mi></msub><mo>/</mo><mi>L</mi></mrow></mtd></mtr>
+      <mtr><mtd><mrow><msub><mi>K</mi><mi>t</mi></msub><mo>/</mo><mi>J</mi></mrow></mtd><mtd><mrow><mo>−</mo><mi>b</mi><mo>/</mo><mi>J</mi></mrow></mtd></mtr>
+    </mtable><mo>]</mo></mrow>
+    <mrow><mo>[</mo><mtable><mtr><mtd><mi>i</mi></mtd></mtr><mtr><mtd><mi>ω</mi></mtd></mtr></mtable><mo>]</mo></mrow>
+    <mo>+</mo>
+    <mrow><mo>[</mo><mtable><mtr><mtd><mrow><mn>1</mn><mo>/</mo><mi>L</mi></mrow></mtd></mtr><mtr><mtd><mn>0</mn></mtd></mtr></mtable><mo>]</mo></mrow><mi>V</mi>
+  </mrow></math></div>
+  <p>角度 <math><mi>θ</mi></math> も制御したいなら <math><mrow><mover><mi>θ</mi><mo>˙</mo></mover><mo>=</mo><mi>ω</mi></mrow></math> を足して 3 状態 <math><mrow><mo>[</mo><mi>i</mi><mo>,</mo><mi>ω</mi><mo>,</mo><mi>θ</mi><mo>]</mo></mrow></math> に拡張します（位置サーボ）。</p>
+
+  <h3>1.3 伝達関数と 1 次近似</h3>
+  <p>負荷 0 で <math><mrow><mi>ω</mi><mo>(</mo><mi>s</mi><mo>)</mo><mo>/</mo><mi>V</mi><mo>(</mo><mi>s</mi><mo>)</mo></mrow></math> を求めると</p>
+  <div class="eq"><math display="block"><mrow><mfrac><mrow><mi>ω</mi><mo>(</mo><mi>s</mi><mo>)</mo></mrow><mrow><mi>V</mi><mo>(</mo><mi>s</mi><mo>)</mo></mrow></mfrac><mo>=</mo><mfrac><msub><mi>K</mi><mi>t</mi></msub><mrow><mo>(</mo><mi>L</mi><mi>s</mi><mo>+</mo><mi>R</mi><mo>)</mo><mo>(</mo><mi>J</mi><mi>s</mi><mo>+</mo><mi>b</mi><mo>)</mo><mo>+</mo><msub><mi>K</mi><mi>t</mi></msub><msub><mi>K</mi><mi>e</mi></msub></mrow></mfrac></mrow></math></div>
+  <p>電気時定数 <math><mrow><msub><mi>τ</mi><mi>e</mi></msub><mo>=</mo><mi>L</mi><mo>/</mo><mi>R</mi></mrow></math> は機械時定数 <math><mrow><msub><mi>τ</mi><mi>m</mi></msub></mrow></math> よりずっと小さいのが普通。<math><mi>L</mi><mo>≈</mo><mn>0</mn></math> と置くと<strong>1 次系</strong>に縮約：</p>
+  <div class="eq"><math display="block"><mrow><mfrac><mrow><mi>ω</mi><mo>(</mo><mi>s</mi><mo>)</mo></mrow><mrow><mi>V</mi><mo>(</mo><mi>s</mi><mo>)</mo></mrow></mfrac><mo>≈</mo><mfrac><msub><mi>K</mi><mi>m</mi></msub><mrow><mi>τ</mi><mi>s</mi><mo>+</mo><mn>1</mn></mrow></mfrac><mo>,</mo><mspace width="1em"/><mi>τ</mi><mo>=</mo><mfrac><mi>J</mi><mrow><mi>b</mi><mo>+</mo><msub><mi>K</mi><mi>t</mi></msub><msub><mi>K</mi><mi>e</mi></msub><mo>/</mo><mi>R</mi></mrow></mfrac></mrow></math></div>
+  <div class="note">
+    <div class="note-label">デモと対応</div>
+    <a href="../demos/mpc_vs_pid.html">制御として見る</a>の<strong>「1 次系」</strong>はこの近似そのもの。<a href="../demos/acc.html">ACC</a> の<strong>「一次の加速度遅れ <math><mi>τ</mi></math>」</strong>も、駆動系（モータ＋ドライブトレイン）の応答を 1 次で表したものです。逆起電力 <math><msub><mi>K</mi><mi>e</mi></msub><mi>ω</mi></math> が<em>自然な速度フィードバック</em>として効くため、開ループでも安定（極が左半面）。
+  </div>
+
+  <!-- ===================== §2 attitude ===================== -->
+  <h2 id="s2">2. 姿勢制御のモデリング</h2>
+  <h3>2.1 剛体の回転</h3>
+  <p>姿勢制御の芯は<strong>剛体の回転運動</strong>。平面（1 軸）なら、慣性モーメント <math><mi>J</mi></math> の物体に正味トルク <math><mi>τ</mi></math> が働き</p>
+  <div class="eq"><math display="block"><mrow><mi>J</mi><mover><mi>θ</mi><mo>¨</mo></mover><mo>=</mo><mi>τ</mi></mrow></math></div>
+  <p>これは<strong>二重積分</strong>（トルク→角加速度→角速度→角度）。摩擦やジャイロ項があれば右辺に加わります。3 次元では <math><mrow><mi>J</mi><mover><mi>ω</mi><mo>˙</mo></mover><mo>+</mo><mi>ω</mi><mo>×</mo><mi>J</mi><mi>ω</mi><mo>=</mo><mi>τ</mi></mrow></math>（オイラーの式）。</p>
+
+  <h3>2.2 平面クアッドロータ／ロケット（並進＋姿勢の結合）</h3>
+  <p>機体は<strong>本体軸方向にしか推力を出せない</strong>。だから水平に動くには機体を傾ける必要があり、並進と姿勢が結合します。総推力 <math><mi>T</mi></math>・トルク <math><msub><mi>u</mi><mn>2</mn></msub></math>、姿勢 <math><mi>θ</mi></math>、質量 <math><mi>m</mi></math> として（平面 PVTOL モデル）</p>
+  <div class="eq"><math display="block"><mrow>
+    <mi>m</mi><mover><mi>x</mi><mo>¨</mo></mover><mo>=</mo><mo>−</mo><mi>T</mi><mi>sin</mi><mi>θ</mi><mo>,</mo><mspace width="1.2em"/>
+    <mi>m</mi><mover><mi>y</mi><mo>¨</mo></mover><mo>=</mo><mi>T</mi><mi>cos</mi><mi>θ</mi><mo>−</mo><mi>m</mi><mi>g</mi><mo>,</mo><mspace width="1.2em"/>
+    <mi>J</mi><mover><mi>θ</mi><mo>¨</mo></mover><mo>=</mo><msub><mi>u</mi><mn>2</mn></msub>
+  </mrow></math></div>
+  <p>これがデモの <a href="../demos/drone.html">2D ドローン</a>・<a href="../demos/rocket.html">ロケット</a>の<strong>非線形</strong>運動方程式（RK4 で積分）。<math><mi>T</mi><mo>,</mo><msub><mi>u</mi><mn>2</mn></msub></math> の 2 入力 ＝ 多入力 (MIMO) です。</p>
+
+  <h3>2.3 ホバリング平衡まわりの線形化</h3>
+  <p>ホバリング（<math><mrow><mi>θ</mi><mo>≈</mo><mn>0</mn></mrow></math>, <math><mrow><mi>T</mi><mo>≈</mo><mi>m</mi><mi>g</mi></mrow></math>）で、<math><mrow><mi>T</mi><mo>=</mo><mi>m</mi><mi>g</mi><mo>+</mo><mi>δT</mi></mrow></math> と置き <math><mrow><mi>sin</mi><mi>θ</mi><mo>≈</mo><mi>θ</mi></mrow></math>, <math><mrow><mi>cos</mi><mi>θ</mi><mo>≈</mo><mn>1</mn></mrow></math> とすると、見通しよく<strong>分離</strong>されます：</p>
+  <div class="eq"><math display="block"><mrow>
+    <mover><mi>x</mi><mo>¨</mo></mover><mo>≈</mo><mo>−</mo><mi>g</mi><mi>θ</mi><mo>,</mo><mspace width="1.4em"/>
+    <mover><mi>y</mi><mo>¨</mo></mover><mo>≈</mo><mfrac><mi>δT</mi><mi>m</mi></mfrac><mo>,</mo><mspace width="1.4em"/>
+    <mover><mi>θ</mi><mo>¨</mo></mover><mo>≈</mo><mfrac><msub><mi>u</mi><mn>2</mn></msub><mi>J</mi></mfrac>
+  </mrow></math></div>
+  <ul>
+    <li><strong>高度</strong> <math><mi>y</mi></math> は推力 <math><mi>δT</mi></math> で直接（二重積分）。</li>
+    <li><strong>姿勢</strong> <math><mi>θ</mi></math> はトルク <math><msub><mi>u</mi><mn>2</mn></msub></math> で（二重積分）。</li>
+    <li><strong>水平</strong> <math><mi>x</mi></math> は<em>姿勢 <math><mi>θ</mi></math> を介して</em>動く（<math><mover><mi>x</mi><mo>¨</mo></mover><mo>=</mo><mo>−</mo><mi>g</mi><mi>θ</mi></math>）。だから「傾けて飛ぶ」＝位置と姿勢が連動 → MPC で一括最適化が要る。</li>
+  </ul>
+  <div class="note">
+    <div class="note-label">デモと対応</div>
+    この線形モデルを <code>c2d</code> で離散化したものが、<a href="../demos/drone.html">2D ドローン</a>・<a href="../demos/rocket.html">ロケット</a>の MPC が予測に使うモデル。デモは<strong>数値ヤコビアン</strong>で平衡点まわりを線形化してから離散化しています（次節）。ロケットは推力に <math><mrow><msub><mi>T</mi><mi>min</mi></msub><mo>≤</mo><mi>T</mi><mo>≤</mo><msub><mi>T</mi><mi>max</mi></msub></mrow></math> の制約つき。
+  </div>
+  <div class="sidenote">
+    <div class="sn-label">サイドノート — ロータ混合と微分平坦性</div>
+    実際のクアッドロータは 4 個のロータ推力 <math><mrow><msub><mi>f</mi><mn>1</mn></msub><mo>…</mo><msub><mi>f</mi><mn>4</mn></msub></mrow></math> から、<strong>混合行列</strong>で総推力と 3 軸トルクを作ります（幾何で決まる定数行列）。また並進と姿勢は<strong>微分平坦</strong>で、望む位置軌道から必要な姿勢・推力が代数的に逆算できる——<a href="../demos/drone3d.html">3D ドローン</a>が位置を加速度指令で扱う「外側ループ」はこの構造に対応します。
+  </div>
+
+  <!-- ===================== §3 ===================== -->
+  <h2 id="s3">3. 線形化と離散化 — MPC で使う形へ</h2>
+  <p>MPC の予測は<strong>離散時間・線形</strong>の状態空間 <math><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mi>A</mi><mi>x</mi><mo>+</mo><mi>B</mi><mi>u</mi></mrow></math> を使います（<a href="lecture-notes.html#s2">講義ノート §2</a>）。物理モデルからの 2 ステップ：</p>
+  <ol>
+    <li><strong>線形化</strong>：非線形 <math><mrow><mover><mi>x</mi><mo>˙</mo></mover><mo>=</mo><mi>f</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>u</mi><mo>)</mo></mrow></math> を平衡点 <math><mrow><mo>(</mo><msub><mi>x</mi><mi>e</mi></msub><mo>,</mo><msub><mi>u</mi><mi>e</mi></msub><mo>)</mo></mrow></math> まわりでヤコビアン展開 → 連続系 <math><mrow><msub><mi>A</mi><mi>c</mi></msub><mo>=</mo><mo>∂</mo><mi>f</mi><mo>/</mo><mo>∂</mo><mi>x</mi></mrow></math>, <math><mrow><msub><mi>B</mi><mi>c</mi></msub><mo>=</mo><mo>∂</mo><mi>f</mi><mo>/</mo><mo>∂</mo><mi>u</mi></mrow></math>。倒立振子・ドローン・ロケットはこれ（数値差分で計算）。</li>
+    <li><strong>離散化</strong>（ZOH）：<math><mrow><mi>A</mi><mo>=</mo><msup><mi>e</mi><mrow><msub><mi>A</mi><mi>c</mi></msub><mi>Δt</mi></mrow></msup></mrow></math>, <math><mrow><mi>B</mi><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>Δt</mi></msubsup><msup><mi>e</mi><mrow><msub><mi>A</mi><mi>c</mi></msub><mi>s</mi></mrow></msup><mi>d</mi><mi>s</mi><mo>·</mo><msub><mi>B</mi><mi>c</mi></msub></mrow></math>。デモは行列指数を<strong>拡大行列の <code>expm</code></strong> で一括計算（<code>c2d</code>）。</li>
+  </ol>
+  <p>2 重積分系（台車・クレーンの位置、姿勢の二重積分）は <math><mrow><msub><mi>A</mi><mi>c</mi></msub><mo>=</mo><mo>[</mo><mo>[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>]</mo><mo>,</mo><mo>[</mo><mn>0</mn><mo>,</mo><mn>0</mn><mo>]</mo><mo>]</mo></mrow></math> なので厳密に <math><mrow><mi>A</mi><mo>=</mo><mo>[</mo><mo>[</mo><mn>1</mn><mo>,</mo><mi>Δt</mi><mo>]</mo><mo>,</mo><mo>[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>]</mo><mo>]</mo></mrow></math>。</p>
+
+  <div class="note" style="margin-top:30px;">
+    <div class="note-label">まとめ</div>
+    モータ＝電気＋機械の 2 次系（普通は 1 次に縮約）、姿勢＝剛体回転の二重積分、機体＝並進と姿勢が推力方向で結合。どれも<strong>平衡点で線形化 → ZOH 離散化</strong>すれば MPC の予測モデル <math><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mi>A</mi><mi>x</mi><mo>+</mo><mi>B</mi><mi>u</mi></mrow></math> になります。続きは <a href="lecture-notes.html">講義ノート</a>、手を動かすなら <a href="../demos/drone.html">2D ドローン</a>・<a href="../demos/rocket.html">ロケット</a>・<a href="../demos/mpc_vs_pid.html">制御として見る</a> へ。
+  </div>
+
+</div>
+</body>
+</html>

@@ -76,6 +76,34 @@
     <div class="kpi-card"><div class="kpi-label">状態</div><div class="kpi-val" id="k-st" style="font-size:15px;">直立</div></div>
   </section>
 
+  <div class="panel" style="margin-bottom:10px;">
+    <div class="panel-hdr"><div class="panel-title">ブロック線図（状態フィードバック MPC 制御ループ）</div><div class="panel-hint">単一入力の力 F で不安定な倒立を安定化</div></div>
+    <svg viewBox="0 0 720 170" style="width:100%;max-height:185px;" role="img" aria-label="倒立振子の制御ブロック線図">
+      <defs><marker id="cpah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--text-3)"/></marker></defs>
+      <g font-size="12" fill="var(--text-1)">
+        <text x="10" y="58" font-size="12" fill="var(--text-2)">r = x*（目標位置）</text>
+        <circle cx="158" cy="54" r="13" fill="var(--surface)" stroke="var(--border-2)" stroke-width="1"/><text x="158" y="59" text-anchor="middle" font-size="15">⊕</text>
+        <text x="142" y="82" font-size="13" fill="var(--red)">−</text>
+        <rect x="214" y="31" width="184" height="46" rx="8" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="1"/>
+        <text x="306" y="50" text-anchor="middle" font-weight="600" fill="var(--info-text)">MPC（状態 FB）</text>
+        <text x="306" y="67" text-anchor="middle" font-size="10.5" fill="var(--info-text)">線形化モデルで未来予測</text>
+        <rect x="486" y="31" width="184" height="46" rx="8" fill="var(--surface-2)" stroke="var(--border-2)" stroke-width="0.5"/>
+        <text x="578" y="50" text-anchor="middle" font-weight="600">倒立振子</text>
+        <text x="578" y="67" text-anchor="middle" font-size="10.5" fill="var(--text-2)">x, ẋ, θ, θ̇（4 状態）</text>
+        <text x="688" y="50" font-size="12" fill="var(--text-2)">y</text>
+      </g>
+      <g stroke="var(--text-3)" stroke-width="1.4" fill="none">
+        <line x1="132" y1="54" x2="143" y2="54" marker-end="url(#cpah)"/>
+        <line x1="171" y1="54" x2="210" y2="54" marker-end="url(#cpah)"/><text x="190" y="48" font-size="10" fill="var(--text-3)" stroke="none">e</text>
+        <line x1="398" y1="54" x2="482" y2="54" marker-end="url(#cpah)"/><text x="440" y="48" font-size="10" fill="var(--text-3)" stroke="none">F 力</text>
+        <line x1="670" y1="54" x2="710" y2="54"/>
+        <path d="M695,57 L695,132 L158,132 L158,69" marker-end="url(#cpah)"/>
+        <text x="426" y="146" font-size="10" fill="var(--text-3)" stroke="none">y = [x, θ] をフィードバック</text>
+      </g>
+      <text x="360" y="163" text-anchor="middle" font-size="10.5" fill="var(--text-3)">上向きの不安定平衡を、線形化モデルで未来を予測しながら<tspan font-weight="600" fill="var(--text-2)">安定化</tspan>。力 F は F<tspan baseline-shift="sub" font-size="8">max</tspan> で飽和</text>
+    </svg>
+  </div>
+
   <div class="main-grid">
     <div class="col">
       <div class="panel">
