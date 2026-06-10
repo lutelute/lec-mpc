@@ -129,6 +129,7 @@
           <button class="btn" id="b-pause">一時停止</button>
           <button class="btn" id="b-reset">リセット</button>
         </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);margin:4px 0 2px;cursor:pointer;"><input type="checkbox" id="c-pid" checked style="width:14px;height:14px;accent-color:var(--amber);">PID を同時比較（薄い橙で重ねる）</label>
       </div>
       <div class="panel">
         <div class="panel-hdr"><div class="panel-title">状態量とコスト（ライブ）</div></div>
@@ -196,8 +197,9 @@
     const Gain=mm(inv(H),SuTQ);const K1=Gain[0];Kfb=[0,0,0,0];Kr=0;for(let i=0;i<Np*4;i++){for(let c=0;c<4;c++)Kfb[c]+=K1[i]*Sx[i][c];if(i%4===0)Kr+=K1[i];}
   }
 
-  let st=[0,0,0,0],target=0,Fmax=15,running=true,lastF=0;
+  let st=[0,0,0,0],stP=[0,0,0,0],target=0,Fmax=15,running=true,lastF=0,lastFP=0,showPID=true;
   function force(){let u=Kr*target;for(let c=0;c<4;c++)u-=Kfb[c]*st[c];return Math.max(-Fmax,Math.min(Fmax,u));}
+  function pidForce(s){let u=70*s[2]+14*s[3]+0.9*(s[0]-target)+1.3*s[1];return Math.max(-Fmax,Math.min(Fmax,u));}
   function v(id){return document.getElementById(id).value;}
   const $=id=>document.getElementById(id);
 
@@ -216,6 +218,14 @@
   stage.appendChild(cartG);stage.appendChild(pole);stage.appendChild(bob);stage.appendChild(pivot);
   pole.setAttribute('filter','url(#glow)');bob.setAttribute('filter','url(#glow)');
   const bobTrail=[];
+  // PID 比較ゴースト（薄い橙のアウトライン）
+  const ghostG=el('g',{opacity:'0.5'});
+  const gcart=el('rect',{x:-34,y:-20,width:68,height:38,rx:6,fill:'none',stroke:'var(--amber)','stroke-width':1.6});
+  const gpole=el('line',{x1:0,y1:0,x2:0,y2:0,stroke:'var(--amber)','stroke-width':3,'stroke-linecap':'round'});
+  const gbob=el('circle',{cx:0,cy:0,r:11,fill:'none',stroke:'var(--amber)','stroke-width':2});
+  const gcartG=el('g',{});gcartG.appendChild(gcart);ghostG.appendChild(gcartG);ghostG.appendChild(gpole);ghostG.appendChild(gbob);
+  const glabel=el('text',{'font-size':9,fill:'var(--amber)','text-anchor':'middle'});glabel.textContent='PID';ghostG.appendChild(glabel);
+  stage.appendChild(ghostG);
 
   function drawStage(){
     const px=cx+st[0]*scale;cartG.setAttribute('transform',`translate(${px},${trackY-18})`);
@@ -228,10 +238,12 @@
     tgtG.setAttribute('transform',`translate(${cx+target*scale},0)`);
     const fy=trackY-14,flen=Math.max(-60,Math.min(60,lastF*3.5));forceLine.setAttribute('x1',px);forceLine.setAttribute('y1',fy);forceLine.setAttribute('x2',px+flen);forceLine.setAttribute('y2',fy);
     if(Math.abs(flen)>4){const d=Math.sign(flen);forceHead.setAttribute('d',`M${px+flen},${fy} L${px+flen-d*7},${fy-4} L${px+flen-d*7},${fy+4} Z`);}else forceHead.setAttribute('d','');
+    // PID 比較ゴースト
+    if(showPID){ghostG.style.display='';const gpx=cx+stP[0]*scale;gcartG.setAttribute('transform',`translate(${gpx},${trackY-18})`);const gbx=gpx+2*L*scale*Math.sin(stP[2]),gby=(trackY-36)-2*L*scale*Math.cos(stP[2]);gpole.setAttribute('x1',gpx);gpole.setAttribute('y1',trackY-36);gpole.setAttribute('x2',gbx);gpole.setAttribute('y2',gby);gbob.setAttribute('cx',gbx);gbob.setAttribute('cy',gby);glabel.setAttribute('x',gpx);glabel.setAttribute('y',trackY+34);}else ghostG.style.display='none';
   }
 
   // ===== 時系列ロガー =====
-  const thHist=[],FHist=[],xHist=[];const HIST=240; // 12s @ dt
+  const thHist=[],FHist=[],xHist=[],thHistP=[];const HIST=240; // 12s @ dt
   const strip=$('strip');
   function drawStrip(){
     const W2=760,topH=92,botH=88,m={l:42,r:10,t:8,gap:12};const pw=W2-m.l-m.r;
@@ -244,9 +256,10 @@
     s+=`<line x1="${m.l}" y1="${thY(0)}" x2="${m.l+pw}" y2="${thY(0)}" stroke="var(--border-strong)" stroke-width="0.5"/>`;
     s+=`<text x="${m.l-5}" y="${ty0+9}" text-anchor="end" font-size="9" fill="var(--text-secondary)">+${thMax.toFixed(0)}°</text>`;
     s+=`<text x="${m.l-5}" y="${ty1}" text-anchor="end" font-size="9" fill="var(--text-secondary)">-${thMax.toFixed(0)}°</text>`;
-    s+=`<text x="${m.l+4}" y="${ty0+10}" font-size="9" fill="var(--red)">θ 角度</text>`;
-    if(n>1){let p1='',p2='';for(let i=0;i<n;i++){p1+=`${xAt(i+HIST-n).toFixed(1)},${thY(thHist[i]).toFixed(1)} `;p2+=`${xAt(i+HIST-n).toFixed(1)},${thY((xHist[i])*15).toFixed(1)} `;}
+    s+=`<text x="${m.l+4}" y="${ty0+10}" font-size="9" fill="var(--red)">θ 角度（<tspan fill="var(--red)">MPC</tspan>${showPID?` / <tspan fill="var(--amber)">PID</tspan>`:''}）</text>`;
+    if(n>1){let p1='',p2='',pP='';for(let i=0;i<n;i++){const xx=xAt(i+HIST-n).toFixed(1);p1+=`${xx},${thY(thHist[i]).toFixed(1)} `;p2+=`${xx},${thY((xHist[i])*15).toFixed(1)} `;if(!isNaN(thHistP[i]))pP+=`${xx},${thY(thHistP[i]).toFixed(1)} `;}
       s+=`<polyline points="${p2}" fill="none" stroke="var(--blue)" stroke-width="1" opacity="0.5"/>`;
+      if(pP)s+=`<polyline points="${pP}" fill="none" stroke="var(--amber)" stroke-width="1.4" stroke-dasharray="4,3" opacity="0.95"/>`;
       s+=`<polyline points="${p1}" fill="none" stroke="var(--red)" stroke-width="1.6"/>`;}
     // 下: F(N)
     const by0=ty1+m.gap,by1=by0+botH;const fY=v=>by0+(1-(v+Fmax)/(2*Fmax))*botH;
@@ -283,18 +296,21 @@
 
   let acc=0,prev=performance.now(),frame=0,auto=false,autoAcc=0;
   function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;
-    if(auto&&running){autoAcc+=dtr;if(autoAcc>3.0){autoAcc=0;if(Math.random()<0.6){st[3]+=(Math.random()<0.5?-1:1)*(1.3+Math.random()*0.8);}else{target=Math.round((Math.random()*3-1.5)*10)/10;}}}
-    if(running){acc+=dtr;let guard=0;while(acc>=ctrlDt&&guard<10){const F=force();lastF=F;const sub=4;for(let i=0;i<sub;i++)st=rk4(st,F,ctrlDt/sub);acc-=ctrlDt;guard++;
-      thHist.push(st[2]*180/Math.PI);FHist.push(F);xHist.push(st[0]);if(thHist.length>HIST){thHist.shift();FHist.shift();xHist.shift();}}}
+    if(auto&&running){autoAcc+=dtr;if(autoAcc>3.0){autoAcc=0;if(Math.random()<0.6){const k=(Math.random()<0.5?-1:1)*(1.3+Math.random()*0.8);st[3]+=k;stP[3]+=k;}else{target=Math.round((Math.random()*3-1.5)*10)/10;}}}
+    if(running){acc+=dtr;let guard=0;while(acc>=ctrlDt&&guard<10){const F=force();lastF=F;const sub=4;for(let i=0;i<sub;i++)st=rk4(st,F,ctrlDt/sub);
+      if(showPID){const FP=pidForce(stP);lastFP=FP;for(let i=0;i<sub;i++)stP=rk4(stP,FP,ctrlDt/sub);}
+      acc-=ctrlDt;guard++;
+      thHist.push(st[2]*180/Math.PI);FHist.push(F);xHist.push(st[0]);thHistP.push(showPID?stP[2]*180/Math.PI:NaN);if(thHist.length>HIST){thHist.shift();FHist.shift();xHist.shift();thHistP.shift();}}}
     drawStage();if((frame++ %2)===0)drawStrip();refreshReadouts();requestAnimationFrame(loop);}
   requestAnimationFrame(loop);
 
   // ===== UI =====
   function clientToX(clientX){const r=stage.getBoundingClientRect();const vx=(clientX-r.left)*(W/r.width);return Math.max(-TRACK_HALF,Math.min(TRACK_HALF,(vx-cx)/scale));}
   stage.addEventListener('pointerdown',e=>{target=Math.round(clientToX(e.clientX)*100)/100;});
-  $('b-kick').addEventListener('click',()=>{const mag=[0,1.5,2.5,3.5][+v('s-dist')];st[3]+=(Math.random()<0.5?-1:1)*mag;});
+  $('b-kick').addEventListener('click',()=>{const mag=[0,1.5,2.5,3.5][+v('s-dist')];const k=(Math.random()<0.5?-1:1)*mag;st[3]+=k;stP[3]+=k;});
   $('b-pause').addEventListener('click',e=>{running=!running;e.target.textContent=running?'一時停止':'再開';prev=performance.now();});
-  $('b-reset').addEventListener('click',()=>{st=[0,0,0,0];target=0;lastF=0;thHist.length=0;FHist.length=0;xHist.length=0;bobTrail.length=0;});
+  $('b-reset').addEventListener('click',()=>{st=[0,0,0,0];stP=[0,0,0,0];target=0;lastF=0;lastFP=0;thHist.length=0;FHist.length=0;xHist.length=0;thHistP.length=0;bobTrail.length=0;});
+  $('c-pid').addEventListener('change',e=>{showPID=e.target.checked;if(showPID){stP=st.slice();thHistP.length=0;}});
   $('b-auto').addEventListener('click',e=>{auto=!auto;e.target.textContent=auto?'■ オート停止':'▶ オート上映';if(auto){running=true;$('b-pause').textContent='一時停止';autoAcc=2.4;}});
   function bindGain(id,vid,fmt){const e=$(id),o=$(vid);e.addEventListener('input',()=>{o.textContent=fmt(+e.value);rebuildGain();});o.textContent=fmt(+e.value);}
   bindGain('s-qth','v-qth',x=>x.toFixed(0));bindGain('s-qx','v-qx',x=>x.toFixed(0));
