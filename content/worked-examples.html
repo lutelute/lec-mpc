@@ -80,6 +80,7 @@
       <li><a href="#e4">MPC vs PID：台車の位置決め</a></li>
       <li><a href="#e5">不安定プラント（倒立振子）の安定化</a></li>
       <li><a href="#e6">オフセットフリーと外乱除去（積分動作）</a></li>
+      <li><a href="#e7">オブザーバの設計（位置から速度を推定）</a></li>
     </ol>
   </div>
 
@@ -217,9 +218,24 @@
     </div>
   </div>
 
+  <h2 id="e7">例題 7：オブザーバの設計（位置から速度を推定）</h2>
+  <div class="ex">
+    <div class="ex-label">例題<span class="tag">状態推定・可観測性</span></div>
+    <p>二重積分系 <math><mrow><mi>A</mi><mo>=</mo><mo>[</mo><mo>[</mo><mn>1</mn><mo>,</mo><mi>Δt</mi><mo>]</mo><mo>;</mo><mo>[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>]</mo><mo>]</mo></mrow></math>、出力は位置のみ <math><mrow><mi>C</mi><mo>=</mo><mo>[</mo><mn>1</mn><mo>,</mo><mn>0</mn><mo>]</mo></mrow></math>、<math><mrow><mi>Δt</mi><mo>=</mo><mn>0.1</mn></mrow></math>。(1) 可観測かを確認し、(2) 観測器極を <math><mrow><mi>z</mi><mo>=</mo><mn>0.7</mn></mrow></math>（二重）に置く利得 <math><mi>L</mi></math> を求め、(3) 推定誤差が初期値の 1% 未満になるステップ数を見積もれ。</p>
+    <div class="sol">
+      <div class="sol-label">解</div>
+      <p><strong>(1) 可観測性</strong>。可観測性行列は <math><mrow><mo>[</mo><mi>C</mi><mo>;</mo><mi>C</mi><mi>A</mi><mo>]</mo><mo>=</mo><mo>[</mo><mo>[</mo><mn>1</mn><mo>,</mo><mn>0</mn><mo>]</mo><mo>;</mo><mo>[</mo><mn>1</mn><mo>,</mo><mn>0.1</mn><mo>]</mo><mo>]</mo></mrow></math>。行列式 <math><mrow><mo>=</mo><mn>0.1</mn><mo>≠</mo><mn>0</mn></mrow></math> よりランク 2 ＝ <math><mi>n</mi></math>、<strong>可観測</strong>。だから観測器極は自由に置ける。</p>
+      <p><strong>(2) 利得 L</strong>。観測器極を <math><mi>α</mi></math> 二重に置く閉じた式 <math><mrow><mi>L</mi><mo>=</mo><msup><mrow><mo>[</mo><mn>2</mn><mo>(</mo><mn>1</mn><mo>−</mo><mi>α</mi><mo>)</mo><mo>,</mo><mo>(</mo><mn>1</mn><mo>−</mo><mi>α</mi><msup><mo>)</mo><mn>2</mn></msup><mo>/</mo><mi>Δt</mi><mo>]</mo></mrow><mi>⊤</mi></msup></mrow></math> に <math><mrow><mi>α</mi><mo>=</mo><mn>0.7</mn></mrow></math> を入れて</p>
+      <div class="eq"><math display="block"><mrow><mi>L</mi><mo>=</mo><msup><mrow><mo>[</mo><mn>2</mn><mo>(</mo><mn>0.3</mn><mo>)</mo><mo>,</mo><mspace width="0.3em"/><mn>0.09</mn><mo>/</mo><mn>0.1</mn><mo>]</mo></mrow><mi>⊤</mi></msup><mo>=</mo><msup><mrow><mo>[</mo><mn>0.6</mn><mo>,</mo><mspace width="0.3em"/><mn>0.9</mn><mo>]</mo></mrow><mi>⊤</mi></msup></mrow></math></div>
+      <p>検算：<math><mrow><mi>A</mi><mo>−</mo><mi>L</mi><mi>C</mi><mo>=</mo><mo>[</mo><mo>[</mo><mn>0.4</mn><mo>,</mo><mn>0.1</mn><mo>]</mo><mo>;</mo><mo>[</mo><mo>−</mo><mn>0.9</mn><mo>,</mo><mn>1</mn><mo>]</mo><mo>]</mo></mrow></math>、特性多項式 <math><mrow><msup><mi>z</mi><mn>2</mn></msup><mo>−</mo><mn>1.4</mn><mi>z</mi><mo>+</mo><mn>0.49</mn><mo>=</mo><mo>(</mo><mi>z</mi><mo>−</mo><mn>0.7</mn><msup><mo>)</mo><mn>2</mn></msup></mrow></math> ✓。</p>
+      <p><strong>(3) 収束</strong>。誤差は <math><mrow><mi>e</mi><mo>(</mo><mi>k</mi><mo>)</mo><mo>=</mo><mo>(</mo><mi>A</mi><mo>−</mo><mi>L</mi><mi>C</mi><msup><mo>)</mo><mi>k</mi></msup><mi>e</mi><mo>(</mo><mn>0</mn><mo>)</mo></mrow></math> で毎ステップ約 0.7 倍。<math><mrow><msup><mn>0.7</mn><mi>k</mi></msup><mo>&lt;</mo><mn>0.01</mn></mrow></math> を解くと <math><mrow><mi>k</mi><mo>&gt;</mo><mi>ln</mi><mn>0.01</mn><mo>/</mo><mi>ln</mi><mn>0.7</mn><mo>≈</mo><mn>12.9</mn></mrow></math>、つまり<strong>約 13 ステップ（1.3 秒）</strong>で誤差が 1% 未満に。<math><mi>α</mi></math> を小さくすれば速く収束するが、測定雑音に敏感になる（<a href="lecture-notes.html#s7-3">§7.3 カルマンの折り合い</a>）。</p>
+      <p><a class="demo-link" href="../demos/observer.html">▶ オブザーバ デモで「信頼度」を動かし、収束の速さと雑音感度のトレードオフを体感</a></p>
+    </div>
+  </div>
+
   <div class="note" style="margin-top:30px;">
     <div class="note-label">関連</div>
-    理論の導出は <a href="lecture-notes.html">講義ノート</a>、手を動かすのは <a href="../demos/mpc_vs_pid.html">制御として見るデモ</a>。MPC の内部動作（予測・受け取り・制約）は <a href="../demos/mpc_receding_horizon.html">受け取りデモ</a>・<a href="../demos/mpc_constrained.html">制約デモ</a> へ。
+    理論の導出は <a href="lecture-notes.html">講義ノート</a>（状態推定は <a href="lecture-notes.html#s7">§7</a>）、手を動かすのは <a href="../demos/mpc_vs_pid.html">制御として見るデモ</a>・<a href="../demos/observer.html">オブザーバ デモ</a>。MPC の内部動作（予測・受け取り・制約）は <a href="../demos/mpc_receding_horizon.html">受け取りデモ</a>・<a href="../demos/mpc_constrained.html">制約デモ</a> へ。
   </div>
 
 </div>
