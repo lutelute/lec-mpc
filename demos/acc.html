@@ -52,7 +52,70 @@
   .explain{font-size:12.5px;color:var(--text-2);line-height:1.7;} .explain b{color:var(--text-1);}
   .footer{font-size:10px;color:var(--text-3);text-align:center;margin-top:14px;line-height:1.7;}
   @media (max-width:980px){.main-grid{grid-template-columns:1fr;}.kpi{grid-template-columns:1fr 1fr;}}
+  /* ===== 埋め込みインフォグラフ（技術書スタイル・白基調・罫線ベース） ===== */
+  .infographic{--ink:#1b1b1a;--muted:#56554f;--faint:#8c8b84;--blue:#2F7DD1;--blue-deep:#0C447C;--amber:#C57A12;--red:#C0392B;--green:#1f7a47;--line:#dcd7cb;--line-2:#c3bdae;--bg:#fff;background:#faf8f4;border:1px solid var(--line-2);border-radius:3px;margin-top:18px;color:var(--ink);font-family:var(--font-sans);overflow:hidden;}
+  .infographic *{box-sizing:border-box;margin:0;padding:0;}
+  .infographic .ig-hd{font-size:11px;color:#6b6a64;text-transform:uppercase;letter-spacing:.1em;font-weight:600;padding:9px 22px;border-bottom:1px solid var(--line);background:#f1efe8;}
+  .infographic .poster{width:100%;background:var(--bg);display:flex;flex-direction:column;}
+  .infographic .phead{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:14px 22px 12px;border-bottom:2px solid var(--ink);}
+  .infographic .phead h1{font-size:21px;font-weight:700;}
+  .infographic .phead h1 span{font-weight:400;color:var(--muted);font-size:16px;}
+  .infographic .phead p{font-size:12px;color:var(--muted);margin-top:3px;max-width:840px;line-height:1.45;}
+  .infographic .badge{flex:none;text-align:center;border:1px solid var(--blue);color:var(--blue-deep);border-radius:2px;padding:6px 12px;font-size:11px;font-weight:600;line-height:1.4;}
+  .infographic .badge b{font-size:13px;display:block;color:var(--blue-deep);}
+  .infographic .cols{display:grid;grid-template-columns:1fr 1fr 1.06fr;}
+  .infographic .col{padding:14px 20px 16px;display:flex;flex-direction:column;min-width:0;}
+  .infographic .col+.col{border-left:1px solid var(--line);}
+  .infographic .ctitle{display:flex;align-items:center;gap:8px;margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+  .infographic .cnum{flex:none;width:20px;height:20px;border-radius:2px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;}
+  .infographic .ctitle h2{font-size:15px;font-weight:700;}
+  .infographic .ctitle .sub{font-size:10px;color:var(--faint);font-weight:400;}
+  .infographic .c1 .cnum{background:var(--muted);} .infographic .c2 .cnum{background:var(--blue);} .infographic .c3 .cnum{background:var(--green);}
+  .infographic .lead{background:#eef4fb;border-left:3px solid var(--blue);border-radius:3px;padding:5px 10px;font-size:11px;color:#2c4a6b;line-height:1.5;margin-bottom:10px;}
+  .infographic .lead b{font-weight:700;color:var(--ink);}
+  .infographic .c1 .lead{background:#f1efe9;border-left-color:var(--muted);color:#46453f;}
+  .infographic .c3 .lead{background:#eaf5ee;border-left-color:var(--green);color:#1f6b41;}
+  .infographic .figbox{border:1px solid var(--line);border-radius:3px;padding:6px;margin-bottom:9px;background:#f4f2ec;}
+  .infographic .figbox.plain{border:none;padding:0;background:none;}
+  .infographic svg{display:block;width:100%;}
+  .infographic .lbl{font-size:10px;color:var(--faint);margin:0 0 3px;text-align:center;}
+  .infographic .eq{background:#f7f5ef;border:1px solid var(--line);border-left:3px solid var(--line-2);border-radius:3px;padding:6px 10px;margin-bottom:9px;}
+  .infographic .eq-cap{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.02em;margin-bottom:4px;}
+  .infographic math{font-size:14px;}
+  .infographic .eqline{display:flex;align-items:baseline;gap:8px;margin:4px 0;}
+  .infographic .eqline math{font-size:13.5px;flex:none;}
+  .infographic .eqnote{font-size:10px;color:var(--muted);line-height:1.35;}
+  .infographic .eqline .eqnote{margin-left:auto;text-align:right;}
+  .infographic .params{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .infographic .params .p{border:1px solid var(--line);border-radius:2px;padding:2px 8px;font-size:10.5px;color:var(--muted);white-space:nowrap;}
+  .infographic .params .p b{color:var(--ink);font-variant-numeric:tabular-nums;}
+  .infographic .bul{list-style:none;font-size:11.5px;color:#3a3a36;line-height:1.55;}
+  .infographic .bul li{padding-left:14px;position:relative;margin-bottom:3px;}
+  .infographic .bul li::before{content:"—";position:absolute;left:0;top:-1px;color:var(--blue);font-weight:700;}
+  .infographic .c3 .bul li::before{color:var(--green);}
+  .infographic .bul b{color:var(--ink);}
+  .infographic .takeaway{margin-top:9px;background:#eef6f0;border:1px solid #cfe6d8;border-radius:3px;padding:6px 10px;font-size:11px;color:#1f6b41;line-height:1.5;}
+  .infographic .takeaway b{color:#155233;}
+  .infographic .kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+  .infographic .kpi{padding:7px 11px;border:1px solid var(--line);border-radius:3px;white-space:nowrap;}
+  .infographic .kpi .k{font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;}
+  .infographic .kpi .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;}
+  .infographic .kpi.mpc{background:#eef4fb;border-color:#cfe0f2;} .infographic .kpi.mpc .v{color:var(--blue-deep);}
+  .infographic .kpi.pid{background:#fbf3e6;border-color:#eddcc0;} .infographic .kpi.pid .v{color:#9a6410;}
+  .infographic .leg{display:flex;gap:14px;justify-content:center;font-size:10.5px;color:var(--muted);margin:0 0 6px;}
+  .infographic .leg span{display:inline-flex;align-items:center;gap:5px;}
+  .infographic .leg i{width:16px;height:0;border-top-width:2.5px;border-top-style:solid;display:inline-block;}
+  .infographic .pfoot{padding:8px 22px;border-top:2px solid var(--ink);color:var(--muted);font-size:11px;display:flex;justify-content:space-between;align-items:center;background:#f1efe8;}
+  .infographic .pfoot b{color:var(--ink);} .infographic .pfoot .tag{color:var(--blue-deep);}
+  .infographic .katex{font-size:1.02em;}
+  .infographic .katex-display{margin:6px 0 4px;text-align:left;overflow-x:auto;overflow-y:hidden;padding-bottom:2px;}
+  .infographic .eqline{flex-wrap:wrap;}
+  .infographic .eqline .katex{flex:none;}
+  @media (max-width:980px){.infographic .cols{grid-template-columns:1fr;}.infographic .col+.col{border-left:none;border-top:1px solid var(--line);}}
 </style>
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/contrib/auto-render.min.js" onload="renderMathInElement(document.querySelector('.infographic'),{delimiters:[{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
 </head>
 <body>
 <div class="app">
@@ -76,33 +139,42 @@
 
   <div class="panel" style="margin-bottom:10px;">
     <div class="panel-hdr"><div class="panel-title">ブロック線図（車間制御ループ）</div><div class="panel-hint">加速度指令 1 入力で車間誤差を 0 に · 前車挙動は外乱として先読み</div></div>
-    <svg viewBox="0 0 720 185" style="width:100%;max-height:200px;" role="img" aria-label="車間制御ACCの制御ブロック線図">
+    <svg viewBox="0 0 720 196" style="width:100%;max-height:210px;" role="img" aria-label="車間制御ACCの制御ブロック線図（伝達関数）">
       <defs><marker id="accah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--text-3)"/></marker></defs>
       <g font-size="12" fill="var(--text-1)">
-        <text x="10" y="58" font-size="12" fill="var(--text-2)">r = 目標車間 d*</text>
-        <circle cx="128" cy="54" r="13" fill="var(--surface)" stroke="var(--border-2)" stroke-width="1"/><text x="128" y="59" text-anchor="middle" font-size="15">⊕</text>
-        <text x="112" y="82" font-size="13" fill="var(--red)">−</text>
-        <rect x="186" y="31" width="170" height="46" rx="8" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="1"/>
-        <text x="271" y="50" text-anchor="middle" font-weight="600" fill="var(--info-text)">MPC</text>
-        <text x="271" y="67" text-anchor="middle" font-size="10.5" fill="var(--info-text)">未来予測 ＋ 制約付き最適化</text>
-        <rect x="486" y="31" width="184" height="46" rx="8" fill="var(--surface-2)" stroke="var(--border-2)" stroke-width="0.5"/>
-        <text x="578" y="50" text-anchor="middle" font-weight="600">自車（縦運動）</text>
-        <text x="578" y="67" text-anchor="middle" font-size="10.5" fill="var(--text-2)">加速度遅れ τ → 車間</text>
-        <text x="688" y="50" font-size="12" fill="var(--text-2)">y</text>
-        <text x="490" y="123" font-size="10.5" fill="var(--amber)">前車挙動 ＝ 外乱</text>
+        <text x="8" y="58" font-size="12" fill="var(--text-2)">r = 目標 d*</text>
+        <circle cx="116" cy="54" r="13" fill="var(--surface)" stroke="var(--border-2)" stroke-width="1"/><text x="116" y="59" text-anchor="middle" font-size="15">⊕</text>
+        <text x="100" y="82" font-size="13" fill="var(--red)">−</text>
+        <rect x="156" y="33" width="92" height="42" rx="8" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="1"/>
+        <text x="202" y="52" text-anchor="middle" font-weight="700" fill="var(--info-text)" font-size="16">−K</text>
+        <text x="202" y="67" text-anchor="middle" font-size="9.5" fill="var(--info-text)">状態フィードバック</text>
+        <text x="202" y="90" text-anchor="middle" font-size="10" fill="var(--red)">制約 |u| ≤ a_max</text>
+        <rect x="294" y="26" width="382" height="56" rx="8" fill="none" stroke="var(--border-2)" stroke-width="1" stroke-dasharray="5,3"/>
+        <text x="485" y="20" text-anchor="middle" font-size="10.5" fill="var(--text-3)">プラント（自車の縦運動）</text>
+        <rect x="304" y="37" width="118" height="38" rx="6" fill="var(--surface-2)" stroke="var(--border-2)" stroke-width="0.5"/>
+        <text x="363" y="55" text-anchor="middle" font-size="15" fill="var(--text-1)">1/(τs+1)</text>
+        <text x="363" y="69" text-anchor="middle" font-size="8.5" fill="var(--text-2)">加速度遅れ</text>
+        <rect x="460" y="37" width="78" height="38" rx="6" fill="var(--surface-2)" stroke="var(--border-2)" stroke-width="0.5"/>
+        <text x="499" y="60" text-anchor="middle" font-size="15" fill="var(--text-1)">1/s</text>
+        <rect x="576" y="37" width="78" height="38" rx="6" fill="var(--surface-2)" stroke="var(--border-2)" stroke-width="0.5"/>
+        <text x="615" y="60" text-anchor="middle" font-size="15" fill="var(--text-1)">1/s</text>
+        <text x="690" y="50" font-size="12" fill="var(--text-2)">y</text>
       </g>
       <g stroke="var(--text-3)" stroke-width="1.4" fill="none">
-        <line x1="102" y1="54" x2="113" y2="54" marker-end="url(#accah)"/>
-        <line x1="141" y1="54" x2="182" y2="54" marker-end="url(#accah)"/><text x="161" y="48" font-size="10" fill="var(--text-3)" stroke="none">e</text>
-        <line x1="356" y1="54" x2="482" y2="54" marker-end="url(#accah)"/><text x="419" y="48" font-size="10" fill="var(--text-3)" stroke="none">a 加速度指令</text>
-        <line x1="670" y1="54" x2="710" y2="54"/>
-        <path d="M695,57 L695,150 L128,150 L128,69" marker-end="url(#accah)"/>
-        <text x="138" y="146" font-size="10" fill="var(--text-3)" stroke="none">出力 = 車間（前車位置 − 自車位置）</text>
+        <line x1="90" y1="54" x2="101" y2="54" marker-end="url(#accah)"/>
+        <line x1="129" y1="54" x2="153" y2="54" marker-end="url(#accah)"/><text x="141" y="48" font-size="10" fill="var(--text-3)" stroke="none">e</text>
+        <line x1="248" y1="54" x2="302" y2="54" marker-end="url(#accah)"/><text x="275" y="48" font-size="10" fill="var(--text-3)" stroke="none">u</text>
+        <line x1="422" y1="56" x2="458" y2="56" marker-end="url(#accah)"/><text x="440" y="50" font-size="10" fill="var(--text-3)" stroke="none">a</text>
+        <line x1="538" y1="56" x2="574" y2="56" marker-end="url(#accah)"/><text x="556" y="50" font-size="10" fill="var(--text-3)" stroke="none">v</text>
+        <line x1="654" y1="56" x2="712" y2="56"/>
+        <path d="M695,59 L695,160 L116,160 L116,69" marker-end="url(#accah)"/>
+        <text x="126" y="156" font-size="10" fill="var(--text-3)" stroke="none">出力 = 車間（前車位置 − 自車位置）をフィードバック</text>
       </g>
       <g stroke="var(--amber)" stroke-width="1.4" fill="none">
-        <path d="M560,110 L560,79" marker-end="url(#accah)"/>
+        <path d="M556,102 L556,77" marker-end="url(#accah)"/>
       </g>
-      <text x="360" y="175" text-anchor="middle" font-size="10.5" fill="var(--text-3)">前車の速度・急減速（前車ブレーキ）は measured disturbance として別経路でプラントへ入り、MPC は先読みで早めに減速</text>
+      <text x="556" y="116" text-anchor="middle" font-size="10" fill="var(--amber)">前車 a_l ＝外乱</text>
+      <text x="360" y="190" text-anchor="middle" font-size="10.5" fill="var(--text-3)">プラントを「一次遅れ 1/(τs+1) → 積分 1/s → 積分 1/s」に分解。制御器は状態フィードバック −K（制約付き最適化で定まる固定ゲイン）。</text>
     </svg>
     <p class="explain" style="font-size:12px;margin:6px 0 0;"><strong>加減速の上限を制約</strong>として守りつつ車間誤差を 0 に。前車の急減速も<strong>先読み</strong>で早めに減速。</p>
   </div>
@@ -176,6 +248,148 @@
       </div>
     </div>
   </div>
+
+  <section class="infographic">
+    <div class="ig-hd">体系まとめ — モデル化・制御ロジック・制御の効果</div>
+<div class="poster" data-demo="acc">
+    <header class="phead">
+      <div>
+        <h1>車間制御 ACC <span>— 前車に追従する MPC</span></h1>
+        <p>前車との車間を一定に保つ。加速・減速には上限（快適性・安全の制約）。前車の急ブレーキにも先回りして減速し、追突を回避する。</p>
+      </div>
+      <div class="badge"><b>1 入力</b>加速度指令<br>制約付き MPC</div>
+    </header>
+    <main class="cols">
+      <!-- ① モデル化 -->
+      <section class="col c1">
+        <div class="ctitle"><div class="cnum">1</div><div><h2>モデル化</h2><div class="sub">縦運動の物理 → 状態空間 → 離散化</div></div></div>
+        <div class="lead">自車が前車との<b>車間</b>を目標値 d* に保つ問題。状態は<b>車間の誤差・相対速度・自車の加速度</b>の3つで表す。前車の加減速は<b>外乱</b>として効く。</div>
+        <div class="figbox">
+          <svg viewBox="0 0 360 108" role="img" aria-label="ACCプラント図">
+            <rect x="0" y="48" width="360" height="40" fill="#46453f"/>
+            <line x1="0" y1="68" x2="360" y2="68" stroke="#d8d4c8" stroke-width="3" stroke-dasharray="20,14"/>
+            <g transform="translate(92,68)">
+              <rect x="-29" y="-13" width="58" height="22" rx="6" fill="#2F7DD1"/>
+              <rect x="-13" y="-22" width="28" height="12" rx="4" fill="#2F7DD1" opacity=".85"/>
+              <circle cx="-16" cy="10" r="5" fill="#1d1d1d"/><circle cx="16" cy="10" r="5" fill="#1d1d1d"/>
+              <text x="0" y="-28" text-anchor="middle" font-size="10" fill="#2F7DD1" font-weight="600">自車 xₑ, vₑ</text>
+              <path d="M30,2 l16,0" stroke="#2F7DD1" stroke-width="1.5" marker-end="url(#pv)"/>
+            </g>
+            <g transform="translate(272,68)">
+              <rect x="-29" y="-13" width="58" height="22" rx="6" fill="#DD901C"/>
+              <rect x="-13" y="-22" width="28" height="12" rx="4" fill="#DD901C" opacity=".85"/>
+              <circle cx="-16" cy="10" r="5" fill="#1d1d1d"/><circle cx="16" cy="10" r="5" fill="#1d1d1d"/>
+              <text x="0" y="-28" text-anchor="middle" font-size="10" fill="#b9760f" font-weight="600">前車 xₗ, vₗ</text>
+              <path d="M30,2 l16,0" stroke="#DD901C" stroke-width="1.5" marker-end="url(#pvo)"/>
+            </g>
+            <defs>
+              <marker id="pv" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2F7DD1"/></marker>
+              <marker id="pvo" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DD901C"/></marker>
+            </defs>
+            <g stroke="#46453f" stroke-width="1.3" fill="none">
+              <line x1="123" y1="34" x2="243" y2="34"/>
+              <path d="M123,34 l7,-4 v8 z" fill="#46453f" stroke="none"/><path d="M243,34 l-7,-4 v8 z" fill="#46453f" stroke="none"/>
+            </g>
+            <text x="183" y="27" text-anchor="middle" font-size="11" fill="#46453f">車間 d = xₗ − xₑ　（目標 d*）</text>
+          </svg>
+        </div>
+        <div class="eq">
+          <div class="eq-cap">運動方程式（誤差座標・連続時間）</div>
+          <div class="eqline">\(\dot{e}_{\text{gap}} = \Delta v\)<span class="eqnote">車間誤差の変化 ＝ 相対速度</span></div>
+          <div class="eqline">\(\dot{\Delta v} = a_l - a_e\)<span class="eqnote">前車加速度 \(a_l\) は<b>外乱</b></span></div>
+          <div class="eqline">\(\dot{a}_e = (u - a_e)/\tau\)<span class="eqnote">加速度の<b>一次遅れ</b></span></div>
+        </div>
+        <div class="eq">
+          <div class="eq-cap">状態空間　ẋ = A x + B u + E a<sub>l</sub></div>
+          \[\begin{bmatrix}\dot{e}_{\text{gap}}\\\dot{\Delta v}\\\dot{a}_e\end{bmatrix}=\begin{bmatrix}0&1&0\\0&0&\textcolor{#b9760f}{-1}\\0&0&\textcolor{#b9760f}{-1/\tau}\end{bmatrix}\begin{bmatrix}e_{\text{gap}}\\\Delta v\\a_e\end{bmatrix}+\begin{bmatrix}0\\0\\\textcolor{#2F7DD1}{1/\tau}\end{bmatrix}u\]
+          <div class="eqnote"><b style="color:#b9760f">橙</b> ＝ 自車加速度の効き、<b style="color:#2F7DD1">青</b> ＝ 指令 \(u\) の効き。外乱 \(E=[0,1,0]^\top\)。</div>
+        </div>
+        <div class="eq" style="padding:5px 10px;">
+          <div class="eq-cap">離散化（ZOH・dt = 0.1 s）</div>
+          <div class="eqline">\(x_{k+1} = A_d x_k + B_d u_k\)<span class="eqnote">\(A_d=e^{A\,dt}\)</span></div>
+        </div>
+        <div class="params">
+          <span class="p">τ = <b>0.5 s</b></span><span class="p">dt = <b>0.1 s</b></span><span class="p">d* = <b>15 m</b></span><span class="p">状態 <b>3次</b></span><span class="p">入力 <b>1次</b></span>
+        </div>
+      </section>
+      <!-- ② 制御ロジック -->
+      <section class="col c2">
+        <div class="ctitle"><div class="cnum">2</div><div><h2>制御ロジック（MPC）</h2><div class="sub">予測＋制約付き最適化</div></div></div>
+        <div class="lead">MPC は<b>未来を予測</b>し、加減速の<b>上限を守りながら</b>車間誤差を最小にする加速度列を毎瞬間計算し、先頭だけ実行する。前車の急減速も先読みできる。</div>
+        <div class="figbox">
+          <svg viewBox="0 0 360 140" role="img" aria-label="ACC制御ブロック線図（伝達関数）">
+            <defs><marker id="ahig" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#7d7c75"/></marker></defs>
+            <text x="2" y="43" font-size="10" fill="#56554f">d*</text>
+            <circle cx="30" cy="39" r="11" fill="#fff" stroke="#222" stroke-width="1"/><text x="30" y="44" text-anchor="middle" font-size="13">⊕</text>
+            <text x="17" y="60" font-size="11" fill="#D8423F">−</text>
+            <!-- 制御器：状態フィードバック -->
+            <rect x="52" y="25" width="44" height="28" rx="3" fill="#eaf2fb" stroke="#2F7DD1" stroke-width="1.2"/>
+            <text x="74" y="39" text-anchor="middle" font-weight="700" fill="#0C447C" font-size="13">−K</text>
+            <text x="74" y="49" text-anchor="middle" font-size="7.5" fill="#0C447C">状態FB</text>
+            <text x="74" y="68" text-anchor="middle" font-size="8" fill="#D8423F">制約 |u|≤a_max</text>
+            <!-- プラント（伝達関数の要素分解） -->
+            <rect x="116" y="20" width="218" height="40" rx="3" fill="none" stroke="#c3bdae" stroke-width="1" stroke-dasharray="3,2"/>
+            <text x="225" y="16" text-anchor="middle" font-size="8" fill="#8c8b84">プラント（自車の縦運動）</text>
+            <rect x="120" y="25" width="58" height="28" rx="3" fill="#f5f2ec" stroke="#8c8b84" stroke-width=".8"/>
+            <text x="149" y="43" text-anchor="middle" font-size="12">1/(τs+1)</text>
+            <rect x="200" y="25" width="36" height="28" rx="3" fill="#f5f2ec" stroke="#8c8b84" stroke-width=".8"/>
+            <text x="218" y="43" text-anchor="middle" font-size="12">1/s</text>
+            <rect x="258" y="25" width="36" height="28" rx="3" fill="#f5f2ec" stroke="#8c8b84" stroke-width=".8"/>
+            <text x="276" y="43" text-anchor="middle" font-size="12">1/s</text>
+            <text x="322" y="35" font-size="10" fill="#56554f">車間 y</text>
+            <g stroke="#7d7c75" stroke-width="1.3" fill="none">
+              <line x1="11" y1="39" x2="17" y2="39" marker-end="url(#ahig)"/>
+              <line x1="41" y1="39" x2="50" y2="39" marker-end="url(#ahig)"/>
+              <line x1="96" y1="39" x2="118" y2="39" marker-end="url(#ahig)"/><text x="107" y="34" font-size="8.5" fill="#7d7c75" stroke="none">u</text>
+              <line x1="178" y1="39" x2="198" y2="39" marker-end="url(#ahig)"/><text x="188" y="34" font-size="8" fill="#7d7c75" stroke="none">a</text>
+              <line x1="236" y1="39" x2="256" y2="39" marker-end="url(#ahig)"/><text x="246" y="34" font-size="8" fill="#7d7c75" stroke="none">v</text>
+              <line x1="294" y1="39" x2="320" y2="39"/>
+              <path d="M308,39 L308,116 L30,116 L30,52" marker-end="url(#ahig)"/>
+            </g>
+            <text x="120" y="128" font-size="8.5" fill="#7d7c75">出力（車間）を測って目標 r と比較 ＝ フィードバック</text>
+            <g stroke="#DD901C" stroke-width="1.3" fill="none"><path d="M246,74 L246,55" marker-end="url(#ahig)"/></g>
+            <text x="246" y="86" text-anchor="middle" font-size="8" fill="#b9760f">前車 a_l ＝外乱</text>
+          </svg>
+        </div>
+        <div class="eq">
+          <div class="eq-cap">毎ステップ解く最適化（＋制約）</div>
+          \[\min_{u}\ \sum_{k=1}^{N_p}\left(q\,e_{\text{gap}}^2 + r\,u^2\right)\quad \text{s.t. } a_{\min}\le u\le a_{\max}\]
+          <div class="eqnote">＝車間誤差 e<sub>gap</sub> を小さく、かつ加減速 u を穏やかに。<b>上限は制約として内蔵</b>。</div>
+        </div>
+        <ul class="bul">
+          <li><b>未来 N<sub>p</sub>=25 ステップ</b>を予測して最適加速度列を計算、先頭だけ実行</li>
+          <li>前車の急減速を<b>先読み</b>し、上限内で<b>早めに</b>減速</li>
+          <li><b>PIDとの違い</b>：PIDは今の誤差にしか反応せず制約も知らない。MPCは未来と上限を同時に考える</li>
+        </ul>
+      </section>
+      <!-- ③ 制御の効果 -->
+      <section class="col c3">
+        <div class="ctitle"><div class="cnum">3</div><div><h2>制御の効果</h2><div class="sub">前車ブレーキ：MPC vs PID</div></div></div>
+        <div class="lead"><b>読み方</b>：青＝MPC、橙破線＝PID（同じ加減速上限）。前車が<b>急ブレーキ</b>（赤帯）したとき、車間がどこまで詰まるかを比べる。下段は加速度が上限に当たる様子。</div>
+        <div class="leg">
+          <span><i style="border-top-color:#2F7DD1;"></i>MPC</span>
+          <span><i style="border-top-color:#DD901C;border-top-style:dashed;"></i>PID</span>
+          <span><i style="border-top-color:#D8423F;border-top-style:dotted;"></i>目標 / 上限</span>
+        </div>
+        <div class="figbox plain">
+          <svg id="acc_gap" viewBox="0 0 380 132" role="img" aria-label="車間の時間応答"></svg>
+          <div class="lbl">車間 [m]（赤帯＝前車が急ブレーキ中）</div>
+          <svg id="acc_acc" viewBox="0 0 380 110" role="img" aria-label="自車加速度の時間応答"></svg>
+          <div class="lbl">自車の加速度 [m/s²]（点線＝加減速の上限）</div>
+        </div>
+        <div class="kpis">
+          <div class="kpi mpc"><div class="k">MPC 最小車間</div><div class="v" id="acc_kmpc">– m</div></div>
+          <div class="kpi pid"><div class="k">PID 最小車間</div><div class="v" id="acc_kpid">– m</div></div>
+        </div>
+        <div class="takeaway"><b>結論</b>：MPC は前車ブレーキを先読みして早めに減速し車間を保つ。PID は反応が遅れて車間が詰まる（最小車間が小さい＝追突に近い）。</div>
+      </section>
+    </main>
+    <footer class="pfoot">
+      <div>状態コスト <b>MPC</b>（車間誤差を罰）＋ 加減速クランプ <b>|a| ≤ 上限</b>　·　一次遅れ τ=0.5s　·　同一シナリオで <b>MPC</b> と <b>PID</b> を比較</div>
+      <div class="tag">制御工学 教材デモ ／ lec_mpc</div>
+    </footer>
+  </div>
+  </section>
   <div class="footer">
     縦方向 ACC モデル（一次の加速度遅れ τ=0.5s）· 状態コスト MPC（車間誤差を罰）＋ 加減速クランプ |a|≤上限 · 実時間アニメ<br>
     目標車間を詰める／減速上限を小さくすると、前車ブレーキ時に車間が縮みやすくなります（それでも追突は回避）。
@@ -340,6 +554,78 @@
   $('s-kd').addEventListener('input',e=>$('v-kd').textContent=(+e.target.value).toFixed(2));
   $('s-ki').addEventListener('input',e=>$('v-ki').textContent=(+e.target.value).toFixed(2));
   $('s-qe').addEventListener('input',e=>{$('v-qe').textContent=(+e.target.value).toFixed(1);Qd[0]=+e.target.value;computeKfb();});
+})();
+</script>
+
+<script>
+(function(){
+"use strict";
+/* ===== 共通：行列ユーティリティ ===== */
+const I=n=>Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
+const zeros=(r,c)=>Array.from({length:r},()=>new Array(c).fill(0));
+function mm(A,B){const n=A.length,m=B[0].length,p=B.length,C=zeros(n,m);for(let i=0;i<n;i++)for(let k=0;k<p;k++){const a=A[i][k];if(!a)continue;for(let j=0;j<m;j++)C[i][j]+=a*B[k][j];}return C;}
+const tp=A=>A[0].map((_,j)=>A.map(r=>r[j]));const add=(A,B)=>A.map((r,i)=>r.map((v,j)=>v+B[i][j]));const sc=(A,s)=>A.map(r=>r.map(v=>v*s));
+function inv(A){const n=A.length;const M=A.map((r,i)=>r.concat(I(n)[i]));for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)M[p][c]+=1e-9;[M[c],M[p]]=[M[p],M[c]];const d=M[c][c];for(let j=0;j<2*n;j++)M[c][j]/=d;for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];for(let j=0;j<2*n;j++)M[r][j]-=f*M[c][j];}}return M.map(r=>r.slice(n));}
+function expm(A){const n=A.length;let nr=0;for(const r of A)for(const v of r)nr+=v*v;nr=Math.sqrt(nr);let s=Math.max(0,Math.ceil(Math.log2(nr+1e-9)));const As=sc(A,1/Math.pow(2,s));let t=I(n),sum=I(n);for(let k=1;k<=20;k++){t=sc(mm(t,As),1/k);sum=add(sum,t);}for(let i=0;i<s;i++)sum=mm(sum,sum);return sum;}
+function c2d(Ac,Bc,dt){const n=Ac.length,m=Bc[0].length;const M=zeros(n+m,n+m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)M[i][j]=Ac[i][j]*dt;for(let j=0;j<m;j++)M[i][n+j]=Bc[i][j]*dt;}const E=expm(M);const Ad=zeros(n,n),Bd=zeros(n,m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)Ad[i][j]=E[i][j];for(let j=0;j<m;j++)Bd[i][j]=E[i][n+j];}return{Ad,Bd};}
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+const el=id=>document.getElementById(id);
+
+/* ===== 各デモ ===== */
+
+const DEMOS={};
+/* ---- ACC ---- */
+DEMOS.acc=function(){
+  const tau=0.5,dt=0.1;
+  const Ac=[[0,1,0],[0,0,-1],[0,0,-1/tau]],Bc=[[0],[0],[1/tau]];
+  const{Ad,Bd}=c2d(Ac,Bc,dt);
+  const Np=25,Nc=8,Qd=[2,3,0.3],Rw=0.5;let Kfb=[0,0,0];
+  (function(){const Apow=[I(3)];for(let i=1;i<=Np;i++)Apow.push(mm(Apow[i-1],Ad));const Sx=zeros(Np*3,3),Su=zeros(Np*3,Nc);
+    for(let i=1;i<=Np;i++){const Ai=Apow[i];for(let r=0;r<3;r++)for(let c=0;c<3;c++)Sx[(i-1)*3+r][c]=Ai[r][c];for(let j=0;j<Nc;j++){if(j>i-1)break;const AB=mm(Apow[i-1-j],Bd);for(let r=0;r<3;r++)Su[(i-1)*3+r][j]=AB[r][0];}}
+    const SuT=tp(Su);const SuTQ=SuT.map(row=>row.map((v,k)=>v*Qd[k%3]));const H=mm(SuTQ,Su);for(let i=0;i<Nc;i++)H[i][i]+=Rw;const Gain=mm(inv(H),SuTQ);const K1=Gain[0];
+    for(let i=0;i<Np*3;i++)for(let c=0;c<3;c++)Kfb[c]+=K1[i]*Sx[i][c];})();
+  const Kp=0.9,Kd=1.05,Ki=0.03,dstar=15,aMin=-4,aMax=2.5;
+  const T=12,N=Math.round(T/dt),brakeT0=3.0,brakeT1=4.8;
+  function simulate(kind){
+    let xe=0,ve=20,ae=0,xl=dstar,vl=20,pidI=0;const gap=[],acc=[],t=[];
+    for(let k=0;k<N;k++){const tk=k*dt;let aL=0;if(tk>=brakeT0&&tk<brakeT1)aL=-4.5;vl+=dt*aL;if(vl<0)vl=0;xl+=dt*vl;
+      const e=(xl-xe)-dstar,dv=vl-ve;let u;
+      if(kind==='mpc')u=-(Kfb[0]*e+Kfb[1]*dv+Kfb[2]*ae);else{pidI+=e*dt;pidI=clamp(pidI,-15,15);u=Kp*e+Kd*dv+Ki*pidI;}
+      u=clamp(u,aMin,aMax);ae+=dt*(u-ae)/tau;ve+=dt*ae;if(ve<0)ve=0;xe+=dt*ve;gap.push(xl-xe);acc.push(ae);t.push(tk);}
+    return{gap,acc,t};
+  }
+  const mpc=simulate('mpc'),pid=simulate('pid');
+  const M={l:34,r:8,t:8,b:18};const xPx=(tk,pw)=>M.l+(tk/T)*pw;
+  const poly=(arr,t,yfn,pw)=>{let p='';for(let i=0;i<arr.length;i++)p+=`${xPx(t[i],pw).toFixed(1)},${yfn(arr[i]).toFixed(1)} `;return p;};
+  // 上段：車間
+  (function(){const W=380,H=132,pw=W-M.l-M.r,ph=H-M.t-M.b;
+    const gMax=Math.max(22,...mpc.gap,...pid.gap),gMin=Math.min(0,...pid.gap);
+    const yhi=Math.ceil(gMax/5)*5,ylo=Math.min(0,Math.floor(gMin/5)*5);const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s='';
+    s+=`<rect x="${xPx(brakeT0,pw)}" y="${M.t}" width="${xPx(brakeT1,pw)-xPx(brakeT0,pw)}" height="${ph}" fill="#D8423F" opacity="0.09"/>`;
+    for(let g=ylo;g<=yhi;g+=5){const y=yPx(g);s+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="rgba(0,0,0,.07)"/>`;s+=`<text x="${M.l-4}" y="${y+3}" text-anchor="end" font-size="9" fill="#8c8b84">${g}</text>`;}
+    s+=`<line x1="${M.l}" y1="${yPx(dstar)}" x2="${W-M.r}" y2="${yPx(dstar)}" stroke="#D8423F" stroke-width="1" stroke-dasharray="3,3" opacity=".7"/>`;
+    s+=`<text x="${W-M.r}" y="${yPx(dstar)-3}" text-anchor="end" font-size="9" fill="#D8423F">目標 d*=${dstar}</text>`;
+    if(ylo<0){s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="#D8423F" opacity=".5"/>`;s+=`<text x="${M.l+2}" y="${yPx(0)-3}" font-size="8.5" fill="#D8423F">追突</text>`;}
+    s+=`<polyline points="${poly(pid.gap,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
+    s+=`<polyline points="${poly(mpc.gap,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;
+    el('acc_gap').innerHTML=s;})();
+  // 下段：加速度
+  (function(){const W=380,H=110,pw=W-M.l-M.r,ph=H-M.t-M.b;
+    const aHi=Math.max(aMax,1)+0.6,aLo=Math.min(aMin,-1)-0.6;const yPx=v=>M.t+(1-(v-aLo)/(aHi-aLo))*ph;let s='';
+    s+=`<rect x="${xPx(brakeT0,pw)}" y="${M.t}" width="${xPx(brakeT1,pw)-xPx(brakeT0,pw)}" height="${ph}" fill="#D8423F" opacity="0.09"/>`;
+    s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="rgba(0,0,0,.25)"/>`;
+    s+=`<line x1="${M.l}" y1="${yPx(aMax)}" x2="${W-M.r}" y2="${yPx(aMax)}" stroke="#2E9457" stroke-dasharray="3,3" opacity=".7"/>`;
+    s+=`<text x="${W-M.r}" y="${yPx(aMax)-3}" text-anchor="end" font-size="9" fill="#2E9457">a_max ${aMax}</text>`;
+    s+=`<line x1="${M.l}" y1="${yPx(aMin)}" x2="${W-M.r}" y2="${yPx(aMin)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".7"/>`;
+    s+=`<text x="${W-M.r}" y="${yPx(aMin)+10}" text-anchor="end" font-size="9" fill="#D8423F">a_min ${aMin}</text>`;
+    s+=`<polyline points="${poly(pid.acc,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
+    s+=`<polyline points="${poly(mpc.acc,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;
+    for(let tk=0;tk<=T;tk+=3){s+=`<text x="${xPx(tk,pw)}" y="${H-3}" text-anchor="middle" font-size="9" fill="#8c8b84">${tk}s</text>`;}
+    el('acc_acc').innerHTML=s;})();
+  el('acc_kmpc').textContent=Math.min(...mpc.gap).toFixed(1)+' m';
+  el('acc_kpid').textContent=Math.min(...pid.gap).toFixed(1)+' m';
+};
+DEMOS.acc();
 })();
 </script>
 </body>

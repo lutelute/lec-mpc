@@ -55,7 +55,70 @@
   .explain{font-size:12.5px;color:var(--text-2);line-height:1.7;} .explain b{color:var(--text-1);}
   .footer{font-size:10px;color:var(--text-3);text-align:center;margin-top:14px;line-height:1.7;}
   @media (max-width:980px){.main-grid{grid-template-columns:1fr;}.kpi{grid-template-columns:1fr 1fr;}}
+  /* ===== 埋め込みインフォグラフ（技術書スタイル・白基調・罫線ベース） ===== */
+  .infographic{--ink:#1b1b1a;--muted:#56554f;--faint:#8c8b84;--blue:#2F7DD1;--blue-deep:#0C447C;--amber:#C57A12;--red:#C0392B;--green:#1f7a47;--line:#dcd7cb;--line-2:#c3bdae;--bg:#fff;background:#faf8f4;border:1px solid var(--line-2);border-radius:3px;margin-top:18px;color:var(--ink);font-family:var(--font-sans);overflow:hidden;}
+  .infographic *{box-sizing:border-box;margin:0;padding:0;}
+  .infographic .ig-hd{font-size:11px;color:#6b6a64;text-transform:uppercase;letter-spacing:.1em;font-weight:600;padding:9px 22px;border-bottom:1px solid var(--line);background:#f1efe8;}
+  .infographic .poster{width:100%;background:var(--bg);display:flex;flex-direction:column;}
+  .infographic .phead{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:14px 22px 12px;border-bottom:2px solid var(--ink);}
+  .infographic .phead h1{font-size:21px;font-weight:700;}
+  .infographic .phead h1 span{font-weight:400;color:var(--muted);font-size:16px;}
+  .infographic .phead p{font-size:12px;color:var(--muted);margin-top:3px;max-width:840px;line-height:1.45;}
+  .infographic .badge{flex:none;text-align:center;border:1px solid var(--blue);color:var(--blue-deep);border-radius:2px;padding:6px 12px;font-size:11px;font-weight:600;line-height:1.4;}
+  .infographic .badge b{font-size:13px;display:block;color:var(--blue-deep);}
+  .infographic .cols{display:grid;grid-template-columns:1fr 1fr 1.06fr;}
+  .infographic .col{padding:14px 20px 16px;display:flex;flex-direction:column;min-width:0;}
+  .infographic .col+.col{border-left:1px solid var(--line);}
+  .infographic .ctitle{display:flex;align-items:center;gap:8px;margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid var(--line);}
+  .infographic .cnum{flex:none;width:20px;height:20px;border-radius:2px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;}
+  .infographic .ctitle h2{font-size:15px;font-weight:700;}
+  .infographic .ctitle .sub{font-size:10px;color:var(--faint);font-weight:400;}
+  .infographic .c1 .cnum{background:var(--muted);} .infographic .c2 .cnum{background:var(--blue);} .infographic .c3 .cnum{background:var(--green);}
+  .infographic .lead{background:#eef4fb;border-left:3px solid var(--blue);border-radius:3px;padding:5px 10px;font-size:11px;color:#2c4a6b;line-height:1.5;margin-bottom:10px;}
+  .infographic .lead b{font-weight:700;color:var(--ink);}
+  .infographic .c1 .lead{background:#f1efe9;border-left-color:var(--muted);color:#46453f;}
+  .infographic .c3 .lead{background:#eaf5ee;border-left-color:var(--green);color:#1f6b41;}
+  .infographic .figbox{border:1px solid var(--line);border-radius:3px;padding:6px;margin-bottom:9px;background:#f4f2ec;}
+  .infographic .figbox.plain{border:none;padding:0;background:none;}
+  .infographic svg{display:block;width:100%;}
+  .infographic .lbl{font-size:10px;color:var(--faint);margin:0 0 3px;text-align:center;}
+  .infographic .eq{background:#f7f5ef;border:1px solid var(--line);border-left:3px solid var(--line-2);border-radius:3px;padding:6px 10px;margin-bottom:9px;}
+  .infographic .eq-cap{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.02em;margin-bottom:4px;}
+  .infographic math{font-size:14px;}
+  .infographic .eqline{display:flex;align-items:baseline;gap:8px;margin:4px 0;}
+  .infographic .eqline math{font-size:13.5px;flex:none;}
+  .infographic .eqnote{font-size:10px;color:var(--muted);line-height:1.35;}
+  .infographic .eqline .eqnote{margin-left:auto;text-align:right;}
+  .infographic .params{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .infographic .params .p{border:1px solid var(--line);border-radius:2px;padding:2px 8px;font-size:10.5px;color:var(--muted);white-space:nowrap;}
+  .infographic .params .p b{color:var(--ink);font-variant-numeric:tabular-nums;}
+  .infographic .bul{list-style:none;font-size:11.5px;color:#3a3a36;line-height:1.55;}
+  .infographic .bul li{padding-left:14px;position:relative;margin-bottom:3px;}
+  .infographic .bul li::before{content:"—";position:absolute;left:0;top:-1px;color:var(--blue);font-weight:700;}
+  .infographic .c3 .bul li::before{color:var(--green);}
+  .infographic .bul b{color:var(--ink);}
+  .infographic .takeaway{margin-top:9px;background:#eef6f0;border:1px solid #cfe6d8;border-radius:3px;padding:6px 10px;font-size:11px;color:#1f6b41;line-height:1.5;}
+  .infographic .takeaway b{color:#155233;}
+  .infographic .kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+  .infographic .kpi{padding:7px 11px;border:1px solid var(--line);border-radius:3px;white-space:nowrap;}
+  .infographic .kpi .k{font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;}
+  .infographic .kpi .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;}
+  .infographic .kpi.mpc{background:#eef4fb;border-color:#cfe0f2;} .infographic .kpi.mpc .v{color:var(--blue-deep);}
+  .infographic .kpi.pid{background:#fbf3e6;border-color:#eddcc0;} .infographic .kpi.pid .v{color:#9a6410;}
+  .infographic .leg{display:flex;gap:14px;justify-content:center;font-size:10.5px;color:var(--muted);margin:0 0 6px;}
+  .infographic .leg span{display:inline-flex;align-items:center;gap:5px;}
+  .infographic .leg i{width:16px;height:0;border-top-width:2.5px;border-top-style:solid;display:inline-block;}
+  .infographic .pfoot{padding:8px 22px;border-top:2px solid var(--ink);color:var(--muted);font-size:11px;display:flex;justify-content:space-between;align-items:center;background:#f1efe8;}
+  .infographic .pfoot b{color:var(--ink);} .infographic .pfoot .tag{color:var(--blue-deep);}
+  .infographic .katex{font-size:1.02em;}
+  .infographic .katex-display{margin:6px 0 4px;text-align:left;overflow-x:auto;overflow-y:hidden;padding-bottom:2px;}
+  .infographic .eqline{flex-wrap:wrap;}
+  .infographic .eqline .katex{flex:none;}
+  @media (max-width:980px){.infographic .cols{grid-template-columns:1fr;}.infographic .col+.col{border-left:none;border-top:1px solid var(--line);}}
 </style>
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/contrib/auto-render.min.js" onload="renderMathInElement(document.querySelector('.infographic'),{delimiters:[{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
 </head>
 <body>
 <div class="app">
@@ -78,30 +141,49 @@
   </section>
 
   <div class="panel" style="margin-bottom:10px;">
-    <div class="panel-hdr"><div class="panel-title">ブロック線図（アンチスウェイ制御ループ）</div><div class="panel-hint">単一入力 F で位置と振れ角を同時に整える</div></div>
-    <svg viewBox="0 0 720 170" style="width:100%;max-height:185px;" role="img" aria-label="天井クレーンの制御ブロック線図">
-      <defs><marker id="crah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--text-3)"/></marker></defs>
+    <div class="panel-hdr"><div class="panel-title">ブロック線図（アンチスウェイ制御ループ）</div><div class="panel-hint">単一入力 F で台車位置と振れ角を同時に整える · プラントを伝達関数に分解</div></div>
+    <svg viewBox="0 0 720 232" style="width:100%;max-height:248px;" role="img" aria-label="天井クレーンの制御ブロック線図（伝達関数）">
+      <defs><marker id="crtf" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--text-3)"/></marker></defs>
       <g font-size="12" fill="var(--text-1)">
-        <text x="10" y="58" font-size="12" fill="var(--text-2)">r = 目標位置</text>
-        <circle cx="96" cy="54" r="13" fill="var(--surface)" stroke="var(--border-2)" stroke-width="1"/><text x="96" y="59" text-anchor="middle" font-size="15">⊕</text>
-        <text x="80" y="82" font-size="13" fill="var(--red)">−</text>
-        <rect x="168" y="31" width="184" height="46" rx="8" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="1"/>
-        <text x="260" y="50" text-anchor="middle" font-weight="600" fill="var(--info-text)">MPC</text>
-        <text x="260" y="67" text-anchor="middle" font-size="10.5" fill="var(--info-text)">未来予測 ＋ 入力整形</text>
-        <rect x="486" y="31" width="184" height="46" rx="8" fill="var(--surface-2)" stroke="var(--border-2)" stroke-width="0.5"/>
-        <text x="578" y="50" text-anchor="middle" font-weight="600">天井クレーン</text>
-        <text x="578" y="67" text-anchor="middle" font-size="10.5" fill="var(--text-2)">x 位置, φ 吊り角</text>
-        <text x="688" y="50" font-size="12" fill="var(--text-2)">y</text>
+        <text x="8" y="78" font-size="12" fill="var(--text-2)">r = 目標位置</text>
+        <circle cx="116" cy="74" r="13" fill="var(--surface)" stroke="var(--border-2)" stroke-width="1"/><text x="116" y="79" text-anchor="middle" font-size="15">⊕</text>
+        <text x="100" y="102" font-size="13" fill="var(--red)">−</text>
+        <rect x="156" y="53" width="92" height="42" rx="8" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="1"/>
+        <text x="202" y="72" text-anchor="middle" font-weight="700" fill="var(--info-text)" font-size="16">−K</text>
+        <text x="202" y="87" text-anchor="middle" font-size="9.5" fill="var(--info-text)">状態フィードバック</text>
+        <text x="202" y="110" text-anchor="middle" font-size="10" fill="var(--red)">制約 |F| ≤ F_max</text>
+        <rect x="294" y="20" width="382" height="118" rx="8" fill="none" stroke="var(--border-2)" stroke-width="1" stroke-dasharray="5,3"/>
+        <text x="485" y="14" text-anchor="middle" font-size="10.5" fill="var(--text-3)">プラント（台車＋吊り荷の振子）</text>
+        <!-- 台車経路：力 → 2重積分 → 位置 x -->
+        <rect x="306" y="32" width="116" height="38" rx="6" fill="var(--surface-2)" stroke="var(--border-2)" stroke-width="0.5"/>
+        <text x="364" y="50" text-anchor="middle" font-size="14" fill="var(--text-1)">1/Mₜ</text>
+        <text x="364" y="64" text-anchor="middle" font-size="8.5" fill="var(--text-2)">台車の加速</text>
+        <rect x="460" y="32" width="78" height="38" rx="6" fill="var(--surface-2)" stroke="var(--border-2)" stroke-width="0.5"/>
+        <text x="499" y="55" text-anchor="middle" font-size="15" fill="var(--text-1)">1/s</text>
+        <rect x="576" y="32" width="78" height="38" rx="6" fill="var(--surface-2)" stroke="var(--border-2)" stroke-width="0.5"/>
+        <text x="615" y="55" text-anchor="middle" font-size="15" fill="var(--text-1)">1/s</text>
+        <text x="694" y="46" font-size="12" fill="var(--text-2)">x</text>
+        <!-- 振れ経路：力 → 安定2次系 → 吊り角 φ -->
+        <rect x="372" y="92" width="138" height="38" rx="6" fill="var(--surface-2)" stroke="var(--amber)" stroke-width="0.8"/>
+        <text x="441" y="110" text-anchor="middle" font-size="14" fill="var(--text-1)">ω²/(s²+ω²)</text>
+        <text x="441" y="124" text-anchor="middle" font-size="8.5" fill="var(--text-2)">振り子（ω²=g/L）</text>
+        <text x="544" y="115" font-size="12" fill="var(--amber)">φ 吊り角</text>
       </g>
       <g stroke="var(--text-3)" stroke-width="1.4" fill="none">
-        <line x1="70" y1="54" x2="81" y2="54" marker-end="url(#crah)"/>
-        <line x1="109" y1="54" x2="164" y2="54" marker-end="url(#crah)"/><text x="136" y="48" font-size="10" fill="var(--text-3)" stroke="none">e</text>
-        <line x1="352" y1="54" x2="482" y2="54" marker-end="url(#crah)"/><text x="417" y="48" font-size="10" fill="var(--text-3)" stroke="none">F トロリーへの力</text>
-        <line x1="670" y1="54" x2="710" y2="54"/>
-        <path d="M695,57 L695,132 L96,132 L96,69" marker-end="url(#crah)"/>
-        <text x="396" y="128" font-size="10" fill="var(--text-3)" stroke="none">フィードバック y = [x, φ]</text>
+        <line x1="90" y1="74" x2="101" y2="74" marker-end="url(#crtf)"/>
+        <line x1="129" y1="74" x2="153" y2="74" marker-end="url(#crtf)"/><text x="141" y="68" font-size="10" fill="var(--text-3)" stroke="none">e</text>
+        <line x1="248" y1="74" x2="302" y2="74" marker-end="url(#crtf)"/><text x="275" y="68" font-size="10" fill="var(--text-3)" stroke="none">F</text>
+        <line x1="422" y1="51" x2="458" y2="51" marker-end="url(#crtf)"/><text x="440" y="45" font-size="10" fill="var(--text-3)" stroke="none">a</text>
+        <line x1="538" y1="51" x2="574" y2="51" marker-end="url(#crtf)"/><text x="556" y="45" font-size="10" fill="var(--text-3)" stroke="none">ẋ</text>
+        <line x1="654" y1="51" x2="690" y2="51"/>
+        <!-- 入力分岐：F を振れ経路へ -->
+        <path d="M275,74 L275,111 L370,111" marker-end="url(#crtf)"/>
+        <line x1="510" y1="111" x2="540" y2="111"/>
+        <!-- 出力フィードバック -->
+        <path d="M672,54 L672,182 L116,182 L116,89" marker-end="url(#crtf)"/>
+        <text x="126" y="178" font-size="10" fill="var(--text-3)" stroke="none">出力 y = [x, φ] 全状態をフィードバック</text>
       </g>
-      <text x="360" y="156" text-anchor="middle" font-size="10.5" fill="var(--text-3)">コストが<tspan font-weight="600" fill="var(--text-2)">位置誤差だけでなく吊り角 φ も罰する</tspan> ＝ 振れを予測して目標で消すアンチスウェイ</text>
+      <text x="360" y="222" text-anchor="middle" font-size="10.5" fill="var(--text-3)">プラントを「台車：1/Mₜ→1/s→1/s（＝2重積分）」＋「振れ：安定2次 ω²/(s²+ω²)」に分解。制御器は状態フィードバック −K（制約付き最適化で定まる固定ゲイン）。</text>
     </svg>
   </div>
 
@@ -157,6 +239,152 @@
       </div>
     </div>
   </div>
+
+  <section class="infographic">
+    <div class="ig-hd">体系まとめ — モデル化・制御ロジック・制御の効果</div>
+<div class="poster" data-demo="crane">
+    <header class="phead">
+      <div>
+        <h1>天井クレーン アンチスウェイ <span>— 揺らさず運ぶ MPC</span></h1>
+        <p>吊り荷を載せたトロリーを目標位置へ運ぶ。台車に加える力は1入力だが、位置と吊り角の両方を同時に整える必要がある。MPCは振れを先読みし、到着時に残留スイングをほぼゼロにする。</p>
+      </div>
+      <div class="badge"><b>1 入力</b>トロリーへの力 F<br>位置 ＋ 振れ角を制御</div>
+    </header>
+    <main class="cols">
+      <!-- ① モデル化 -->
+      <section class="col c1">
+        <div class="ctitle"><div class="cnum">1</div><div><h2>モデル化</h2><div class="sub">台車＋振子の連成系を1本の力で</div></div></div>
+        <div class="lead">台車を動かすと吊り荷が<b>振り子</b>のように揺れる連成系。状態は台車の<b>位置 x・速度 ẋ</b>と振れの<b>角度 φ・角速度 φ̇</b>の4つ。入力は台車を押す<b>力 F</b> 1つだけで、位置合わせと振れ消しを両立させたい。</div>
+        <div class="figbox">
+          <svg viewBox="0 0 360 104" role="img" aria-label="天井クレーンのプラント図">
+            <rect x="20" y="10" width="320" height="8" rx="2" fill="#cfcabd"/>
+            <line x1="20" y1="18" x2="340" y2="18" stroke="#46453f" stroke-width="2"/>
+            <line x1="250" y1="18" x2="250" y2="98" stroke="#D8423F" stroke-width="1.4" stroke-dasharray="5,4"/>
+            <text x="253" y="95" font-size="9.5" fill="#D8423F">目標 r</text>
+            <g transform="translate(132,18)">
+              <rect x="-30" y="-1" width="60" height="20" rx="4" fill="#2F7DD1"/>
+              <circle cx="-18" cy="20" r="4" fill="#1d1d1d"/><circle cx="18" cy="20" r="4" fill="#1d1d1d"/>
+              <text x="0" y="-5" text-anchor="middle" font-size="10" fill="#2F7DD1" font-weight="600">トロリー Mₜ</text>
+              <path d="M30,9 l30,0" stroke="#2E9457" stroke-width="2.4" marker-end="url(#ig-crcf)"/>
+              <text x="46" y="5" text-anchor="middle" font-size="10" fill="#2E9457" font-weight="600">F</text>
+              <line x1="0" y1="19" x2="32" y2="71" stroke="#56554f" stroke-width="2"/>
+              <line x1="0" y1="19" x2="0" y2="73" stroke="#8c8b84" stroke-width="1" stroke-dasharray="3,3"/>
+              <path d="M0,47 A28,28 0 0 0 15,54" fill="none" stroke="#DD901C" stroke-width="1.2"/>
+              <text x="13" y="45" font-size="11" fill="#b9760f" font-weight="600">φ</text>
+              <text x="19" y="38" font-size="9" fill="#56554f">L</text>
+              <rect x="23" y="67" width="18" height="18" rx="3" fill="#DD901C" stroke="#fff" stroke-width="1.5"/>
+              <text x="32" y="98" text-anchor="middle" font-size="9.5" fill="#b9760f">吊り荷 mₚ</text>
+            </g>
+            <defs><marker id="ig-crcf" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2E9457"/></marker></defs>
+            <text x="298" y="40" font-size="9.5" fill="#8c8b84">x = 台車位置</text>
+          </svg>
+        </div>
+        <div class="eq">
+          <div class="eq-cap">運動方程式（微小振れ sinφ≈φ, cosφ≈1 で線形化）</div>
+          <div class="eqline">\(\ddot{x} \approx \dfrac{1}{M_t}F + \dfrac{m_p g}{M_t}\varphi\)<span class="eqnote">台車は力Fで動き<b>＋振れφに引かれる</b></span></div>
+          <div class="eqline">\(\ddot{\varphi} \approx -\dfrac{(M_t+m_p)g}{L\,M_t}\varphi - \dfrac{1}{L\,M_t}F\)<span class="eqnote">振れは<b>戻ろうとし</b>押すと<b>逆へ</b></span></div>
+        </div>
+        <div class="eq">
+          <div class="eq-cap">→ 行列形式 ẋ = A x + B F　（x = [x, ẋ, φ, φ̇]ᵀ）</div>
+          \[\begin{bmatrix}\dot{x}\\\ddot{x}\\\dot{\varphi}\\\ddot{\varphi}\end{bmatrix}=\begin{bmatrix}0&1&0&0\\0&0&\textcolor{#b9760f}{2.94}&0\\0&0&0&1\\0&0&\textcolor{#b9760f}{-21.3}&0\end{bmatrix}\begin{bmatrix}x\\\dot{x}\\\varphi\\\dot{\varphi}\end{bmatrix}+\begin{bmatrix}0\\\textcolor{#2F7DD1}{1}\\0\\\textcolor{#2F7DD1}{-1.67}\end{bmatrix}F\]
+          <div class="eqnote">左の縦ベクトル＝各状態の変化。2行目 ẍ・4行目 φ̈ が上の式そのもの。<b style="color:#b9760f">橙＝振れ φ の効き</b>（−21.3＝復元）、<b style="color:#2F7DD1">青＝力 F の効き</b></div>
+        </div>
+        <div class="eq" style="padding:5px 10px;">
+          <div class="eq-cap">離散化（ZOH・dt = 0.05 s）</div>
+          <div class="eqline">\(x_{k+1} = A_d x_k + B_d F_k\)<span class="eqnote">\(A_d=e^{A\,dt}\)（数値ヤコビアンで A,B 構築）</span></div>
+        </div>
+        <div class="params">
+          <span class="p">L = <b>0.6 m</b></span><span class="p">Mₜ = <b>1.0</b></span><span class="p">mₚ = <b>0.3</b></span><span class="p">g = <b>9.81</b></span><span class="p">dt = <b>0.05 s</b></span><span class="p">状態 <b>4次</b></span>
+        </div>
+      </section>
+      <!-- ② 制御ロジック -->
+      <section class="col c2">
+        <div class="ctitle"><div class="cnum">2</div><div><h2>制御ロジック（MPC）</h2><div class="sub">振れ角 φ を罰する予測最適化</div></div></div>
+        <div class="lead">MPCは振れ角 φ を<b>重く罰する</b>コストで、未来 N<sub>p</sub>=40 ステップ（≒2秒）を予測し、力の加え方を整形。<b>到着時に振れが消える</b>ように先読みして加減速する（アンチスウェイ）。</div>
+        <div class="figbox">
+          <svg viewBox="0 0 360 170" role="img" aria-label="天井クレーン制御ブロック線図（伝達関数）">
+            <defs><marker id="ig-crtf" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#7d7c75"/></marker></defs>
+            <text x="2" y="47" font-size="10" fill="#56554f">r</text>
+            <circle cx="30" cy="43" r="11" fill="#fff" stroke="#222" stroke-width="1"/><text x="30" y="48" text-anchor="middle" font-size="13">⊕</text>
+            <text x="17" y="64" font-size="11" fill="#D8423F">−</text>
+            <!-- 制御器：状態フィードバック -->
+            <rect x="52" y="29" width="44" height="28" rx="3" fill="#eaf2fb" stroke="#2F7DD1" stroke-width="1.2"/>
+            <text x="74" y="43" text-anchor="middle" font-weight="700" fill="#0C447C" font-size="13">−K</text>
+            <text x="74" y="53" text-anchor="middle" font-size="7.5" fill="#0C447C">状態FB</text>
+            <text x="74" y="72" text-anchor="middle" font-size="8" fill="#D8423F">制約 |F|≤8N</text>
+            <!-- プラント（伝達関数の要素分解） -->
+            <rect x="116" y="22" width="226" height="92" rx="3" fill="none" stroke="#c3bdae" stroke-width="1" stroke-dasharray="3,2"/>
+            <text x="229" y="18" text-anchor="middle" font-size="8" fill="#8c8b84">プラント（台車＋吊り荷の振子）</text>
+            <!-- 台車経路：2重積分 → 位置 x -->
+            <rect x="120" y="27" width="60" height="26" rx="3" fill="#f5f2ec" stroke="#8c8b84" stroke-width=".8"/>
+            <text x="150" y="44" text-anchor="middle" font-size="11">1/Mₜ</text>
+            <rect x="200" y="27" width="32" height="26" rx="3" fill="#f5f2ec" stroke="#8c8b84" stroke-width=".8"/>
+            <text x="216" y="44" text-anchor="middle" font-size="11">1/s</text>
+            <rect x="252" y="27" width="32" height="26" rx="3" fill="#f5f2ec" stroke="#8c8b84" stroke-width=".8"/>
+            <text x="268" y="44" text-anchor="middle" font-size="11">1/s</text>
+            <text x="322" y="37" font-size="10" fill="#56554f">x 位置</text>
+            <!-- 振れ経路：安定2次系 → 吊り角 φ -->
+            <rect x="160" y="78" width="92" height="26" rx="3" fill="#f5f2ec" stroke="#C57A12" stroke-width=".9"/>
+            <text x="206" y="95" text-anchor="middle" font-size="11">ω²/(s²+ω²)</text>
+            <text x="276" y="95" font-size="10" fill="#b9760f">φ 吊り角</text>
+            <g stroke="#7d7c75" stroke-width="1.3" fill="none">
+              <line x1="11" y1="43" x2="17" y2="43" marker-end="url(#ig-crtf)"/>
+              <line x1="41" y1="43" x2="50" y2="43" marker-end="url(#ig-crtf)"/>
+              <line x1="96" y1="43" x2="118" y2="43" marker-end="url(#ig-crtf)"/><text x="107" y="37" font-size="8.5" fill="#7d7c75" stroke="none">F</text>
+              <line x1="180" y1="40" x2="198" y2="40" marker-end="url(#ig-crtf)"/><text x="189" y="35" font-size="8" fill="#7d7c75" stroke="none">a</text>
+              <line x1="232" y1="40" x2="250" y2="40" marker-end="url(#ig-crtf)"/><text x="241" y="35" font-size="8" fill="#7d7c75" stroke="none">ẋ</text>
+              <line x1="284" y1="40" x2="320" y2="40"/>
+              <!-- 入力分岐：F を振れ経路へ -->
+              <path d="M107,43 L107,91 L158,91" marker-end="url(#ig-crtf)"/>
+              <line x1="252" y1="91" x2="274" y2="91"/>
+              <!-- 出力フィードバック -->
+              <path d="M336,40 L336,150 L30,150 L30,56" marker-end="url(#ig-crtf)"/>
+              <text x="120" y="146" font-size="8.5" fill="#7d7c75" stroke="none">出力 y=[x, φ] 全状態をフィードバック</text>
+            </g>
+            <text x="180" y="164" text-anchor="middle" font-size="8.5" fill="#b9760f">台車＝2重積分／振れ＝安定2次系。−K が φ も罰し振れを消す</text>
+          </svg>
+        </div>
+        <div class="eq">
+          <div class="eq-cap">毎ステップ解く最適化（＋制約 |F|≤F<sub>max</sub>）</div>
+          \[\min_{F}\ \sum_{k=1}^{N_p}\Big((x_k-r)^\top Q\,(x_k-r) + r\,F_k^2\Big)\quad \text{s.t. } |F|\le 8\,\text{N}\]
+          <div class="eqnote">Q = diag(10, 1, <b style="color:#b9760f">40</b>, 4) → <b>振れ角 φ を最も重く罰する</b></div>
+        </div>
+        <ul class="bul">
+          <li><b>未来 N<sub>p</sub>=40 ステップ</b>（≒2秒）を予測、N<sub>c</sub>=12 で力の列を最適化し先頭だけ実行</li>
+          <li>到着時に振れが消えるよう加減速のタイミングを<b>整形</b>（1入力で2目的）</li>
+          <li><b>PIDとの違い</b>：PD は位置だけ追い振れは置き去り。MPCは φ も予測して能動的に消す</li>
+        </ul>
+      </section>
+      <!-- ③ 制御の効果 -->
+      <section class="col c3">
+        <div class="ctitle"><div class="cnum">3</div><div><h2>制御の効果</h2><div class="sub">目標 2m へ運搬：MPC vs PID</div></div></div>
+        <div class="lead"><b>読み方</b>：青＝MPC、橙破線＝PD（同上限）。目標 2m へ運搬し<b>到着域（緑帯）</b>の残留スイングを比較——<b>MPC はほぼ消し、PD は揺れ続ける</b>。</div>
+        <div class="leg">
+          <span><i style="border-top-color:#2F7DD1;"></i>MPC</span>
+          <span><i style="border-top-color:#DD901C;border-top-style:dashed;"></i>PD</span>
+          <span><i style="border-top-color:#D8423F;border-top-style:dotted;"></i>目標 / 上限</span>
+        </div>
+        <div class="figbox plain">
+          <svg id="cr_phi" viewBox="0 0 380 110" role="img" aria-label="振れ角の時間応答"></svg>
+          <div class="lbl">吊り角 φ [°]（到着後の残留スイングに注目）</div>
+          <svg id="cr_pos" viewBox="0 0 380 92" role="img" aria-label="トロリー位置の時間応答"></svg>
+          <div class="lbl">トロリー位置 x [m]（点線＝目標 2m）</div>
+          <svg id="cr_f" viewBox="0 0 380 88" role="img" aria-label="制御力の時間応答"></svg>
+          <div class="lbl">制御力 F [N]（点線＝±F_max）</div>
+        </div>
+        <div class="kpis">
+          <div class="kpi mpc"><div class="k">MPC 到着時の残留振れ</div><div class="v" id="cr_kmpc">– °</div></div>
+          <div class="kpi pid"><div class="k">PD 到着時の残留振れ</div><div class="v" id="cr_kpid">– °</div></div>
+        </div>
+        <div class="takeaway"><b>結論</b>：MPC は φ を予測して到着時に振れをほぼ消す。PD は位置だけ追うため到着後も揺れが残る（残留振れが大きい）。</div>
+      </section>
+    </main>
+    <footer class="pfoot">
+      <div>状態コスト <b>MPC</b>（振れ角 φ を重く罰）＋ 力クランプ <b>|F| ≤ F<sub>max</sub></b>　·　非線形 RK4 で実応答を計算　·　同一シナリオで <b>MPC</b> と <b>PD</b> を比較</div>
+      <div class="tag">制御工学 教材デモ ／ lec_mpc</div>
+    </footer>
+  </div>
+  </section>
   <div class="footer">
     2D 天井クレーン（トロリー質量1, 積み荷0.3, 可変ロープ長, g=9.81）· 数値線形化→離散化→状態コスト MPC（φ を重く罰）· 非線形 RK4 で実時間描画<br>
     MPC は振れを予測して残留スイングをほぼ 0 に。OFF（PD）と切り替えてアンチスウェイの効果を比べてください。
@@ -311,6 +539,77 @@
   document.getElementById('s-len').addEventListener('input',e=>{L=+e.target.value;document.getElementById('v-len').textContent=L.toFixed(2)+' m';rebuildGain();});
   document.getElementById('s-fmax').addEventListener('input',e=>{Fmax=+e.target.value;document.getElementById('v-fmax').textContent=Fmax+' N';});
   if(location.search.indexOf('show')>=0){const b=document.getElementById('b-auto');if(b)b.click();}
+})();
+</script>
+
+<script>
+(function(){
+"use strict";
+/* ===== 共通：行列ユーティリティ（インフォグラフ専用・別スコープ） ===== */
+const I=n=>Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
+const zeros=(r,c)=>Array.from({length:r},()=>new Array(c).fill(0));
+function mm(A,B){const n=A.length,m=B[0].length,p=B.length,C=zeros(n,m);for(let i=0;i<n;i++)for(let k=0;k<p;k++){const a=A[i][k];if(!a)continue;for(let j=0;j<m;j++)C[i][j]+=a*B[k][j];}return C;}
+const tp=A=>A[0].map((_,j)=>A.map(r=>r[j]));const add=(A,B)=>A.map((r,i)=>r.map((v,j)=>v+B[i][j]));const sc=(A,s)=>A.map(r=>r.map(v=>v*s));
+function inv(A){const n=A.length;const M=A.map((r,i)=>r.concat(I(n)[i]));for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)M[p][c]+=1e-9;[M[c],M[p]]=[M[p],M[c]];const d=M[c][c];for(let j=0;j<2*n;j++)M[c][j]/=d;for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];for(let j=0;j<2*n;j++)M[r][j]-=f*M[c][j];}}return M.map(r=>r.slice(n));}
+function expm(A){const n=A.length;let nr=0;for(const r of A)for(const v of r)nr+=v*v;nr=Math.sqrt(nr);let s=Math.max(0,Math.ceil(Math.log2(nr+1e-9)));const As=sc(A,1/Math.pow(2,s));let t=I(n),sum=I(n);for(let k=1;k<=20;k++){t=sc(mm(t,As),1/k);sum=add(sum,t);}for(let i=0;i<s;i++)sum=mm(sum,sum);return sum;}
+function c2d(Ac,Bc,dt){const n=Ac.length,m=Bc[0].length;const M=zeros(n+m,n+m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)M[i][j]=Ac[i][j]*dt;for(let j=0;j<m;j++)M[i][n+j]=Bc[i][j]*dt;}const E=expm(M);const Ad=zeros(n,n),Bd=zeros(n,m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)Ad[i][j]=E[i][j];for(let j=0;j<m;j++)Bd[i][j]=E[i][n+j];}return{Ad,Bd};}
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+const el=id=>document.getElementById(id);
+
+/* ---- 天井クレーン（インフォグラフの③：応答グラフ＋KPI） ---- */
+const DEMOS={};
+DEMOS.crane=function(){
+  const Mt=1.0,mp=0.3,g=9.81,L=0.6;
+  function deriv(s,u){const[x,xd,ph,phd]=s;const sp=Math.sin(ph),cp=Math.cos(ph);const den=Mt+mp*sp*sp;
+    const xdd=(u+mp*L*phd*phd*sp+mp*g*sp*cp)/den;
+    const phdd=(-(Mt+mp)*g*sp-cp*(u+mp*L*phd*phd*sp))/(L*den);return[xd,xdd,phd,phdd];}
+  function rk4(s,u,dt){const k1=deriv(s,u);const s2=s.map((v,i)=>v+0.5*dt*k1[i]);const k2=deriv(s2,u);const s3=s.map((v,i)=>v+0.5*dt*k2[i]);const k3=deriv(s3,u);const s4=s.map((v,i)=>v+dt*k3[i]);const k4=deriv(s4,u);return s.map((v,i)=>v+dt/6*(k1[i]+2*k2[i]+2*k3[i]+k4[i]));}
+  const ctrlDt=0.05,Np=40,Nc=12,Qd=[10,1,40,4],Rw=0.05;
+  let Kfb=[0,0,0,0],Kr=0;
+  (function(){const eps=1e-6,Ac=zeros(4,4),Bc=zeros(4,1);
+    for(let j=0;j<4;j++){const sp=[0,0,0,0];sp[j]=eps;const sm=[0,0,0,0];sm[j]=-eps;const fp=deriv(sp,0),fm=deriv(sm,0);for(let i=0;i<4;i++)Ac[i][j]=(fp[i]-fm[i])/(2*eps);}
+    const fp=deriv([0,0,0,0],eps),fm=deriv([0,0,0,0],-eps);for(let i=0;i<4;i++)Bc[i][0]=(fp[i]-fm[i])/(2*eps);
+    const{Ad,Bd}=c2d(Ac,Bc,ctrlDt);const Apow=[I(4)];for(let i=1;i<=Np;i++)Apow.push(mm(Apow[i-1],Ad));
+    const Sx=zeros(Np*4,4),Su=zeros(Np*4,Nc);for(let i=1;i<=Np;i++){const Ai=Apow[i];for(let r=0;r<4;r++)for(let c=0;c<4;c++)Sx[(i-1)*4+r][c]=Ai[r][c];for(let j=0;j<Nc;j++){if(j>i-1)break;const AB=mm(Apow[i-1-j],Bd);for(let r=0;r<4;r++)Su[(i-1)*4+r][j]=AB[r][0];}}
+    const SuT=tp(Su);const SuTQ=SuT.map(row=>row.map((v,k)=>v*Qd[k%4]));const H=mm(SuTQ,Su);for(let i=0;i<Nc;i++)H[i][i]+=Rw;
+    const Gain=mm(inv(H),SuTQ);const K1=Gain[0];Kfb=[0,0,0,0];Kr=0;for(let i=0;i<Np*4;i++){for(let c=0;c<4;c++)Kfb[c]+=K1[i]*Sx[i][c];if(i%4===0)Kr+=K1[i];}})();
+  const Fmax=8,target=2.0;
+  function force(st){let u=Kr*target;for(let c=0;c<4;c++)u-=Kfb[c]*st[c];return clamp(u,-Fmax,Fmax);}
+  function pidForce(s){return clamp(3.0*(target-s[0])-2.0*s[1],-Fmax,Fmax);}
+  const T=6.0,N=Math.round(T/ctrlDt);
+  function simulate(kind){let st=[0,0,0,0];const x=[],ph=[],F=[],t=[];
+    for(let k=0;k<N;k++){const tk=k*ctrlDt;const u=kind==='mpc'?force(st):pidForce(st);
+      x.push(st[0]);ph.push(st[2]*180/Math.PI);F.push(u);t.push(tk);for(let i=0;i<4;i++)st=rk4(st,u,ctrlDt/4);}
+    return{x,ph,F,t};}
+  const mpc=simulate('mpc'),pid=simulate('pid');
+  const M={l:30,r:8,t:8,b:16};const xPx=(tk,pw)=>M.l+(tk/T)*pw;
+  const poly=(arr,t,yfn,pw)=>{let p='';for(let i=0;i<arr.length;i++)p+=`${xPx(t[i],pw).toFixed(1)},${yfn(arr[i]).toFixed(1)} `;return p;};
+  (function(){const W=380,H=110,pw=W-M.l-M.r,ph=H-M.t-M.b;
+    const aMax=Math.max(10,...mpc.ph.map(Math.abs),...pid.ph.map(Math.abs));const yhi=Math.ceil(aMax/10)*10,ylo=-yhi;const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s='';
+    for(let gd=ylo;gd<=yhi;gd+=10){const y=yPx(gd);s+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="rgba(0,0,0,.07)"/><text x="${M.l-4}" y="${y+3}" text-anchor="end" font-size="9" fill="#8c8b84">${gd}</text>`;}
+    s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="rgba(0,0,0,.28)"/>`;
+    const tA=4.0;s+=`<rect x="${xPx(tA,pw)}" y="${M.t}" width="${(W-M.r)-xPx(tA,pw)}" height="${ph}" fill="#2E9457" opacity="0.06"/><text x="${xPx(tA,pw)+3}" y="${M.t+10}" font-size="8.5" fill="#2E9457">到着域</text>`;
+    s+=`<polyline points="${poly(pid.ph,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
+    s+=`<polyline points="${poly(mpc.ph,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;el('cr_phi').innerHTML=s;})();
+  (function(){const W=380,H=92,pw=W-M.l-M.r,ph=H-M.t-M.b;
+    const xMax=Math.max(target+0.4,...mpc.x,...pid.x);const yhi=Math.ceil(xMax*2)/2,ylo=0;const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s='';
+    for(let gx=0;gx<=yhi+1e-9;gx+=0.5){const y=yPx(gx);s+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="rgba(0,0,0,.07)"/><text x="${M.l-4}" y="${y+3}" text-anchor="end" font-size="9" fill="#8c8b84">${gx.toFixed(1)}</text>`;}
+    s+=`<line x1="${M.l}" y1="${yPx(target)}" x2="${W-M.r}" y2="${yPx(target)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".75"/><text x="${W-M.r}" y="${yPx(target)-3}" text-anchor="end" font-size="9" fill="#D8423F">目標 2m</text>`;
+    s+=`<polyline points="${poly(pid.x,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
+    s+=`<polyline points="${poly(mpc.x,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;el('cr_pos').innerHTML=s;})();
+  (function(){const W=380,H=88,pw=W-M.l-M.r,ph=H-M.t-M.b;
+    const fHi=Fmax+1.5,fLo=-Fmax-1.5;const yPx=v=>M.t+(1-(v-fLo)/(fHi-fLo))*ph;let s='';
+    s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="rgba(0,0,0,.25)"/>`;
+    s+=`<line x1="${M.l}" y1="${yPx(Fmax)}" x2="${W-M.r}" y2="${yPx(Fmax)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${yPx(Fmax)-3}" text-anchor="end" font-size="9" fill="#D8423F">+F_max ${Fmax}</text>`;
+    s+=`<line x1="${M.l}" y1="${yPx(-Fmax)}" x2="${W-M.r}" y2="${yPx(-Fmax)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${yPx(-Fmax)+10}" text-anchor="end" font-size="9" fill="#D8423F">−F_max ${-Fmax}</text>`;
+    s+=`<polyline points="${poly(pid.F,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
+    s+=`<polyline points="${poly(mpc.F,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;
+    for(let tk=0;tk<=T;tk+=1){s+=`<text x="${xPx(tk,pw)}" y="${H-3}" text-anchor="middle" font-size="9" fill="#8c8b84">${tk}s</text>`;}el('cr_f').innerHTML=s;})();
+  function tailMaxAbs(arr,t,fromT){let m=0;for(let i=0;i<arr.length;i++)if(t[i]>=fromT)m=Math.max(m,Math.abs(arr[i]));return m;}
+  el('cr_kmpc').textContent=tailMaxAbs(mpc.ph,mpc.t,5.0).toFixed(1)+' °';
+  el('cr_kpid').textContent=tailMaxAbs(pid.ph,pid.t,5.0).toFixed(1)+' °';
+};
+DEMOS.crane();
 })();
 </script>
 </body>
