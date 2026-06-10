@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2D ドローン — 1枚インフォグラフ</title>
+<style>
+  :root{
+    --ink:#1b1b1a;--muted:#56554f;--faint:#8c8b84;
+    --blue:#2F7DD1;--blue-deep:#0C447C;--blue-soft:#eaf2fb;
+    --amber:#DD901C;--amber-soft:#fbf1df;--red:#D8423F;--green:#2E9457;
+    --line:rgba(0,0,0,.12);--line-2:rgba(0,0,0,.22);--bg:#fff;--soft:#f5f2ec;
+    --font:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    --mono:"SF Mono","Menlo","Consolas",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#cdc9c1;font-family:var(--font);color:var(--ink);display:flex;justify-content:center;align-items:center;min-height:100vh;padding:24px;}
+  .poster{width:1280px;height:720px;background:var(--bg);border-radius:16px;box-shadow:0 10px 50px rgba(0,0,0,.22);overflow:hidden;display:flex;flex-direction:column;}
+  /* header */
+  .phead{display:flex;justify-content:space-between;align-items:center;padding:20px 30px 16px;border-bottom:2px solid var(--ink);}
+  .phead h1{font-size:27px;font-weight:700;letter-spacing:.01em;}
+  .phead h1 span{font-weight:400;color:var(--muted);font-size:21px;}
+  .phead p{font-size:13px;color:var(--muted);margin-top:4px;max-width:880px;line-height:1.5;}
+  .badge{flex:none;text-align:center;background:var(--blue-soft);color:var(--blue-deep);border-radius:10px;padding:9px 15px;font-size:12px;font-weight:600;line-height:1.45;}
+  .badge b{font-size:15px;display:block;color:var(--blue);}
+  /* columns */
+  .cols{flex:1;display:grid;grid-template-columns:1fr 1fr 1.06fr;min-height:0;}
+  .col{padding:16px 20px 12px;display:flex;flex-direction:column;min-height:0;}
+  .col+.col{border-left:1px solid var(--line);}
+  .ctitle{display:flex;align-items:center;gap:9px;margin-bottom:11px;}
+  .cnum{flex:none;width:25px;height:25px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:700;color:#fff;}
+  .ctitle h2{font-size:16px;font-weight:600;}
+  .ctitle .sub{font-size:10.5px;color:var(--faint);font-weight:400;}
+  .c1 .cnum{background:var(--muted);} .c2 .cnum{background:var(--blue);} .c3 .cnum{background:var(--green);}
+  .figbox{background:var(--soft);border-radius:9px;padding:8px;margin-bottom:10px;}
+  .figbox.plain{background:none;padding:0;}
+  svg{display:block;width:100%;}
+  .lbl{font-size:10.5px;color:var(--faint);margin:1px 0 7px;text-align:center;}
+  .eq{background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin-bottom:9px;}
+  .eq-cap{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+  math{font-size:15px;}
+  .c1 .eq{margin-bottom:6px;padding:6px 10px;}
+  .c1 .eq math{font-size:12.5px;}
+  .c1 .eqline{margin:3px 0;} .c1 .eqline math{min-width:96px;}
+  .c2 .eq{margin-bottom:6px;padding:6px 10px;}
+  .c2 .bul{line-height:1.42;font-size:11.5px;} .c2 .bul li{margin-bottom:2px;}
+  .c2 .figbox{padding:6px;margin-bottom:7px;} .c2 .lbl{margin:2px 0 1px;}
+  .c3 .lbl{margin:0 0 4px;}
+  .eqline{display:flex;align-items:baseline;gap:8px;margin:5px 0;}
+  .eqline math{font-size:14px;flex:none;min-width:104px;}
+  .eqnote{font-size:10px;color:var(--faint);line-height:1.32;}
+  .params{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;}
+  .params .p{background:var(--soft);border-radius:6px;padding:3px 9px;font-size:11px;color:var(--muted);}
+  .params .p b{color:var(--ink);font-variant-numeric:tabular-nums;}
+  .bul{list-style:none;font-size:12px;color:var(--muted);line-height:1.62;}
+  .bul li{padding-left:15px;position:relative;margin-bottom:3px;}
+  .bul li::before{content:"";position:absolute;left:2px;top:7px;width:5px;height:5px;border-radius:50%;background:var(--blue);}
+  .c1 .bul li::before{background:var(--muted);} .c3 .bul li::before{background:var(--green);}
+  .bul b{color:var(--ink);}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto;}
+  .kpi{border:1px solid var(--line);border-radius:8px;padding:7px 10px;}
+  .kpi .k{font-size:9.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;}
+  .kpi .v{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px;}
+  .kpi.mpc{background:var(--blue-soft);border-color:transparent;} .kpi.mpc .v{color:var(--blue-deep);}
+  .kpi.pid{background:var(--amber-soft);border-color:transparent;} .kpi.pid .v{color:#9a6410;}
+  .leg{display:flex;gap:14px;justify-content:center;font-size:10.5px;color:var(--muted);margin:2px 0 7px;}
+  .leg span{display:inline-flex;align-items:center;gap:5px;}
+  .leg i{width:16px;height:0;border-top-width:2.5px;border-top-style:solid;display:inline-block;}
+  /* footer */
+  .pfoot{padding:9px 30px;background:var(--ink);color:#d9d8d2;font-size:11px;display:flex;justify-content:space-between;align-items:center;}
+  .pfoot b{color:#fff;}
+  .pfoot .tag{color:var(--blue-soft);}
+  @media print{
+    body{background:#fff;padding:0;}
+    .poster{box-shadow:none;border-radius:0;}
+    @page{size:1280px 720px;margin:0;}
+  }
+</style>
+</head>
+<body>
+<div class="poster">
+  <header class="phead">
+    <div>
+      <h1>2D ドローン <span>— ホバリング＆飛行する多入力 MPC</span></h1>
+      <p>平面クアッドロータ。総推力と回転トルクの 2 入力で、水平位置・高度・姿勢を同時に制御。水平移動は機体を傾けて推力の横成分で行うため、位置と姿勢が連動する MIMO 問題になる。突風（横外乱）にも姿勢を立て直して復帰。</p>
+    </div>
+    <div class="badge"><b>2 入力</b>総推力 δT ＋ トルク u₂<br>6 状態 MIMO・MPC</div>
+  </header>
+
+  <main class="cols">
+    <!-- ① モデル化 -->
+    <section class="col c1">
+      <div class="ctitle"><div class="cnum">1</div><div><h2>モデル化</h2><div class="sub">平面の運動 → 状態空間 → 離散化</div></div></div>
+      <div class="figbox">
+        <svg viewBox="0 0 360 118" role="img" aria-label="2Dドローンのプラント図">
+          <!-- 空・地面 -->
+          <rect x="0" y="0" width="360" height="118" fill="#dfeaf3"/>
+          <rect x="0" y="100" width="360" height="18" fill="#cdc9c1"/>
+          <line x1="0" y1="100" x2="360" y2="100" stroke="#9a968d" stroke-width="1.4"/>
+          <!-- 機体（傾いている） -->
+          <g transform="translate(150,52) rotate(-13)">
+            <rect x="-40" y="-3" width="80" height="6" rx="3" fill="#2F7DD1"/>
+            <rect x="-13" y="-10" width="26" height="15" rx="4" fill="#0C447C"/>
+            <ellipse cx="-40" cy="-5" rx="17" ry="4" fill="#56554f" opacity=".55"/>
+            <ellipse cx="40" cy="-5" rx="17" ry="4" fill="#56554f" opacity=".55"/>
+            <!-- 推力ベクトル（機体上向き） -->
+            <line x1="-40" y1="-7" x2="-40" y2="-30" stroke="#2E9457" stroke-width="3" stroke-linecap="round"/>
+            <line x1="40" y1="-7" x2="40" y2="-30" stroke="#2E9457" stroke-width="3" stroke-linecap="round"/>
+            <text x="0" y="-15" text-anchor="middle" font-size="10" fill="#2E9457" font-weight="600">推力 T</text>
+          </g>
+          <!-- 傾き角 θ -->
+          <line x1="150" y1="52" x2="150" y2="20" stroke="#8c8b84" stroke-width="1" stroke-dasharray="3,2"/>
+          <path d="M150,32 A 12 12 0 0 1 147,28" fill="none" stroke="#D8423F" stroke-width="1.2"/>
+          <text x="158" y="30" font-size="11" fill="#D8423F" font-weight="600">θ</text>
+          <!-- 座標軸 -->
+          <g stroke="#56554f" stroke-width="1.2" fill="none">
+            <line x1="24" y1="100" x2="24" y2="40" marker-end="url(#dy)"/>
+            <line x1="24" y1="100" x2="84" y2="100" marker-end="url(#dx)"/>
+          </g>
+          <defs>
+            <marker id="dy" markerWidth="7" markerHeight="7" refX="3" refY="5" orient="auto"><path d="M0,6 L3,0 L6,6 Z" fill="#56554f"/></marker>
+            <marker id="dx" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#56554f"/></marker>
+          </defs>
+          <text x="14" y="44" font-size="11" fill="#56554f">y</text>
+          <text x="86" y="104" font-size="11" fill="#56554f">x</text>
+          <!-- 重力 -->
+          <line x1="222" y1="52" x2="222" y2="80" stroke="#b9760f" stroke-width="2" marker-end="url(#dx)" transform="rotate(90 222 52)" opacity="0"/>
+          <line x1="222" y1="48" x2="222" y2="78" stroke="#b9760f" stroke-width="2"/>
+          <path d="M222,78 l-4,-7 h8 z" fill="#b9760f"/>
+          <text x="230" y="68" font-size="10" fill="#b9760f" font-weight="600">mg</text>
+        </svg>
+      </div>
+      <div class="eq">
+        <div class="eq-cap">① 運動方程式（並進＝ニュートン・回転＝オイラー）</div>
+        <div class="eqline">
+          <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>m</mi><mover><mi>x</mi><mo>¨</mo></mover><mo>=</mo><mo>−</mo><mi>T</mi><mi>sin</mi><mi>θ</mi></math>
+          <span class="eqnote">推力の<b>横成分</b>で水平加速（傾けて進む）</span>
+        </div>
+        <div class="eqline">
+          <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>m</mi><mover><mi>y</mi><mo>¨</mo></mover><mo>=</mo><mi>T</mi><mi>cos</mi><mi>θ</mi><mo>−</mo><mi>m</mi><mi>g</mi></math>
+          <span class="eqnote">推力の縦成分−重力。総推力 T=mg+δT</span>
+        </div>
+        <div class="eqline">
+          <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>J</mi><mover><mi>θ</mi><mo>¨</mo></mover><mo>=</mo><msub><mi>u</mi><mn>2</mn></msub></math>
+          <span class="eqnote">左右ローター差＝<b>トルク</b>で機体を回転</span>
+        </div>
+      </div>
+      <div class="eq">
+        <div class="eq-cap">② 線形化 → 状態空間　ẋ = A x + B u　（x = [x,ẋ,y,ẏ,θ,θ̇]ᵀ, u = [δT,u₂]ᵀ）</div>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <mi>A</mi><mo>=</mo>
+          <mfenced open="[" close="]"><mtable rowspacing="0" columnspacing="4pt">
+            <mtr><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+            <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mrow><mo>−</mo><mi>g</mi></mrow></mtd><mtd><mn>0</mn></mtd></mtr>
+            <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+            <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+            <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr>
+            <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+          </mtable></mfenced>
+          <mspace width="4px"/><mi>B</mi><mo>=</mo>
+          <mfenced open="[" close="]"><mtable rowspacing="0" columnspacing="4pt">
+            <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+            <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+            <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+            <mtr><mtd><mrow><mn>1</mn><mo>/</mo><mi>m</mi></mrow></mtd><mtd><mn>0</mn></mtd></mtr>
+            <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+            <mtr><mtd><mn>0</mn></mtd><mtd><mrow><mn>1</mn><mo>/</mo><mi>J</mi></mrow></mtd></mtr>
+          </mtable></mfenced>
+        </math>
+        <div class="eqnote" style="margin-top:2px;">ホバリング平衡（θ=0, T=mg）で線形化。−g=−9.81, 1/m=2.0, 1/J=83.3</div>
+      </div>
+      <div class="eq">
+        <div class="eq-cap">③ 離散化（ゼロ次ホールド・dt）</div>
+        <div class="eqline">
+          <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>x</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><msub><mi>A</mi><mi>d</mi></msub><msub><mi>x</mi><mi>k</mi></msub><mo>+</mo><msub><mi>B</mi><mi>d</mi></msub><msub><mi>u</mi><mi>k</mi></msub></math>
+          <span class="eqnote">A<sub>d</sub>=e<sup>A·dt</sup>,　B<sub>d</sub>=∫₀<sup>dt</sup>e<sup>As</sup>ds·B</span>
+        </div>
+      </div>
+      <div class="params">
+        <span class="p">m = <b>0.5 kg</b></span><span class="p">J = <b>0.012</b></span><span class="p">g = <b>9.81</b></span><span class="p">dt = <b>0.04 s</b></span><span class="p">状態 <b>6次</b></span><span class="p">入力 <b>2次</b></span>
+      </div>
+    </section>
+
+    <!-- ② 制御ロジック -->
+    <section class="col c2">
+      <div class="ctitle"><div class="cnum">2</div><div><h2>制御ロジック（多入力 MPC）</h2><div class="sub">予測＋同時最適化＋制約</div></div></div>
+      <div class="figbox">
+        <svg viewBox="0 0 360 104" role="img" aria-label="ドローン制御ブロック線図">
+          <defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#7d7c75"/></marker></defs>
+          <text x="4" y="32" font-size="10.5" fill="#56554f">r=[x*,y*]</text>
+          <circle cx="54" cy="28" r="12" fill="#fff" stroke="#222" stroke-width="1"/><text x="54" y="33" text-anchor="middle" font-size="14">⊕</text>
+          <text x="40" y="53" font-size="12" fill="#D8423F">−</text>
+          <rect x="98" y="8" width="116" height="40" rx="8" fill="#eaf2fb" stroke="#2F7DD1" stroke-width="1.2"/>
+          <text x="156" y="24" text-anchor="middle" font-weight="700" fill="#0C447C" font-size="12.5">多入力 MPC</text>
+          <text x="156" y="38" text-anchor="middle" font-size="9" fill="#0C447C">予測 ＋ 同時最適化</text>
+          <rect x="254" y="8" width="100" height="40" rx="8" fill="#f5f2ec" stroke="#8c8b84" stroke-width=".8"/>
+          <text x="304" y="24" text-anchor="middle" font-weight="600" font-size="12">平面ドローン</text>
+          <text x="304" y="38" text-anchor="middle" font-size="9" fill="#56554f">x, y, θ（6 状態）</text>
+          <g stroke="#7d7c75" stroke-width="1.3" fill="none">
+            <line x1="28" y1="28" x2="40" y2="28" marker-end="url(#ah)"/>
+            <line x1="66" y1="28" x2="95" y2="28" marker-end="url(#ah)"/><text x="80" y="22" font-size="9" fill="#7d7c75" stroke="none">e</text>
+            <line x1="214" y1="22" x2="251" y2="22" marker-end="url(#ah)"/><text x="232" y="17" font-size="8.5" fill="#7d7c75" stroke="none">δT</text>
+            <line x1="214" y1="36" x2="251" y2="36" marker-end="url(#ah)"/><text x="232" y="47" font-size="8.5" fill="#7d7c75" stroke="none">u₂</text>
+            <line x1="354" y1="28" x2="360" y2="28"/>
+            <path d="M357,30 L357,88 L54,88 L54,42" marker-end="url(#ah)"/>
+            <text x="150" y="84" font-size="9" fill="#7d7c75" stroke="none">出力 = 位置・高度・姿勢（x, y, θ）</text>
+          </g>
+          <g stroke="#DD901C" stroke-width="1.3" fill="none"><path d="M304,64 L304,50" marker-end="url(#ah)"/></g>
+          <text x="304" y="76" text-anchor="middle" font-size="9" fill="#b9760f">突風＝横外乱（ẋ を蹴る）</text>
+        </svg>
+        <div class="lbl">u₂→θ（傾き）→推力の横成分で水平移動 ＝ 位置と姿勢が連動 → 2 入力を同時最適化（MIMO）</div>
+      </div>
+      <div class="eq">
+        <div class="eq-cap">毎ステップ解く最適化問題</div>
+        <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+          <munder><mo>min</mo><mi>u</mi></munder>
+          <munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><msub><mi>N</mi><mi>p</mi></msub></munderover>
+          <mrow><mo>(</mo><msup><mrow><mo>(</mo><msub><mi>x</mi><mi>k</mi></msub><mo>−</mo><mi>r</mi><mo>)</mo></mrow><mi>T</mi></msup><mi>Q</mi><mo>(</mo><msub><mi>x</mi><mi>k</mi></msub><mo>−</mo><mi>r</mi><mo>)</mo><mo>+</mo><msubsup><mi>u</mi><mi>k</mi><mi>T</mi></msubsup><mi>R</mi><msub><mi>u</mi><mi>k</mi></msub><mo>)</mo></mrow>
+        </math>
+        <div class="eqnote" style="margin-top:3px;">Q=diag(6,1,6,1,5,0.2)（位置・姿勢を罰）　R=diag(0.02,0.4)（推力・トルクの労力）</div>
+      </div>
+      <div class="eq">
+        <div class="eq-cap">制約（アクチュエータの上限）</div>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <mn>0.3</mn><mo>≤</mo><mi>T</mi><mo>≤</mo><mn>2</mn><mi>m</mi><mi>g</mi>
+          <mspace width="10px"/><mo>|</mo><msub><mi>u</mi><mn>2</mn></msub><mo>|</mo><mo>≤</mo><mn>0.6</mn>
+        </math>
+        <div class="eqnote" style="margin-top:3px;">総推力 T≈0.3〜9.8 N（δT∈[−4.6, +4.9]）／ トルク |u₂|≤0.6 N·m</div>
+      </div>
+      <ul class="bul">
+        <li><b>未来 N<sub>p</sub>=35 ステップ</b>を予測し最適入力列を計算、先頭だけ実行（受け取り原理）</li>
+        <li>位置と姿勢が<b>連動</b>するため 2 入力を<b>同時</b>最適化（個別ループでは破綻）</li>
+        <li>事前計算ゲイン K<sub>fb</sub>, K<sub>r</sub> で実時間動作。推力・トルクは上限で飽和（クランプ）</li>
+      </ul>
+    </section>
+
+    <!-- ③ 制御の効果 -->
+    <section class="col c3">
+      <div class="ctitle"><div class="cnum">3</div><div><h2>制御の効果</h2><div class="sub">目標へ移動＋突風：MPC vs PID</div></div></div>
+      <div class="leg">
+        <span><i style="border-top-color:#2F7DD1;"></i>MPC</span>
+        <span><i style="border-top-color:#DD901C;border-top-style:dashed;"></i>PID（カスケード）</span>
+        <span><i style="border-top-color:#D8423F;border-top-style:dotted;"></i>目標 / 上限</span>
+      </div>
+      <div class="figbox plain">
+        <svg id="g-x" viewBox="0 0 380 126" role="img" aria-label="水平位置の時間応答"></svg>
+        <div class="lbl">水平位置 x [m]（赤帯＝突風で横に蹴られる区間）</div>
+        <svg id="g-th" viewBox="0 0 380 94" role="img" aria-label="傾き角の時間応答"></svg>
+        <div class="lbl">機体の傾き θ [°]（姿勢の振れ）</div>
+        <svg id="g-T" viewBox="0 0 380 94" role="img" aria-label="総推力の時間応答"></svg>
+        <div class="lbl">総推力 T [N]（点線＝推力の上下限）</div>
+      </div>
+      <div class="kpis">
+        <div class="kpi mpc"><div class="k">MPC 整定時間 x</div><div class="v" id="kpi-mpc">– s</div></div>
+        <div class="kpi pid"><div class="k">PID 整定時間 x</div><div class="v" id="kpi-pid">– s</div></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pfoot">
+    <div>状態コスト <b>MPC</b>（位置・高度・姿勢を罰）＋ 推力/トルク <b>クランプ</b>　·　ホバリング平衡で線形化（6 状態・2 入力）　·　同一シナリオで <b>MPC</b> と <b>PID</b> を比較</div>
+    <div class="tag">制御工学 教材デモ ／ lec_mpc</div>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // ---- 行列ユーティリティ（drone.html と同一の MPC エンジン）----
+  const I=n=>Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
+  const zeros=(r,c)=>Array.from({length:r},()=>new Array(c).fill(0));
+  function mm(A,B){const n=A.length,m=B[0].length,p=B.length,C=zeros(n,m);for(let i=0;i<n;i++)for(let k=0;k<p;k++){const a=A[i][k];if(!a)continue;for(let j=0;j<m;j++)C[i][j]+=a*B[k][j];}return C;}
+  const tp=A=>A[0].map((_,j)=>A.map(r=>r[j]));const add=(A,B)=>A.map((r,i)=>r.map((v,j)=>v+B[i][j]));const sc=(A,s)=>A.map(r=>r.map(v=>v*s));
+  function inv(A){const n=A.length;const M=A.map((r,i)=>r.concat(I(n)[i]));for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)M[p][c]+=1e-9;[M[c],M[p]]=[M[p],M[c]];const d=M[c][c];for(let j=0;j<2*n;j++)M[c][j]/=d;for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];for(let j=0;j<2*n;j++)M[r][j]-=f*M[c][j];}}return M.map(r=>r.slice(n));}
+  function expm(A){const n=A.length;let nr=0;for(const r of A)for(const v of r)nr+=v*v;nr=Math.sqrt(nr);let s=Math.max(0,Math.ceil(Math.log2(nr+1e-9)));const As=sc(A,1/Math.pow(2,s));let t=I(n),sum=I(n);for(let k=1;k<=22;k++){t=sc(mm(t,As),1/k);sum=add(sum,t);}for(let i=0;i<s;i++)sum=mm(sum,sum);return sum;}
+  function c2d(Ac,Bc,dt){const n=Ac.length,m=Bc[0].length;const M=zeros(n+m,n+m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)M[i][j]=Ac[i][j]*dt;for(let j=0;j<m;j++)M[i][n+j]=Bc[i][j]*dt;}const E=expm(M);const Ad=zeros(n,n),Bd=zeros(n,m);for(let i=0;i<n;i++){for(let j=0;j<n;j++)Ad[i][j]=E[i][j];for(let j=0;j<m;j++)Bd[i][j]=E[i][n+j];}return{Ad,Bd};}
+
+  // ---- 物理（drone.html と同一）----
+  const m=0.5,J=0.012,g=9.81;
+  function deriv(s,u){const[x,xd,y,yd,th,thd]=s;const T=m*g+u[0];return[xd,-(T/m)*Math.sin(th),yd,(T/m)*Math.cos(th)-g,thd,u[1]/J];}
+  function rk4(s,u,dt){const k1=deriv(s,u);const s2=s.map((v,i)=>v+0.5*dt*k1[i]);const k2=deriv(s2,u);const s3=s.map((v,i)=>v+0.5*dt*k2[i]);const k3=deriv(s3,u);const s4=s.map((v,i)=>v+dt*k3[i]);const k4=deriv(s4,u);return s.map((v,i)=>v+dt/6*(k1[i]+2*k2[i]+2*k3[i]+k4[i]));}
+
+  // ---- 線形化＋MPCゲイン（drone.html と同一）----
+  const dt=0.04,Np=35,Nc=10;
+  const eps=1e-6,Ac=zeros(6,6),Bc=zeros(6,2);
+  for(let j=0;j<6;j++){const sp=[0,0,0,0,0,0];sp[j]=eps;const sm=[0,0,0,0,0,0];sm[j]=-eps;const fp=deriv(sp,[0,0]),fm=deriv(sm,[0,0]);for(let i=0;i<6;i++)Ac[i][j]=(fp[i]-fm[i])/(2*eps);}
+  for(let q=0;q<2;q++){const up=[0,0];up[q]=eps;const um=[0,0];um[q]=-eps;const fp=deriv([0,0,0,0,0,0],up),fm=deriv([0,0,0,0,0,0],um);for(let i=0;i<6;i++)Bc[i][q]=(fp[i]-fm[i])/(2*eps);}
+  const{Ad,Bd}=c2d(Ac,Bc,dt);
+  let Kfb=zeros(2,6),Kr=zeros(2,6);
+  (function rebuild(posW){
+    const Qd=[posW,1,posW,1,5,0.2],Rd=[0.02,0.4];
+    const Apow=[I(6)];for(let i=1;i<=Np;i++)Apow.push(mm(Apow[i-1],Ad));
+    const Sx=zeros(Np*6,6),Su=zeros(Np*6,Nc*2);
+    for(let i=1;i<=Np;i++){const Ai=Apow[i];for(let r=0;r<6;r++)for(let c=0;c<6;c++)Sx[(i-1)*6+r][c]=Ai[r][c];for(let j=0;j<Nc;j++){if(j>i-1)break;const AB=mm(Apow[i-1-j],Bd);for(let r=0;r<6;r++)for(let q=0;q<2;q++)Su[(i-1)*6+r][j*2+q]=AB[r][q];}}
+    const SuT=tp(Su);const SuTQ=SuT.map(row=>row.map((v,k)=>v*Qd[k%6]));const H=mm(SuTQ,Su);for(let i=0;i<Nc*2;i++)H[i][i]+=Rd[i%2];
+    const Gain=mm(inv(H),SuTQ);Kfb=zeros(2,6);Kr=zeros(2,6);
+    for(let q=0;q<2;q++){const row=Gain[q];for(let i=0;i<Np*6;i++){for(let c=0;c<6;c++)Kfb[q][c]+=row[i]*Sx[i][c];Kr[q][i%6]+=row[i];}}
+  })(6);
+
+  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  const u0min=-m*g+0.3, u0max=2*m*g, u1lim=0.6;
+
+  // ---- MPC 制御則（drone.html の ctrl と同一）----
+  function ctrlMPC(st,tx,ty){const xref=[tx,0,ty,0,0,0];const u=[0,0];for(let q=0;q<2;q++){let v=0;for(let c=0;c<6;c++)v+=Kr[q][c]*xref[c]-Kfb[q][c]*st[c];u[q]=v;}return u;}
+  // ---- PID（比較用：高度ループ＋水平カスケード x→傾き目標→トルク）----
+  const Kpy=8.0,Kdy=5.0,Kpx=0.5,Kdx=0.8,thDesMax=0.5,Kpth=3.0,Kdth=0.35;
+  function ctrlPID(st,tx,ty){const x=st[0],xd=st[1],y=st[2],yd=st[3],th=st[4],thd=st[5];
+    let u0=Kpy*(ty-y)+Kdy*(0-yd);
+    let thDes=-(Kpx*(tx-x)+Kdx*(0-xd));thDes=clamp(thDes,-thDesMax,thDesMax);
+    let u1=Kpth*(thDes-th)+Kdth*(0-thd);return [u0,u1];}
+
+  // ---- シナリオ：目標 (x*=1.5, y*=2.2) へ移動、t=4.0〜4.35 s で突風（横外乱）----
+  const Ttot_time=8.0,N=Math.round(Ttot_time/dt);
+  const tx=1.5,ty=2.2;
+  const gustT0=4.0,gustT1=4.35,gustAcc=7.0;
+  function simulate(kind){
+    let st=[0,0,1.5,0,0,0];
+    const rec={t:[],x:[],y:[],th:[],T:[]};
+    for(let k=0;k<N;k++){
+      const tk=k*dt;
+      const u=kind==='mpc'?ctrlMPC(st,tx,ty):ctrlPID(st,tx,ty);
+      u[0]=clamp(u[0],u0min,u0max);u[1]=clamp(u[1],-u1lim,u1lim);
+      const Ttotal=m*g+u[0];
+      for(let i=0;i<3;i++)st=rk4(st,u,dt/3); // drone.html と同じ 3 サブステップ RK4
+      if(tk>=gustT0&&tk<gustT1){st[1]+=gustAcc*dt;} // 突風：水平速度を蹴る
+      if(st[2]<0.05){st[2]=0.05;if(st[3]<0)st[3]=0;}
+      rec.t.push(tk);rec.x.push(st[0]);rec.y.push(st[2]);rec.th.push(st[4]*180/Math.PI);rec.T.push(Ttotal);
+    }
+    return rec;
+  }
+  const mpc=simulate('mpc'),pid=simulate('pid');
+
+  // ---- 描画 ----
+  const M={l:34,r:8,t:8,b:16};
+  const xPx=(tk,pw)=>M.l+(tk/Ttot_time)*pw;
+  function poly(arr,t,yfn,pw){let p='';for(let i=0;i<arr.length;i++)p+=`${xPx(t[i],pw).toFixed(1)},${yfn(arr[i]).toFixed(1)} `;return p;}
+  function gustBand(pw,ph){return `<rect x="${xPx(gustT0,pw)}" y="${M.t}" width="${(xPx(gustT1,pw)-xPx(gustT0,pw)).toFixed(1)}" height="${ph}" fill="#D8423F" opacity="0.10"/>`;}
+
+  // 上段：水平位置 x
+  (function(){
+    const W=380,H=126,pw=W-M.l-M.r,ph=H-M.t-M.b;
+    const xmax=Math.max(tx+0.4,...mpc.x,...pid.x),xmin=Math.min(0,...mpc.x,...pid.x);
+    const yhi=Math.ceil(xmax*2)/2,ylo=Math.floor(xmin*2)/2;
+    const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;
+    let s=gustBand(pw,ph);
+    for(let gg=Math.ceil(ylo/0.5)*0.5;gg<=yhi+1e-9;gg+=0.5){const y=yPx(gg);s+=`<line x1="${M.l}" y1="${y.toFixed(1)}" x2="${W-M.r}" y2="${y.toFixed(1)}" stroke="rgba(0,0,0,.07)" stroke-width="1"/>`;s+=`<text x="${M.l-4}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#8c8b84">${gg.toFixed(1)}</text>`;}
+    s+=`<line x1="${M.l}" y1="${yPx(tx)}" x2="${W-M.r}" y2="${yPx(tx)}" stroke="#D8423F" stroke-width="1" stroke-dasharray="3,3" opacity=".7"/>`;
+    s+=`<text x="${W-M.r}" y="${(yPx(tx)-3).toFixed(1)}" text-anchor="end" font-size="9" fill="#D8423F">目標 x*=${tx}</text>`;
+    s+=`<polyline points="${poly(pid.x,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
+    s+=`<polyline points="${poly(mpc.x,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;
+    document.getElementById('g-x').innerHTML=s;
+  })();
+
+  // 中段：傾き θ
+  (function(){
+    const W=380,H=94,pw=W-M.l-M.r,ph=H-M.t-M.b;
+    const aMax=Math.max(15,...mpc.th.map(Math.abs),...pid.th.map(Math.abs));
+    const yhi=Math.ceil(aMax/15)*15,ylo=-yhi;
+    const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;
+    let s=gustBand(pw,ph);
+    s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="rgba(0,0,0,.25)" stroke-width="1"/>`;
+    for(let gg=-yhi;gg<=yhi+1e-9;gg+=yhi/2){if(gg===0)continue;const y=yPx(gg);s+=`<text x="${M.l-4}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#8c8b84">${gg.toFixed(0)}</text>`;}
+    s+=`<polyline points="${poly(pid.th,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
+    s+=`<polyline points="${poly(mpc.th,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;
+    document.getElementById('g-th').innerHTML=s;
+  })();
+
+  // 下段：総推力 T
+  (function(){
+    const W=380,H=94,pw=W-M.l-M.r,ph=H-M.t-M.b;
+    const Tlo_c=u0min+m*g, Thi_c=u0max+m*g; // 制約由来の推力上下限
+    const yhi=Math.ceil((Thi_c+0.5)),ylo=0;
+    const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;
+    let s=gustBand(pw,ph);
+    for(let gg=0;gg<=yhi+1e-9;gg+=5){const y=yPx(gg);s+=`<line x1="${M.l}" y1="${y.toFixed(1)}" x2="${W-M.r}" y2="${y.toFixed(1)}" stroke="rgba(0,0,0,.07)" stroke-width="1"/>`;s+=`<text x="${M.l-4}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#8c8b84">${gg}</text>`;}
+    // ホバリング推力 mg
+    s+=`<line x1="${M.l}" y1="${yPx(m*g)}" x2="${W-M.r}" y2="${yPx(m*g)}" stroke="#8c8b84" stroke-width="1" stroke-dasharray="2,2" opacity=".6"/>`;
+    s+=`<text x="${M.l+2}" y="${(yPx(m*g)-3).toFixed(1)}" font-size="8.5" fill="#8c8b84">mg=${(m*g).toFixed(1)}</text>`;
+    // 上限
+    s+=`<line x1="${M.l}" y1="${yPx(Thi_c)}" x2="${W-M.r}" y2="${yPx(Thi_c)}" stroke="#2E9457" stroke-width="1" stroke-dasharray="3,3" opacity=".7"/>`;
+    s+=`<text x="${W-M.r}" y="${(yPx(Thi_c)+10).toFixed(1)}" text-anchor="end" font-size="9" fill="#2E9457">T_max ${Thi_c.toFixed(1)}</text>`;
+    s+=`<polyline points="${poly(pid.T,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
+    s+=`<polyline points="${poly(mpc.T,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;
+    for(let tk=0;tk<=Ttot_time;tk+=2){s+=`<text x="${xPx(tk,pw).toFixed(1)}" y="${H-3}" text-anchor="middle" font-size="9" fill="#8c8b84">${tk}s</text>`;}
+    document.getElementById('g-T').innerHTML=s;
+  })();
+
+  // KPI：整定時間（x が目標の ±5cm に収まり、以降そこに留まる最初の時刻）
+  function settle(rec,target,tol){for(let k=0;k<rec.x.length;k++){let ok=true;for(let j=k;j<rec.x.length;j++){if(Math.abs(rec.x[j]-target)>tol){ok=false;break;}}if(ok)return rec.t[k];}return rec.t[rec.t.length-1];}
+  document.getElementById('kpi-mpc').textContent=settle(mpc,tx,0.05).toFixed(2)+' s';
+  document.getElementById('kpi-pid').textContent=settle(pid,tx,0.05).toFixed(2)+' s';
+})();
+</script>
+</body>
+</html>
