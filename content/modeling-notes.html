@@ -3,40 +3,51 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>技術ノート：モデリング — DC モータと姿勢制御</title>
+<title>技術ノート：モデリング — 立式・接続・線形化・離散化と失敗例</title>
 <style>
   :root {
     --bg:#f6f4ee;--surface:#fff;--surface-2:#efece4;--text-1:#1a1a1a;--text-2:#5f5e5a;--text-3:#888780;
     --border:rgba(0,0,0,0.10);--border-2:rgba(0,0,0,0.22);--info-bg:#E6F1FB;--info-text:#0C447C;
-    --blue:#378ADD;--blue-deep:#0C447C;--amber:#EF9F27;--amber-bg:#FBF0DC;--red:#E24B4A;--green:#3DA35D;--radius:10px;
+    --blue:#378ADD;--blue-deep:#0C447C;--amber:#EF9F27;--amber-bg:#FBF0DC;--red:#E24B4A;--red-bg:#FBE3E2;--green:#3DA35D;--green-bg:#E3F2E8;--radius:10px;
     --font-sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
     --font-mono:"SF Mono","Menlo","Consolas",monospace;
   }
-  @media (prefers-color-scheme: dark){:root{--bg:#161614;--surface:#1f1f1d;--surface-2:#2a2a27;--text-1:#f0eee8;--text-2:#b4b2a9;--text-3:#888780;--border:rgba(255,255,255,0.10);--border-2:rgba(255,255,255,0.22);--info-bg:#0C447C;--info-text:#B5D4F4;--blue:#5BA0E8;--blue-deep:#B5D4F4;--amber-bg:#3a2f1a;}}
+  @media (prefers-color-scheme: dark){:root{--bg:#161614;--surface:#1f1f1d;--surface-2:#2a2a27;--text-1:#f0eee8;--text-2:#b4b2a9;--text-3:#888780;--border:rgba(255,255,255,0.10);--border-2:rgba(255,255,255,0.22);--info-bg:#0C447C;--info-text:#B5D4F4;--blue:#5BA0E8;--blue-deep:#B5D4F4;--amber-bg:#3a2f1a;--red-bg:#3a2020;--green-bg:#1e3025;}}
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text-1);font-family:var(--font-sans);font-size:15px;line-height:1.72;}
   .wrap{max-width:820px;margin:0 auto;padding:32px 24px 64px;}
   a{color:var(--blue-deep);}
   h1{font-size:27px;font-weight:600;letter-spacing:-0.01em;margin:0 0 6px;}
   .subtitle{font-size:14px;color:var(--text-2);margin:0 0 22px;}
-  h2{font-size:20px;font-weight:600;margin:40px 0 12px;padding-top:14px;border-top:2px solid var(--border);}
-  h3{font-size:16px;font-weight:600;margin:24px 0 10px;}
-  p{margin:12px 0;} ul,ol{margin:12px 0;padding-left:24px;} li{margin:5px 0;} strong{font-weight:600;} em{font-style:italic;color:var(--text-2);}
+  h2{font-size:20px;font-weight:600;margin:42px 0 12px;padding-top:14px;border-top:2px solid var(--border);}
+  h3{font-size:16px;font-weight:600;margin:26px 0 10px;}
+  h4{font-size:14px;font-weight:600;margin:18px 0 6px;color:var(--text-1);}
+  p{margin:12px 0;} ul,ol{margin:12px 0;padding-left:24px;} li{margin:6px 0;} strong{font-weight:600;} em{font-style:italic;color:var(--text-2);}
   .note{background:var(--info-bg);border-radius:var(--radius);padding:14px 18px;margin:18px 0;font-size:14px;}
   .note .note-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--info-text);font-weight:600;margin-bottom:4px;}
   .sidenote{border-left:3px solid var(--amber);background:var(--amber-bg);border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;font-size:13.5px;}
   .sidenote .sn-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--amber);font-weight:600;margin-bottom:4px;}
+  .fail{border-left:3px solid var(--red);background:var(--red-bg);border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:13.5px;}
+  .fail .f-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--red);font-weight:600;margin-bottom:4px;}
+  .fix{color:var(--green);font-weight:600;}
   table{border-collapse:collapse;width:100%;margin:16px 0;font-size:13.5px;}
-  th,td{border:0.5px solid var(--border);padding:7px 12px;text-align:left;}
+  th,td{border:0.5px solid var(--border);padding:7px 12px;text-align:left;vertical-align:top;}
   th{background:var(--surface-2);font-weight:600;}
   code{font-family:var(--font-mono);font-size:0.92em;background:var(--surface-2);padding:1px 5px;border-radius:4px;}
   math{font-size:1.05em;} .eq{margin:16px 0;text-align:center;overflow-x:auto;}
+  .eq-num{display:flex;align-items:center;justify-content:center;gap:14px;}
+  .eq-num .tag{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums;}
+  .steps{counter-reset:step;list-style:none;padding-left:0;}
+  .steps>li{position:relative;padding:10px 0 10px 44px;border-bottom:0.5px solid var(--border);}
+  .steps>li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:10px;width:28px;height:28px;border-radius:50%;background:var(--info-bg);color:var(--info-text);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;}
   .toc{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin:22px 0 30px;}
   .toc-title{font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);font-weight:600;margin-bottom:8px;}
   .toc ol{margin:0;padding-left:20px;} .toc a{color:var(--text-1);text-decoration:none;} .toc a:hover{color:var(--blue-deep);}
+  .toc ol ol{margin:3px 0 6px;font-size:13px;color:var(--text-2);}
   .lec-nav{display:flex;gap:14px;margin-bottom:20px;font-size:12px;flex-wrap:wrap;align-items:center;}
   .lec-nav a{color:var(--text-3);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:1px;}
   .lec-nav a:hover{color:var(--text-1);border-bottom-color:var(--border-2);} .lec-nav a.home{color:var(--text-2);font-weight:500;} .lec-nav .sep{color:var(--text-3);opacity:0.5;}
+  .kbd{font-family:var(--font-mono);font-size:0.85em;border:0.5px solid var(--border-2);border-bottom-width:2px;border-radius:4px;padding:1px 5px;}
   @media (max-width:640px){.wrap{padding:24px 18px 48px;}h1{font-size:23px;}}
 </style>
 </head>
@@ -47,42 +58,110 @@
     <a class="home" href="../index.html">← 教材トップ</a>
     <span class="sep">·</span>
     <a href="lecture-notes.html">講義ノート</a>
+    <a href="worked-examples.html">例題集</a>
+    <a href="../demos/cartpole.html">倒立振子</a>
     <a href="../demos/drone.html">2D ドローン</a>
-    <a href="../demos/rocket.html">ロケット着陸</a>
-    <a href="../demos/acc.html">車間制御 ACC</a>
+    <a href="../demos/rocket.html">ロケット</a>
+    <a href="../demos/acc.html">ACC</a>
   </nav>
 
   <h1>技術ノート：モデリング</h1>
-  <p class="subtitle">DC モータと姿勢制御 — デモの状態空間モデルの「出どころ」</p>
+  <p class="subtitle">立式 → 接続方程式 → 線形化 → 離散化、そして<strong>モデル化の失敗</strong>まで — デモの状態空間モデルが物理からどう生まれ、どこで壊れるか</p>
 
   <div class="note">
-    <div class="note-label">なぜモデリングか</div>
-    MPC は<strong>モデルベース制御</strong>。予測には「入力→状態」の数式モデルが要ります。本ノートは、デモが使う線形状態空間モデルが
-    <strong>物理（電気・力学）からどう導かれるか</strong>を、DC モータ（アクチュエータ）と姿勢系（ドローン・ロケット）について示します。
-    導出は <a href="lecture-notes.html#s2">講義ノート §2 予測モデル</a> の前提になります。
+    <div class="note-label">このノートの位置づけ</div>
+    MPC は<strong>モデルベース制御</strong>。予測には「入力 → 状態」の数式モデルが要ります。本ノートは、各デモが使う線形・離散の状態空間モデル
+    <math><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mi>A</mi><mi>x</mi><mo>+</mo><mi>B</mi><mi>u</mi></mrow></math>
+    が、<strong>物理法則からどう立式され、どう線形化・離散化されるか</strong>を導出します。さらに「現場でモデルが外れる典型パターン（失敗例）」を独立した章にまとめました。理論側は <a href="lecture-notes.html#s2">講義ノート §2 予測モデル</a> に接続します。
   </div>
 
   <div class="toc">
     <div class="toc-title">目次</div>
     <ol>
-      <li><a href="#s1">DC モータのモデリング</a></li>
-      <li><a href="#s2">姿勢制御のモデリング（剛体回転・クアッドロータ）</a></li>
-      <li><a href="#s3">線形化と離散化 — MPC で使う形へ</a></li>
+      <li><a href="#s1">モデリングの全体像と立式の手順</a>
+        <ol><li><a href="#s1-1">モデルの目的と粒度</a></li><li><a href="#s1-2">立式の標準手順（6 ステップ）</a></li><li><a href="#s1-3">ニュートン・オイラー法とラグランジュ法</a></li></ol></li>
+      <li><a href="#s2">DC モータ — 接続方程式の最小例</a>
+        <ol><li><a href="#s2-1">電気系と機械系の立式</a></li><li><a href="#s2-2">接続方程式：逆起電力とトルク定数</a></li><li><a href="#s2-3">状態空間化と伝達関数</a></li><li><a href="#s2-4">特異摂動による 1 次縮約</a></li></ol></li>
+      <li><a href="#s3">力学系の立式 — ラグランジュ法で倒立振子</a>
+        <ol><li><a href="#s3-1">一般化座標とエネルギー</a></li><li><a href="#s3-2">運動方程式の導出</a></li><li><a href="#s3-3">非線形カップリングの読み方</a></li><li><a href="#s3-4">拘束方程式：ホロノミックと非ホロノミック</a></li></ol></li>
+      <li><a href="#s4">並進と姿勢の結合 — クアッドロータ／ロケット</a>
+        <ol><li><a href="#s4-1">剛体回転と推力方向の結合</a></li><li><a href="#s4-2">ロータ混合行列</a></li></ol></li>
+      <li><a href="#s5">線形化 — 平衡点とヤコビアン</a>
+        <ol><li><a href="#s5-1">平衡点を解く</a></li><li><a href="#s5-2">テイラー展開とヤコビアン行列</a></li><li><a href="#s5-3">倒立振子の線形化（数値一致）</a></li><li><a href="#s5-4">線形化が妥当な範囲</a></li></ol></li>
+      <li><a href="#s6">離散化 — ZOH と双一次</a>
+        <ol><li><a href="#s6-1">ZOH の厳密解と expm トリック</a></li><li><a href="#s6-2">近似離散化とサンプル時間</a></li></ol></li>
+      <li><a href="#s7">モデル化の失敗と落とし穴</a>
+        <ol><li><a href="#s7-1">未モデル化ダイナミクスとむだ時間</a></li><li><a href="#s7-2">非線形要素：摩擦・飽和・バックラッシュ</a></li><li><a href="#s7-3">非最小位相と可制御・可観測性</a></li><li><a href="#s7-4">数値とスケーリング</a></li><li><a href="#s7-5">MPC 特有：モデル誤差と定常オフセット</a></li></ol></li>
+      <li><a href="#s8">まとめ — モデリングの作法</a></li>
     </ol>
   </div>
 
-  <!-- ===================== §1 DC motor ===================== -->
-  <h2 id="s1">1. DC モータのモデリング</h2>
-  <p>アクチュエータの代表が DC モータ。<strong>電気系</strong>と<strong>機械系</strong>が逆起電力で結合した 2 次系です。入力は電圧 <math><mi>V</mi></math>、出力は角速度 <math><mi>ω</mi></math>。</p>
+  <!-- ===================== §1 ===================== -->
+  <h2 id="s1">1. モデリングの全体像と立式の手順</h2>
 
-  <h3>1.1 支配方程式</h3>
-  <p><strong>電気系</strong>（キルヒホッフ）: 巻線抵抗 <math><mi>R</mi></math>・インダクタンス <math><mi>L</mi></math>・逆起電力定数 <math><msub><mi>K</mi><mi>e</mi></msub></math></p>
-  <div class="eq"><math display="block"><mrow><mi>L</mi><mfrac><mrow><mi>d</mi><mi>i</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mi>V</mi><mo>−</mo><mi>R</mi><mi>i</mi><mo>−</mo><msub><mi>K</mi><mi>e</mi></msub><mi>ω</mi></mrow></math></div>
-  <p><strong>機械系</strong>（ニュートン・オイラー）: 慣性 <math><mi>J</mi></math>・粘性摩擦 <math><mi>b</mi></math>・トルク定数 <math><msub><mi>K</mi><mi>t</mi></msub></math>・負荷トルク <math><msub><mi>τ</mi><mi>L</mi></msub></math></p>
-  <div class="eq"><math display="block"><mrow><mi>J</mi><mfrac><mrow><mi>d</mi><mi>ω</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><msub><mi>K</mi><mi>t</mi></msub><mi>i</mi><mo>−</mo><mi>b</mi><mi>ω</mi><mo>−</mo><msub><mi>τ</mi><mi>L</mi></msub></mrow></math></div>
+  <h3 id="s1-1">1.1 モデルの目的と粒度</h3>
+  <p>モデルは「真実の完全なコピー」ではなく<strong>目的に対する道具</strong>です。同じ機体でも、構造解析なら有限要素、軌道計画なら質点、姿勢制御なら剛体——と粒度が変わります。制御では次の二つを天秤にかけます。</p>
+  <ul>
+    <li><strong>十分な忠実度</strong>：制御帯域内のダイナミクス（支配的な極・零点）を捉えていること。</li>
+    <li><strong>十分な単純さ</strong>：設計・計算（MPC なら毎周期の QP）に乗る次数・線形性であること。</li>
+  </ul>
+  <p>「制御のためのモデル」は<em>わざと粗く</em>作ります。高周波の振動モードやアクチュエータの細かい応答は、帯域外なら無視し、ロバスト性（余裕）で吸収するのが定石です。<a href="#s7">§7</a> は、この「わざと無視した部分」が牙をむく場面の一覧です。</p>
 
-  <h3>1.2 状態空間表現</h3>
-  <p>状態を <math><mrow><mi>x</mi><mo>=</mo><msup><mrow><mo>[</mo><mi>i</mi><mo>,</mo><mi>ω</mi><mo>]</mo></mrow><mi>⊤</mi></msup></mrow></math>、入力 <math><mi>V</mi></math>、負荷を外乱とすると</p>
+  <h3 id="s1-2">1.2 立式の標準手順（6 ステップ）</h3>
+  <p>物理から状態空間モデルを得るまでは、ほぼ機械的な手順に落ちます。</p>
+  <ol class="steps">
+    <li><strong>自由度 (DOF) を数え、一般化座標を選ぶ</strong>。例：台車＋振子は並進 <math><mi>x</mi></math> と回転 <math><mi>θ</mi></math> の 2 自由度 → <math><mrow><mi>q</mi><mo>=</mo><mo>(</mo><mi>x</mi><mo>,</mo><mi>θ</mi><mo>)</mo></mrow></math>。</li>
+    <li><strong>保存則を書く</strong>。力学はニュートンの運動方程式かラグランジュ方程式、電気はキルヒホッフ、熱はエネルギー収支。</li>
+    <li><strong>構成則 (constitutive relations) を代入する</strong>。ばね <math><mrow><mi>F</mi><mo>=</mo><mi>k</mi><mi>x</mi></mrow></math>、抵抗 <math><mrow><mi>V</mi><mo>=</mo><mi>R</mi><mi>i</mi></mrow></math>、粘性 <math><mrow><mi>F</mi><mo>=</mo><mi>c</mi><mover><mi>x</mi><mo>˙</mo></mover></mrow></math> など、素子の物性。</li>
+    <li><strong>接続方程式 (interconnection) で部分系を結ぶ</strong>。共有する力・速度・電流が部分系をまたいで一致する条件（<a href="#s2-2">§2.2</a>・<a href="#s3-3">§3.3</a>）。</li>
+    <li><strong>1 階の状態空間に整理する</strong>。高階微分を状態として積み増し、<math><mrow><mover><mi>x</mi><mo>˙</mo></mover><mo>=</mo><mi>f</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>u</mi><mo>)</mo></mrow></math> 形に。</li>
+    <li><strong>線形化・離散化して制御モデルにする</strong>（<a href="#s5">§5</a>・<a href="#s6">§6</a>）。MPC が要求する <math><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mi>A</mi><mi>x</mi><mo>+</mo><mi>B</mi><mi>u</mi></mrow></math> 形へ。</li>
+  </ol>
+
+  <h3 id="s1-3">1.3 ニュートン・オイラー法とラグランジュ法</h3>
+  <p>力学系の立式（ステップ 2）には二つの流儀があります。</p>
+  <table>
+    <tr><th>観点</th><th>ニュートン・オイラー</th><th>ラグランジュ（解析力学）</th></tr>
+    <tr><td>扱う量</td><td>力・トルク（ベクトル）</td><td>エネルギー（スカラー）</td></tr>
+    <tr><td>拘束力</td><td>明示的に書く必要あり</td><td>一般化座標を選べば<strong>自動的に消える</strong></td></tr>
+    <tr><td>向き</td><td>単純な系・剛体単体に速い</td><td>多自由度・結合系・拘束つきに強い</td></tr>
+    <tr><td>本ノートでの使い分け</td><td>DC モータ（§2）・剛体回転（§4）</td><td>倒立振子・クレーン（§3）</td></tr>
+  </table>
+  <p>ラグランジュ法の核は、運動エネルギー <math><mi>T</mi></math> とポテンシャル <math><mi>V</mi></math> から <strong>ラグランジアン</strong> <math><mrow><mi>L</mi><mo>=</mo><mi>T</mi><mo>−</mo><mi>V</mi></mrow></math> を作り、各一般化座標 <math><msub><mi>q</mi><mi>i</mi></msub></math> について</p>
+  <div class="eq"><math display="block"><mrow>
+    <mfrac><mi>d</mi><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mfrac><mrow><mo>∂</mo><mi>L</mi></mrow><mrow><mo>∂</mo><msub><mover><mi>q</mi><mo>˙</mo></mover><mi>i</mi></msub></mrow></mfrac>
+    <mo>−</mo><mfrac><mrow><mo>∂</mo><mi>L</mi></mrow><mrow><mo>∂</mo><msub><mi>q</mi><mi>i</mi></msub></mrow></mfrac>
+    <mo>=</mo><msub><mi>Q</mi><mi>i</mi></msub>
+  </mrow></math></div>
+  <p>を解くこと。右辺 <math><msub><mi>Q</mi><mi>i</mi></msub></math> は座標 <math><msub><mi>q</mi><mi>i</mi></msub></math> に対応する<strong>一般化力</strong>（外部入力・非保存力）です。</p>
+
+  <!-- ===================== §2 DC motor ===================== -->
+  <h2 id="s2">2. DC モータ — 接続方程式の最小例</h2>
+  <p>「接続方程式」を一番きれいに見せてくれるのが DC モータです。電気系と機械系という<strong>別物理の二つの系</strong>が、たった二つの結合項で結ばれます。入力は電圧 <math><mi>V</mi></math>、出力は角速度 <math><mi>ω</mi></math>。</p>
+
+  <h3 id="s2-1">2.1 電気系と機械系の立式</h3>
+  <p><strong>電気系</strong>（キルヒホッフの電圧則）：電源電圧が、抵抗降下・インダクタンス降下・逆起電力の和に等しい。</p>
+  <div class="eq eq-num"><math display="block"><mrow><mi>L</mi><mfrac><mrow><mi>d</mi><mi>i</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mi>V</mi><mo>−</mo><mi>R</mi><mi>i</mi><mo>−</mo><mtext style="color:#EF9F27">&#160;</mtext><msub><mi>K</mi><mi>e</mi></msub><mi>ω</mi></mrow></math><span class="tag">(2.1)</span></div>
+  <p><strong>機械系</strong>（剛体回転のニュートン・オイラー）：発生トルクが、慣性・粘性摩擦・負荷の和を駆動する。</p>
+  <div class="eq eq-num"><math display="block"><mrow><mi>J</mi><mfrac><mrow><mi>d</mi><mi>ω</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><msub><mi>K</mi><mi>t</mi></msub><mi>i</mi><mo>−</mo><mi>b</mi><mi>ω</mi><mo>−</mo><msub><mi>τ</mi><mi>L</mi></msub></mrow></math><span class="tag">(2.2)</span></div>
+  <p>ここまでは独立した二式。<math><mi>R</mi></math>・<math><mi>L</mi></math>・<math><mi>J</mi></math>・<math><mi>b</mi></math> は各系で閉じた物性です。</p>
+
+  <h3 id="s2-2">2.2 接続方程式：逆起電力とトルク定数</h3>
+  <p>二式を結ぶのは下線の二項です。</p>
+  <ul>
+    <li><strong>トルク項</strong> <math><mrow><msub><mi>K</mi><mi>t</mi></msub><mi>i</mi></mrow></math>（電気 → 機械）：電流がトルクを生む。</li>
+    <li><strong>逆起電力項</strong> <math><mrow><msub><mi>K</mi><mi>e</mi></msub><mi>ω</mi></mrow></math>（機械 → 電気）：回転が起電力を生み、電気系に「効き返す」。</li>
+  </ul>
+  <p>この双方向のやりとりが<strong>接続方程式</strong>です。しかも両定数は独立ではない。ロスのない電気-機械変換ではエネルギー（パワー）が保存するので、電気側がモータに渡すパワー <math><mrow><mo>(</mo><msub><mi>K</mi><mi>e</mi></msub><mi>ω</mi><mo>)</mo><mi>i</mi></mrow></math> と、機械側に現れるパワー <math><mrow><mi>τ</mi><mi>ω</mi><mo>=</mo><mo>(</mo><msub><mi>K</mi><mi>t</mi></msub><mi>i</mi><mo>)</mo><mi>ω</mi></mrow></math> が一致しなければならない：</p>
+  <div class="eq"><math display="block"><mrow><msub><mi>K</mi><mi>e</mi></msub><mi>ω</mi><mo>·</mo><mi>i</mi><mo>=</mo><msub><mi>K</mi><mi>t</mi></msub><mi>i</mi><mo>·</mo><mi>ω</mi><mspace width="1.4em"/><mo>⟹</mo><mspace width="1.4em"/><msub><mi>K</mi><mi>t</mi></msub><mo>=</mo><msub><mi>K</mi><mi>e</mi></msub></mrow></math></div>
+  <p>SI 単位では<strong>トルク定数と逆起電力定数は等しい</strong>。これは偶然ではなく、接続がパワー保存的（受動的）であることの帰結です。物理の接続は、たいていこうした<em>双対なペア</em>（力↔速度、電圧↔電流、圧力↔流量）として現れます。</p>
+  <div class="sidenote">
+    <div class="sn-label">サイドノート — ボンドグラフ的な見方</div>
+    力↔速度・電圧↔電流のように、積が<strong>パワー</strong>になる量の対を「努力 (effort)」「流れ (flow)」と呼び、部分系をこのペアで継ぐ流儀がボンドグラフです。モータは「電気的努力・流れ」を「機械的努力・流れ」に変換する<strong>ジャイレータ</strong>として表せ、<math><mrow><msub><mi>K</mi><mi>t</mi></msub><mo>=</mo><msub><mi>K</mi><mi>e</mi></msub></mrow></math> はその変換比が一つで足りることを意味します。
+  </div>
+
+  <h3 id="s2-3">2.3 状態空間化と伝達関数</h3>
+  <p>状態を <math><mrow><mi>x</mi><mo>=</mo><msup><mrow><mo>[</mo><mi>i</mi><mo>,</mo><mi>ω</mi><mo>]</mo></mrow><mi>⊤</mi></msup></mrow></math>、入力 <math><mi>V</mi></math>、負荷 <math><msub><mi>τ</mi><mi>L</mi></msub></math> を外乱とすると、(2.1)(2.2) はそのまま 1 階系に：</p>
   <div class="eq"><math display="block"><mrow>
     <mfrac><mi>d</mi><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mrow><mo>[</mo><mtable><mtr><mtd><mi>i</mi></mtd></mtr><mtr><mtd><mi>ω</mi></mtd></mtr></mtable><mo>]</mo></mrow>
     <mo>=</mo>
@@ -94,67 +173,264 @@
     <mo>+</mo>
     <mrow><mo>[</mo><mtable><mtr><mtd><mrow><mn>1</mn><mo>/</mo><mi>L</mi></mrow></mtd></mtr><mtr><mtd><mn>0</mn></mtd></mtr></mtable><mo>]</mo></mrow><mi>V</mi>
   </mrow></math></div>
-  <p>角度 <math><mi>θ</mi></math> も制御したいなら <math><mrow><mover><mi>θ</mi><mo>˙</mo></mover><mo>=</mo><mi>ω</mi></mrow></math> を足して 3 状態 <math><mrow><mo>[</mo><mi>i</mi><mo>,</mo><mi>ω</mi><mo>,</mo><mi>θ</mi><mo>]</mo></mrow></math> に拡張します（位置サーボ）。</p>
-
-  <h3>1.3 伝達関数と 1 次近似</h3>
-  <p>負荷 0 で <math><mrow><mi>ω</mi><mo>(</mo><mi>s</mi><mo>)</mo><mo>/</mo><mi>V</mi><mo>(</mo><mi>s</mi><mo>)</mo></mrow></math> を求めると</p>
+  <p>非対角項 <math><mrow><mo>−</mo><msub><mi>K</mi><mi>e</mi></msub><mo>/</mo><mi>L</mi></mrow></math> と <math><mrow><msub><mi>K</mi><mi>t</mi></msub><mo>/</mo><mi>J</mi></mrow></math> が、まさに接続の現れです（行列の非対角＝結合）。ラプラス変換して <math><mi>i</mi></math> を消去すると、負荷 0 で</p>
   <div class="eq"><math display="block"><mrow><mfrac><mrow><mi>ω</mi><mo>(</mo><mi>s</mi><mo>)</mo></mrow><mrow><mi>V</mi><mo>(</mo><mi>s</mi><mo>)</mo></mrow></mfrac><mo>=</mo><mfrac><msub><mi>K</mi><mi>t</mi></msub><mrow><mo>(</mo><mi>L</mi><mi>s</mi><mo>+</mo><mi>R</mi><mo>)</mo><mo>(</mo><mi>J</mi><mi>s</mi><mo>+</mo><mi>b</mi><mo>)</mo><mo>+</mo><msub><mi>K</mi><mi>t</mi></msub><msub><mi>K</mi><mi>e</mi></msub></mrow></mfrac></mrow></math></div>
-  <p>電気時定数 <math><mrow><msub><mi>τ</mi><mi>e</mi></msub><mo>=</mo><mi>L</mi><mo>/</mo><mi>R</mi></mrow></math> は機械時定数 <math><mrow><msub><mi>τ</mi><mi>m</mi></msub></mrow></math> よりずっと小さいのが普通。<math><mi>L</mi><mo>≈</mo><mn>0</mn></math> と置くと<strong>1 次系</strong>に縮約：</p>
-  <div class="eq"><math display="block"><mrow><mfrac><mrow><mi>ω</mi><mo>(</mo><mi>s</mi><mo>)</mo></mrow><mrow><mi>V</mi><mo>(</mo><mi>s</mi><mo>)</mo></mrow></mfrac><mo>≈</mo><mfrac><msub><mi>K</mi><mi>m</mi></msub><mrow><mi>τ</mi><mi>s</mi><mo>+</mo><mn>1</mn></mrow></mfrac><mo>,</mo><mspace width="1em"/><mi>τ</mi><mo>=</mo><mfrac><mi>J</mi><mrow><mi>b</mi><mo>+</mo><msub><mi>K</mi><mi>t</mi></msub><msub><mi>K</mi><mi>e</mi></msub><mo>/</mo><mi>R</mi></mrow></mfrac></mrow></math></div>
+  <p>分母の <math><mrow><msub><mi>K</mi><mi>t</mi></msub><msub><mi>K</mi><mi>e</mi></msub></mrow></math> が接続項。これが極を左半面に押し込み、<strong>逆起電力が自然な速度フィードバックとして安定化に働く</strong>ことを示します。</p>
+
+  <h3 id="s2-4">2.4 特異摂動による 1 次縮約</h3>
+  <p>電気時定数 <math><mrow><msub><mi>τ</mi><mi>e</mi></msub><mo>=</mo><mi>L</mi><mo>/</mo><mi>R</mi></mrow></math> は機械時定数 <math><mrow><msub><mi>τ</mi><mi>m</mi></msub><mo>=</mo><mi>J</mi><mo>/</mo><mi>b</mi></mrow></math> よりずっと速い（小さい）のが普通です。すると電流は「ほぼ瞬時に」定常値に達するとみなせ、<math><mrow><mi>L</mi><mover><mi>i</mi><mo>˙</mo></mover><mo>≈</mo><mn>0</mn></mrow></math>（特異摂動の縮約）。(2.1) で <math><mrow><mi>i</mi><mo>≈</mo><mo>(</mo><mi>V</mi><mo>−</mo><msub><mi>K</mi><mi>e</mi></msub><mi>ω</mi><mo>)</mo><mo>/</mo><mi>R</mi></mrow></math> を (2.2) に代入すると、きれいな<strong>1 次系</strong>になります。</p>
+  <div class="eq"><math display="block"><mrow><mfrac><mrow><mi>ω</mi><mo>(</mo><mi>s</mi><mo>)</mo></mrow><mrow><mi>V</mi><mo>(</mo><mi>s</mi><mo>)</mo></mrow></mfrac><mo>≈</mo><mfrac><msub><mi>K</mi><mi>m</mi></msub><mrow><mi>τ</mi><mi>s</mi><mo>+</mo><mn>1</mn></mrow></mfrac><mo>,</mo><mspace width="1.2em"/><mi>τ</mi><mo>=</mo><mfrac><mi>J</mi><mrow><mi>b</mi><mo>+</mo><msub><mi>K</mi><mi>t</mi></msub><msub><mi>K</mi><mi>e</mi></msub><mo>/</mo><mi>R</mi></mrow></mfrac><mo>,</mo><mspace width="1.2em"/><msub><mi>K</mi><mi>m</mi></msub><mo>=</mo><mfrac><msub><mi>K</mi><mi>t</mi></msub><mrow><mi>R</mi><mi>b</mi><mo>+</mo><msub><mi>K</mi><mi>t</mi></msub><msub><mi>K</mi><mi>e</mi></msub></mrow></mfrac></mrow></math></div>
   <div class="note">
     <div class="note-label">デモと対応</div>
-    <a href="../demos/mpc_vs_pid.html">制御として見る</a>の<strong>「1 次系」</strong>はこの近似そのもの。<a href="../demos/acc.html">ACC</a> の<strong>「一次の加速度遅れ <math><mi>τ</mi></math>」</strong>も、駆動系（モータ＋ドライブトレイン）の応答を 1 次で表したものです。逆起電力 <math><msub><mi>K</mi><mi>e</mi></msub><mi>ω</mi></math> が<em>自然な速度フィードバック</em>として効くため、開ループでも安定（極が左半面）。
+    <a href="../demos/mpc_vs_pid.html">制御として見る</a>の<strong>「1 次系」</strong>はこの縮約そのもの。<a href="../demos/acc.html">ACC</a> の<strong>「加速度遅れ <math><mi>τ</mi></math>」</strong>も、駆動系（モータ＋ドライブトレイン）の応答を 1 次で表したものです。逆に <math><mi>L</mi></math> を無視できない高速サーボでは 2 次のまま扱う必要があり、無視すると <a href="#s7-1">§7.1 の未モデル化ダイナミクス</a>になります。
   </div>
 
-  <!-- ===================== §2 attitude ===================== -->
-  <h2 id="s2">2. 姿勢制御のモデリング</h2>
-  <h3>2.1 剛体の回転</h3>
-  <p>姿勢制御の芯は<strong>剛体の回転運動</strong>。平面（1 軸）なら、慣性モーメント <math><mi>J</mi></math> の物体に正味トルク <math><mi>τ</mi></math> が働き</p>
-  <div class="eq"><math display="block"><mrow><mi>J</mi><mover><mi>θ</mi><mo>¨</mo></mover><mo>=</mo><mi>τ</mi></mrow></math></div>
-  <p>これは<strong>二重積分</strong>（トルク→角加速度→角速度→角度）。摩擦やジャイロ項があれば右辺に加わります。3 次元では <math><mrow><mi>J</mi><mover><mi>ω</mi><mo>˙</mo></mover><mo>+</mo><mi>ω</mi><mo>×</mo><mi>J</mi><mi>ω</mi><mo>=</mo><mi>τ</mi></mrow></math>（オイラーの式）。</p>
+  <!-- ===================== §3 Lagrange ===================== -->
+  <h2 id="s3">3. 力学系の立式 — ラグランジュ法で倒立振子</h2>
+  <p>制御の王道例、<strong>台車型倒立振子 (cart-pole)</strong> をラグランジュ法で最初から立てます。台車（質量 <math><mi>M</mi></math>、位置 <math><mi>x</mi></math>）の上にピン支持された振子（質量 <math><mi>m</mi></math>、長さ <math><mi>l</mi></math>、鉛直上向きからの角 <math><mi>θ</mi></math>）。入力は台車への水平力 <math><mi>F</mi></math>。</p>
 
-  <h3>2.2 平面クアッドロータ／ロケット（並進＋姿勢の結合）</h3>
-  <p>機体は<strong>本体軸方向にしか推力を出せない</strong>。だから水平に動くには機体を傾ける必要があり、並進と姿勢が結合します。総推力 <math><mi>T</mi></math>・トルク <math><msub><mi>u</mi><mn>2</mn></msub></math>、姿勢 <math><mi>θ</mi></math>、質量 <math><mi>m</mi></math> として（平面 PVTOL モデル）</p>
+  <h3 id="s3-1">3.1 一般化座標とエネルギー</h3>
+  <p>一般化座標は <math><mrow><mi>q</mi><mo>=</mo><mo>(</mo><mi>x</mi><mo>,</mo><mi>θ</mi><mo>)</mo></mrow></math> の 2 自由度。各質点の位置（振子は点質量近似、ピンは台車上）：</p>
   <div class="eq"><math display="block"><mrow>
+    <msub><mi>p</mi><mi>cart</mi></msub><mo>=</mo><mo>(</mo><mi>x</mi><mo>,</mo><mn>0</mn><mo>)</mo><mo>,</mo><mspace width="1.4em"/>
+    <msub><mi>p</mi><mi>bob</mi></msub><mo>=</mo><mo>(</mo><mi>x</mi><mo>+</mo><mi>l</mi><mi>sin</mi><mi>θ</mi><mo>,</mo><mspace width="0.3em"/><mi>l</mi><mi>cos</mi><mi>θ</mi><mo>)</mo>
+  </mrow></math></div>
+  <p>振子の速度の二乗は <math><mrow><msup><mover><mi>x</mi><mo>˙</mo></mover><mn>2</mn></msup><mo>+</mo><mn>2</mn><mi>l</mi><mover><mi>x</mi><mo>˙</mo></mover><mover><mi>θ</mi><mo>˙</mo></mover><mi>cos</mi><mi>θ</mi><mo>+</mo><msup><mi>l</mi><mn>2</mn></msup><msup><mover><mi>θ</mi><mo>˙</mo></mover><mn>2</mn></msup></mrow></math>。運動エネルギーとポテンシャルは</p>
+  <div class="eq"><math display="block"><mrow>
+    <mi>T</mi><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>(</mo><mi>M</mi><mo>+</mo><mi>m</mi><mo>)</mo><msup><mover><mi>x</mi><mo>˙</mo></mover><mn>2</mn></msup><mo>+</mo><mi>m</mi><mi>l</mi><mover><mi>x</mi><mo>˙</mo></mover><mover><mi>θ</mi><mo>˙</mo></mover><mi>cos</mi><mi>θ</mi><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mi>m</mi><msup><mi>l</mi><mn>2</mn></msup><msup><mover><mi>θ</mi><mo>˙</mo></mover><mn>2</mn></msup><mo>,</mo>
+    <mspace width="1.4em"/><mi>V</mi><mo>=</mo><mi>m</mi><mi>g</mi><mi>l</mi><mi>cos</mi><mi>θ</mi>
+  </mrow></math></div>
+  <p>第 2 項 <math><mrow><mi>m</mi><mi>l</mi><mover><mi>x</mi><mo>˙</mo></mover><mover><mi>θ</mi><mo>˙</mo></mover><mi>cos</mi><mi>θ</mi></mrow></math> が、台車と振子の運動を結ぶ<strong>カップリング項</strong>。これが後で非線形の結合行列を生みます。</p>
+
+  <h3 id="s3-2">3.2 運動方程式の導出</h3>
+  <p>ラグランジアン <math><mrow><mi>L</mi><mo>=</mo><mi>T</mi><mo>−</mo><mi>V</mi></mrow></math> を各座標に適用します。<math><mi>x</mi></math> について（一般化力は <math><mi>F</mi></math>）：</p>
+  <div class="eq eq-num"><math display="block"><mrow><mo>(</mo><mi>M</mi><mo>+</mo><mi>m</mi><mo>)</mo><mover><mi>x</mi><mo>¨</mo></mover><mo>+</mo><mi>m</mi><mi>l</mi><mi>cos</mi><mi>θ</mi><mo>·</mo><mover><mi>θ</mi><mo>¨</mo></mover><mo>−</mo><mi>m</mi><mi>l</mi><mi>sin</mi><mi>θ</mi><mo>·</mo><msup><mover><mi>θ</mi><mo>˙</mo></mover><mn>2</mn></msup><mo>=</mo><mi>F</mi></mrow></math><span class="tag">(3.1)</span></div>
+  <p><math><mi>θ</mi></math> について（ピンに駆動トルクなし → 一般化力 0）：</p>
+  <div class="eq eq-num"><math display="block"><mrow><mi>m</mi><mi>l</mi><mi>cos</mi><mi>θ</mi><mo>·</mo><mover><mi>x</mi><mo>¨</mo></mover><mo>+</mo><mi>m</mi><msup><mi>l</mi><mn>2</mn></msup><mover><mi>θ</mi><mo>¨</mo></mover><mo>−</mo><mi>m</mi><mi>g</mi><mi>l</mi><mi>sin</mi><mi>θ</mi><mo>=</mo><mn>0</mn></mrow></math><span class="tag">(3.2)</span></div>
+  <p>行列（ディスクリプタ）形にまとめると、構造がはっきりします：</p>
+  <div class="eq"><math display="block"><mrow>
+    <munder><munder><mrow><mo>[</mo><mtable>
+      <mtr><mtd><mrow><mi>M</mi><mo>+</mo><mi>m</mi></mrow></mtd><mtd><mrow><mi>m</mi><mi>l</mi><mi>cos</mi><mi>θ</mi></mrow></mtd></mtr>
+      <mtr><mtd><mrow><mi>m</mi><mi>l</mi><mi>cos</mi><mi>θ</mi></mrow></mtd><mtd><mrow><mi>m</mi><msup><mi>l</mi><mn>2</mn></msup></mrow></mtd></mtr>
+    </mtable><mo>]</mo></mrow><mo>&#9183;</mo></munder><mtext>慣性行列&#160;M(q)</mtext></munder>
+    <mrow><mo>[</mo><mtable><mtr><mtd><mover><mi>x</mi><mo>¨</mo></mover></mtd></mtr><mtr><mtd><mover><mi>θ</mi><mo>¨</mo></mover></mtd></mtr></mtable><mo>]</mo></mrow>
+    <mo>+</mo>
+    <mrow><mo>[</mo><mtable><mtr><mtd><mrow><mo>−</mo><mi>m</mi><mi>l</mi><mi>sin</mi><mi>θ</mi><mo>·</mo><msup><mover><mi>θ</mi><mo>˙</mo></mover><mn>2</mn></msup></mrow></mtd></mtr><mtr><mtd><mrow><mo>−</mo><mi>m</mi><mi>g</mi><mi>l</mi><mi>sin</mi><mi>θ</mi></mrow></mtd></mtr></mtable><mo>]</mo></mrow>
+    <mo>=</mo>
+    <mrow><mo>[</mo><mtable><mtr><mtd><mi>F</mi></mtd></mtr><mtr><mtd><mn>0</mn></mtd></mtr></mtable><mo>]</mo></mrow>
+  </mrow></math></div>
+  <p>慣性行列 <math><mrow><mi>M</mi><mo>(</mo><mi>q</mi><mo>)</mo></mrow></math> の<strong>非対角 <math><mrow><mi>m</mi><mi>l</mi><mi>cos</mi><mi>θ</mi></mrow></math> が接続</strong>。<math><mover><mi>x</mi><mo>¨</mo></mover></math>・<math><mover><mi>θ</mi><mo>¨</mo></mover></math> について解く（<math><mrow><mi>M</mi><mo>(</mo><mi>q</mi><mo>)</mo></mrow></math> を逆行列）と <math><mrow><mover><mi>x</mi><mo>˙</mo></mover><mo>=</mo><mi>f</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>u</mi><mo>)</mo></mrow></math> が得られ、状態 <math><mrow><mo>[</mo><mi>x</mi><mo>,</mo><mover><mi>x</mi><mo>˙</mo></mover><mo>,</mo><mi>θ</mi><mo>,</mo><mover><mi>θ</mi><mo>˙</mo></mover><mo>]</mo></mrow></math> の 4 次非線形系になります。これが <a href="../demos/cartpole.html">倒立振子デモ</a>が <code>RK4</code> で積分している式です。</p>
+  <div class="sidenote">
+    <div class="sn-label">サイドノート — 点質量と一様棒</div>
+    上の導出は振子を<strong>先端の点質量</strong>で近似しています。デモは<strong>一様な棒</strong>（重心まわり慣性 <math><mrow><mi>I</mi><mo>=</mo><mi>m</mi><msup><mi>l</mi><mn>2</mn></msup><mo>/</mo><mn>3</mn></mrow></math>）でモデル化しているため、<math><mrow><mi>m</mi><msup><mi>l</mi><mn>2</mn></msup></mrow></math> が <math><mrow><mfrac><mn>4</mn><mn>3</mn></mfrac><mi>m</mi><msup><mi>l</mi><mn>2</mn></msup></mrow></math> に置き換わり、係数に <code>4/3</code> が現れます。導出手順は完全に同型で、デモの <code>deriv()</code> 内の <math><mrow><mn>4</mn><mo>/</mo><mn>3</mn></mrow></math> はここから来ています。</p>
+  </div>
+
+  <h3 id="s3-3">3.3 非線形カップリングの読み方</h3>
+  <p>この系が「線形では書けない」理由は三つの非線形項に集約されます。</p>
+  <table>
+    <tr><th>項</th><th>正体</th><th>物理的意味</th></tr>
+    <tr><td><math><mrow><mi>cos</mi><mi>θ</mi></mrow></math> を含む慣性結合</td><td>姿勢に依存する慣性</td><td>傾くほど台車の力が振子に伝わる効率が変わる</td></tr>
+    <tr><td><math><mrow><mi>sin</mi><mi>θ</mi><mo>·</mo><msup><mover><mi>θ</mi><mo>˙</mo></mover><mn>2</mn></msup></mrow></math></td><td>遠心力（コリオリ・遠心項）</td><td>速く振れるほど効く、速度の二乗</td></tr>
+    <tr><td><math><mrow><mi>sin</mi><mi>θ</mi></mrow></math>（重力項）</td><td>復元/転倒トルク</td><td><math><mrow><mi>θ</mi><mo>=</mo><mn>0</mn></mrow></math>（直立）では転倒方向に効く＝<strong>不安定</strong></td></tr>
+  </table>
+  <p>重力項の符号が「直立＝不安定平衡」を生みます（小さな <math><mi>θ</mi></math> が増幅する）。MPC はこの不安定系を、線形化モデルで未来を予測して安定化します（<a href="#s5-3">§5.3</a> で線形化）。</p>
+
+  <h3 id="s3-4">3.4 拘束方程式：ホロノミックと非ホロノミック</h3>
+  <p>多自由度系では、座標が独立に動けない<strong>拘束 (constraint)</strong> が立式に効きます。これも一種の接続方程式です。</p>
+  <ul>
+    <li><strong>ホロノミック拘束</strong>：座標だけの等式 <math><mrow><mi>g</mi><mo>(</mo><mi>q</mi><mo>)</mo><mo>=</mo><mn>0</mn></mrow></math>。例：<a href="../demos/crane.html">クレーン</a>のロープ長一定、剛体リンクの長さ一定。自由度を減らせるので、一般化座標を選び直せば<strong>消去できる</strong>（ラグランジュ法の強み）。クレーンはトロリー位置 <math><mi>x</mi></math> と振れ角 <math><mi>φ</mi></math> の 2 自由度で、倒立振子と同型（ただし吊り下げ＝安定平衡）。</li>
+    <li><strong>非ホロノミック拘束</strong>：速度の等式で、積分して座標の関係に落とせないもの。例：車輪の横滑りなし条件 <math><mrow><mover><mi>x</mi><mo>˙</mo></mover><mi>sin</mi><mi>ψ</mi><mo>−</mo><mover><mi>y</mi><mo>˙</mo></mover><mi>cos</mi><mi>ψ</mi><mo>=</mo><mn>0</mn></mrow></math>。自由度は減らせず、可制御性の議論が必要になる。</li>
+  </ul>
+  <p>拘束を消去しきれないときは、状態方程式に代数式が残る<strong>微分代数方程式 (DAE)</strong> となり、そのまま MPC に載せるか、拘束を陽に解いて ODE 化します。</p>
+
+  <!-- ===================== §4 attitude ===================== -->
+  <h2 id="s4">4. 並進と姿勢の結合 — クアッドロータ／ロケット</h2>
+
+  <h3 id="s4-1">4.1 剛体回転と推力方向の結合</h3>
+  <p>姿勢制御の芯は<strong>剛体の回転</strong>。平面 1 軸なら慣性 <math><mi>J</mi></math> に正味トルク <math><mi>τ</mi></math> で <math><mrow><mi>J</mi><mover><mi>θ</mi><mo>¨</mo></mover><mo>=</mo><mi>τ</mi></mrow></math>（二重積分）。3 次元では回転の非線形（ジャイロ）項が出るオイラーの式 <math><mrow><mi>J</mi><mover><mi>ω</mi><mo>˙</mo></mover><mo>+</mo><mi>ω</mi><mo>×</mo><mi>J</mi><mi>ω</mi><mo>=</mo><mi>τ</mi></mrow></math>。</p>
+  <p>機体は<strong>本体軸方向にしか推力を出せない</strong>。だから水平移動には機体を傾ける必要があり、ここに<strong>並進と姿勢の接続</strong>が生まれます。総推力 <math><mi>T</mi></math>・トルク <math><msub><mi>u</mi><mn>2</mn></msub></math>・姿勢 <math><mi>θ</mi></math>・質量 <math><mi>m</mi></math> の平面モデル (PVTOL)：</p>
+  <div class="eq eq-num"><math display="block"><mrow>
     <mi>m</mi><mover><mi>x</mi><mo>¨</mo></mover><mo>=</mo><mo>−</mo><mi>T</mi><mi>sin</mi><mi>θ</mi><mo>,</mo><mspace width="1.2em"/>
     <mi>m</mi><mover><mi>y</mi><mo>¨</mo></mover><mo>=</mo><mi>T</mi><mi>cos</mi><mi>θ</mi><mo>−</mo><mi>m</mi><mi>g</mi><mo>,</mo><mspace width="1.2em"/>
     <mi>J</mi><mover><mi>θ</mi><mo>¨</mo></mover><mo>=</mo><msub><mi>u</mi><mn>2</mn></msub>
-  </mrow></math></div>
-  <p>これがデモの <a href="../demos/drone.html">2D ドローン</a>・<a href="../demos/rocket.html">ロケット</a>の<strong>非線形</strong>運動方程式（RK4 で積分）。<math><mi>T</mi><mo>,</mo><msub><mi>u</mi><mn>2</mn></msub></math> の 2 入力 ＝ 多入力 (MIMO) です。</p>
+  </mrow></math><span class="tag">(4.1)</span></div>
+  <p><math><mrow><mi>T</mi><mi>sin</mi><mi>θ</mi></mrow></math>・<math><mrow><mi>T</mi><mi>cos</mi><mi>θ</mi></mrow></math> が接続項：<strong>姿勢 <math><mi>θ</mi></math> が推力ベクトルを回し、それが並進に効く</strong>。入力どうしの積（<math><mrow><mi>T</mi><mo>×</mo><mi>θ</mi></mrow></math>）という<em>双線形</em>の形なので、れっきとした非線形系です。これが <a href="../demos/drone.html">2D ドローン</a>・<a href="../demos/rocket.html">ロケット</a>の運動方程式（<code>RK4</code> で積分）で、<math><mrow><mo>(</mo><mi>T</mi><mo>,</mo><msub><mi>u</mi><mn>2</mn></msub><mo>)</mo></mrow></math> の 2 入力＝多入力 (MIMO) です。</p>
 
-  <h3>2.3 ホバリング平衡まわりの線形化</h3>
-  <p>ホバリング（<math><mrow><mi>θ</mi><mo>≈</mo><mn>0</mn></mrow></math>, <math><mrow><mi>T</mi><mo>≈</mo><mi>m</mi><mi>g</mi></mrow></math>）で、<math><mrow><mi>T</mi><mo>=</mo><mi>m</mi><mi>g</mi><mo>+</mo><mi>δT</mi></mrow></math> と置き <math><mrow><mi>sin</mi><mi>θ</mi><mo>≈</mo><mi>θ</mi></mrow></math>, <math><mrow><mi>cos</mi><mi>θ</mi><mo>≈</mo><mn>1</mn></mrow></math> とすると、見通しよく<strong>分離</strong>されます：</p>
+  <h3 id="s4-2">4.2 ロータ混合行列</h3>
+  <p>実機のクアッドロータが直接いじれるのは 4 個のロータ推力 <math><mrow><msub><mi>f</mi><mn>1</mn></msub><mo>…</mo><msub><mi>f</mi><mn>4</mn></msub></mrow></math> だけ。総推力と 3 軸トルクは、機体配置（アーム長 <math><mi>d</mi></math>・トルク係数）で決まる定数<strong>混合行列</strong>で作られます。</p>
   <div class="eq"><math display="block"><mrow>
-    <mover><mi>x</mi><mo>¨</mo></mover><mo>≈</mo><mo>−</mo><mi>g</mi><mi>θ</mi><mo>,</mo><mspace width="1.4em"/>
-    <mover><mi>y</mi><mo>¨</mo></mover><mo>≈</mo><mfrac><mi>δT</mi><mi>m</mi></mfrac><mo>,</mo><mspace width="1.4em"/>
-    <mover><mi>θ</mi><mo>¨</mo></mover><mo>≈</mo><mfrac><msub><mi>u</mi><mn>2</mn></msub><mi>J</mi></mfrac>
+    <mrow><mo>[</mo><mtable><mtr><mtd><mi>T</mi></mtd></mtr><mtr><mtd><msub><mi>τ</mi><mi>x</mi></msub></mtd></mtr><mtr><mtd><msub><mi>τ</mi><mi>y</mi></msub></mtd></mtr><mtr><mtd><msub><mi>τ</mi><mi>z</mi></msub></mtd></mtr></mtable><mo>]</mo></mrow>
+    <mo>=</mo>
+    <munder><munder><mrow><mo>[</mo><mtable>
+      <mtr><mtd><mn>1</mn></mtd><mtd><mn>1</mn></mtd><mtd><mn>1</mn></mtd><mtd><mn>1</mn></mtd></mtr>
+      <mtr><mtd><mn>0</mn></mtd><mtd><mi>d</mi></mtd><mtd><mn>0</mn></mtd><mtd><mrow><mo>−</mo><mi>d</mi></mrow></mtd></mtr>
+      <mtr><mtd><mrow><mo>−</mo><mi>d</mi></mrow></mtd><mtd><mn>0</mn></mtd><mtd><mi>d</mi></mtd><mtd><mn>0</mn></mtd></mtr>
+      <mtr><mtd><mi>c</mi></mtd><mtd><mrow><mo>−</mo><mi>c</mi></mrow></mtd><mtd><mi>c</mi></mtd><mtd><mrow><mo>−</mo><mi>c</mi></mrow></mtd></mtr>
+    </mtable><mo>]</mo></mrow><mo>&#9183;</mo></munder><mtext>混合行列&#160;(幾何で決まる定数)</mtext></munder>
+    <mrow><mo>[</mo><mtable><mtr><mtd><msub><mi>f</mi><mn>1</mn></msub></mtd></mtr><mtr><mtd><msub><mi>f</mi><mn>2</mn></msub></mtd></mtr><mtr><mtd><msub><mi>f</mi><mn>3</mn></msub></mtd></mtr><mtr><mtd><msub><mi>f</mi><mn>4</mn></msub></mtd></mtr></mtable><mo>]</mo></mrow>
   </mrow></math></div>
-  <ul>
-    <li><strong>高度</strong> <math><mi>y</mi></math> は推力 <math><mi>δT</mi></math> で直接（二重積分）。</li>
-    <li><strong>姿勢</strong> <math><mi>θ</mi></math> はトルク <math><msub><mi>u</mi><mn>2</mn></msub></math> で（二重積分）。</li>
-    <li><strong>水平</strong> <math><mi>x</mi></math> は<em>姿勢 <math><mi>θ</mi></math> を介して</em>動く（<math><mover><mi>x</mi><mo>¨</mo></mover><mo>=</mo><mo>−</mo><mi>g</mi><mi>θ</mi></math>）。だから「傾けて飛ぶ」＝位置と姿勢が連動 → MPC で一括最適化が要る。</li>
-  </ul>
+  <p>制御は <math><mrow><mo>(</mo><mi>T</mi><mo>,</mo><mi>τ</mi><mo>)</mo></mrow></math> で設計し、混合行列の逆で各ロータ指令に割り付けます（<strong>制御割当 / control allocation</strong>）。並進と姿勢が<strong>微分平坦</strong>（望む位置軌道から必要姿勢・推力が代数的に逆算できる）なので、<a href="../demos/drone3d.html">3D ドローン</a>は位置を 3 軸加速度指令で扱う「外側ループ」として線形に近似できます。</p>
   <div class="note">
     <div class="note-label">デモと対応</div>
-    この線形モデルを <code>c2d</code> で離散化したものが、<a href="../demos/drone.html">2D ドローン</a>・<a href="../demos/rocket.html">ロケット</a>の MPC が予測に使うモデル。デモは<strong>数値ヤコビアン</strong>で平衡点まわりを線形化してから離散化しています（次節）。ロケットは推力に <math><mrow><msub><mi>T</mi><mi>min</mi></msub><mo>≤</mo><mi>T</mi><mo>≤</mo><msub><mi>T</mi><mi>max</mi></msub></mrow></math> の制約つき。
-  </div>
-  <div class="sidenote">
-    <div class="sn-label">サイドノート — ロータ混合と微分平坦性</div>
-    実際のクアッドロータは 4 個のロータ推力 <math><mrow><msub><mi>f</mi><mn>1</mn></msub><mo>…</mo><msub><mi>f</mi><mn>4</mn></msub></mrow></math> から、<strong>混合行列</strong>で総推力と 3 軸トルクを作ります（幾何で決まる定数行列）。また並進と姿勢は<strong>微分平坦</strong>で、望む位置軌道から必要な姿勢・推力が代数的に逆算できる——<a href="../demos/drone3d.html">3D ドローン</a>が位置を加速度指令で扱う「外側ループ」はこの構造に対応します。
+    (4.1) をホバリング平衡 <math><mrow><mo>(</mo><mi>θ</mi><mo>≈</mo><mn>0</mn><mo>,</mo><mi>T</mi><mo>≈</mo><mi>m</mi><mi>g</mi><mo>)</mo></mrow></math> で線形化すると、高度 <math><mover><mi>y</mi><mo>¨</mo></mover><mo>≈</mo><mi>δT</mi><mo>/</mo><mi>m</mi></math>・姿勢 <math><mover><mi>θ</mi><mo>¨</mo></mover><mo>≈</mo><msub><mi>u</mi><mn>2</mn></msub><mo>/</mo><mi>J</mi></math>・水平 <math><mover><mi>x</mi><mo>¨</mo></mover><mo>≈</mo><mo>−</mo><mi>g</mi><mi>θ</mi></math> に分離します（次章）。「傾けて飛ぶ」＝水平が姿勢を介してしか動かないこの構造が、位置と姿勢を一括最適化する MPC を要求します。
   </div>
 
-  <!-- ===================== §3 ===================== -->
-  <h2 id="s3">3. 線形化と離散化 — MPC で使う形へ</h2>
-  <p>MPC の予測は<strong>離散時間・線形</strong>の状態空間 <math><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mi>A</mi><mi>x</mi><mo>+</mo><mi>B</mi><mi>u</mi></mrow></math> を使います（<a href="lecture-notes.html#s2">講義ノート §2</a>）。物理モデルからの 2 ステップ：</p>
+  <!-- ===================== §5 linearization ===================== -->
+  <h2 id="s5">5. 線形化 — 平衡点とヤコビアン</h2>
+  <p>MPC の予測は線形モデルを使うので、非線形 <math><mrow><mover><mi>x</mi><mo>˙</mo></mover><mo>=</mo><mi>f</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>u</mi><mo>)</mo></mrow></math> を線形化します。手順は「平衡点を探す → そこでテイラー 1 次展開」。</p>
+
+  <h3 id="s5-1">5.1 平衡点を解く</h3>
+  <p>平衡点 <math><mrow><mo>(</mo><msub><mi>x</mi><mi>e</mi></msub><mo>,</mo><msub><mi>u</mi><mi>e</mi></msub><mo>)</mo></mrow></math> は速度がゼロになる点 <math><mrow><mi>f</mi><mo>(</mo><msub><mi>x</mi><mi>e</mi></msub><mo>,</mo><msub><mi>u</mi><mi>e</mi></msub><mo>)</mo><mo>=</mo><mn>0</mn></mrow></math>。倒立振子なら直立静止 <math><mrow><mo>(</mo><mi>x</mi><mo>,</mo><mover><mi>x</mi><mo>˙</mo></mover><mo>,</mo><mi>θ</mi><mo>,</mo><mover><mi>θ</mi><mo>˙</mo></mover><mo>)</mo><mo>=</mo><mn>0</mn></mrow></math>, <math><mrow><mi>F</mi><mo>=</mo><mn>0</mn></mrow></math>。ドローンならホバリング <math><mrow><mi>θ</mi><mo>=</mo><mn>0</mn></mrow></math>, <math><mrow><mi>T</mi><mo>=</mo><mi>m</mi><mi>g</mi></mrow></math>。<strong>同じ系でも平衡点は複数</strong>（直立／吊り下げ）あり、線形化はそのうち一点まわりの近似にすぎません。</p>
+
+  <h3 id="s5-2">5.2 テイラー展開とヤコビアン行列</h3>
+  <p>偏差 <math><mrow><mi>δx</mi><mo>=</mo><mi>x</mi><mo>−</mo><msub><mi>x</mi><mi>e</mi></msub></mrow></math>, <math><mrow><mi>δu</mi><mo>=</mo><mi>u</mi><mo>−</mo><msub><mi>u</mi><mi>e</mi></msub></mrow></math> について 1 次まで展開：</p>
+  <div class="eq"><math display="block"><mrow>
+    <mover><mrow><mi>δx</mi></mrow><mo>˙</mo></mover><mo>≈</mo>
+    <munder><munder><mrow><mo>[</mo><mfrac><mrow><mo>∂</mo><mi>f</mi></mrow><mrow><mo>∂</mo><mi>x</mi></mrow></mfrac><mo>]</mo></mrow><mo>&#9183;</mo></munder><msub><mi>A</mi><mi>c</mi></msub></munder><mi>δx</mi>
+    <mo>+</mo>
+    <munder><munder><mrow><mo>[</mo><mfrac><mrow><mo>∂</mo><mi>f</mi></mrow><mrow><mo>∂</mo><mi>u</mi></mrow></mfrac><mo>]</mo></mrow><mo>&#9183;</mo></munder><msub><mi>B</mi><mi>c</mi></msub></munder><mi>δu</mi>
+  </mrow></math></div>
+  <p>ヤコビアン <math><msub><mi>A</mi><mi>c</mi></msub></math> の <math><mrow><mo>(</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo>)</mo></mrow></math> 成分は <math><mrow><mo>∂</mo><msub><mi>f</mi><mi>i</mi></msub><mo>/</mo><mo>∂</mo><msub><mi>x</mi><mi>j</mi></msub></mrow></math> を平衡点で評価したもの。解析的に偏微分してもよいし、デモのように<strong>数値差分（中心差分）</strong>で求めてもよい：</p>
+  <div class="eq"><math display="block"><mrow><msub><mrow><mo>[</mo><msub><mi>A</mi><mi>c</mi></msub><mo>]</mo></mrow><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>≈</mo><mfrac><mrow><msub><mi>f</mi><mi>i</mi></msub><mo>(</mo><msub><mi>x</mi><mi>e</mi></msub><mo>+</mo><mi>ε</mi><msub><mi>e</mi><mi>j</mi></msub><mo>)</mo><mo>−</mo><msub><mi>f</mi><mi>i</mi></msub><mo>(</mo><msub><mi>x</mi><mi>e</mi></msub><mo>−</mo><mi>ε</mi><msub><mi>e</mi><mi>j</mi></msub><mo>)</mo></mrow><mrow><mn>2</mn><mi>ε</mi></mrow></mfrac></mrow></math></div>
+  <p>中心差分は誤差が <math><mrow><mi>O</mi><mo>(</mo><msup><mi>ε</mi><mn>2</mn></msup><mo>)</mo></mrow></math> で、解析微分を書かずに済むため、機体ごとに方程式が違っても同じコードで線形化できます。</p>
+
+  <h3 id="s5-3">5.3 倒立振子の線形化（数値一致）</h3>
+  <p>(3.1)(3.2) を直立 <math><mrow><mi>θ</mi><mo>=</mo><mn>0</mn></mrow></math> で線形化（<math><mrow><mi>cos</mi><mi>θ</mi><mo>→</mo><mn>1</mn><mo>,</mo><mi>sin</mi><mi>θ</mi><mo>→</mo><mi>θ</mi><mo>,</mo><msup><mover><mi>θ</mi><mo>˙</mo></mover><mn>2</mn></msup><mo>→</mo><mn>0</mn></mrow></math>）すると、点質量モデルでは閉じた形に：</p>
+  <div class="eq"><math display="block"><mrow>
+    <mover><mi>x</mi><mo>¨</mo></mover><mo>=</mo><mo>−</mo><mfrac><mrow><mi>m</mi><mi>g</mi></mrow><mi>M</mi></mfrac><mi>θ</mi><mo>+</mo><mfrac><mn>1</mn><mi>M</mi></mfrac><mi>F</mi><mo>,</mo><mspace width="1.6em"/>
+    <mover><mi>θ</mi><mo>¨</mo></mover><mo>=</mo><mfrac><mrow><mo>(</mo><mi>M</mi><mo>+</mo><mi>m</mi><mo>)</mo><mi>g</mi></mrow><mrow><mi>M</mi><mi>l</mi></mrow></mfrac><mi>θ</mi><mo>−</mo><mfrac><mn>1</mn><mrow><mi>M</mi><mi>l</mi></mrow></mfrac><mi>F</mi>
+  </mrow></math></div>
+  <p>状態 <math><mrow><mo>[</mo><mi>x</mi><mo>,</mo><mover><mi>x</mi><mo>˙</mo></mover><mo>,</mo><mi>θ</mi><mo>,</mo><mover><mi>θ</mi><mo>˙</mo></mover><mo>]</mo></mrow></math> の連続系。デモの一様棒モデル（<code>M=1, m=0.2, l=0.5, g=9.81</code>、4/3 係数）に数値ヤコビアンを掛けると、次が得られます（<strong>解析線形化と数値線形化が小数 4 桁まで一致</strong>することを確認済み）：</p>
+  <div class="eq"><math display="block"><mrow>
+    <msub><mi>A</mi><mi>c</mi></msub><mo>=</mo>
+    <mrow><mo>[</mo><mtable columnspacing="1.1em">
+      <mtr><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+      <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mrow><mo>−</mo><mn>1.40</mn></mrow></mtd><mtd><mn>0</mn></mtd></mtr>
+      <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr>
+      <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>16.82</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+    </mtable><mo>]</mo></mrow>
+    <mo>,</mo><mspace width="1.4em"/>
+    <msub><mi>B</mi><mi>c</mi></msub><mo>=</mo>
+    <mrow><mo>[</mo><mtable><mtr><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>0.95</mn></mtd></mtr><mtr><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mrow><mo>−</mo><mn>1.43</mn></mrow></mtd></mtr></mtable><mo>]</mo></mrow>
+  </mrow></math></div>
+  <p><math><msub><mi>A</mi><mi>c</mi></msub></math> の <math><mrow><mo>∂</mo><mover><mi>θ</mi><mo>¨</mo></mover><mo>/</mo><mo>∂</mo><mi>θ</mi><mo>=</mo><mn>16.82</mn><mo>&gt;</mo><mn>0</mn></mrow></math> が転倒の素。固有値は <math><mrow><mi>λ</mi><mo>=</mo><mo>±</mo><msqrt><mn>16.82</mn></msqrt><mo>≈</mo><mo>±</mo><mn>4.10</mn></mrow></math> で、<strong>正の実固有値 +4.10 が開ループ不安定</strong>を意味します（右半面の極）。MPC はこの不安定モードを予測して先回りで潰します。</p>
+
+  <h3 id="s5-4">5.4 線形化が妥当な範囲</h3>
+  <p>線形化は平衡点<strong>近傍だけ</strong>の近似です。<math><mi>θ</mi></math> が大きくなると <math><mrow><mi>sin</mi><mi>θ</mi><mo>≈</mo><mi>θ</mi></mrow></math> が崩れ、予測が実機からずれます。目安として <math><mrow><mi>θ</mi><mo>=</mo><mn>0.3</mn></mrow></math> rad (≈17°) で <math><mrow><mi>sin</mi><mi>θ</mi></mrow></math> は <math><mi>θ</mi></math> より約 1.5% 小さい程度ですが、<math><mrow><mn>1</mn></mrow></math> rad を超えると数十 % 外れます。倒立振子・ロケットのデモが「大きく傾くと荒れる」のはこの線形化誤差で、MPC が<strong>毎周期 RK4 の真の状態を観測して線形化し直す</strong>ことで実用上吸収しています（再線形化＝逐次線形化 MPC の発想）。大角度を正面から扱うなら<strong>非線形 MPC</strong> が要ります（<a href="mpc-applications.html">応用ショーケース</a>参照）。</p>
+  <div class="sidenote">
+    <div class="sn-label">サイドノート — フィードバック線形化と微分平坦性</div>
+    近似ではなく<strong>非線形性を入力で打ち消す</strong>手もあります。フィードバック線形化は <math><mrow><mi>u</mi><mo>=</mo><mi>α</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>+</mo><mi>β</mi><mo>(</mo><mi>x</mi><mo>)</mo><mi>v</mi></mrow></math> で系を厳密に線形化し、新入力 <math><mi>v</mi></math> で設計する。クアッドロータのように<strong>微分平坦</strong>な系では、出力（位置）とその微分だけで全状態・全入力が代数的に決まり、軌道計画が一気に楽になります。
+  </div>
+
+  <!-- ===================== §6 discretization ===================== -->
+  <h2 id="s6">6. 離散化 — ZOH と双一次</h2>
+  <p>連続系 <math><mrow><mover><mi>x</mi><mo>˙</mo></mover><mo>=</mo><msub><mi>A</mi><mi>c</mi></msub><mi>x</mi><mo>+</mo><msub><mi>B</mi><mi>c</mi></msub><mi>u</mi></mrow></math> を、サンプル時間 <math><mi>Δt</mi></math> の離散系 <math><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mi>A</mi><mi>x</mi><mo>(</mo><mi>k</mi><mo>)</mo><mo>+</mo><mi>B</mi><mi>u</mi><mo>(</mo><mi>k</mi><mo>)</mo></mrow></math> に変換します。</p>
+
+  <h3 id="s6-1">6.1 ZOH の厳密解と expm トリック</h3>
+  <p>入力が 1 周期一定（ゼロ次ホールド, ZOH）なら、連続系の解の公式から厳密に積分できます：</p>
+  <div class="eq"><math display="block"><mrow>
+    <mi>A</mi><mo>=</mo><msup><mi>e</mi><mrow><msub><mi>A</mi><mi>c</mi></msub><mi>Δt</mi></mrow></msup><mo>,</mo><mspace width="1.6em"/>
+    <mi>B</mi><mo>=</mo><mrow><mo>(</mo><msubsup><mo>∫</mo><mn>0</mn><mi>Δt</mi></msubsup><msup><mi>e</mi><mrow><msub><mi>A</mi><mi>c</mi></msub><mi>s</mi></mrow></msup><mi>d</mi><mi>s</mi><mo>)</mo></mrow><msub><mi>B</mi><mi>c</mi></msub>
+  </mrow></math></div>
+  <p>行列指数 <math><msup><mi>e</mi><mrow><msub><mi>A</mi><mi>c</mi></msub><mi>Δt</mi></mrow></msup></math> と積分を別々に計算する代わりに、<strong>拡大行列を一度だけ指数化</strong>する手（van Loan）が使えます：</p>
+  <div class="eq"><math display="block"><mrow>
+    <mi>exp</mi><mrow><mo>(</mo><mrow><mo>[</mo><mtable columnspacing="1em"><mtr><mtd><msub><mi>A</mi><mi>c</mi></msub></mtd><mtd><msub><mi>B</mi><mi>c</mi></msub></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr></mtable><mo>]</mo></mrow><mi>Δt</mi><mo>)</mo></mrow>
+    <mo>=</mo>
+    <mrow><mo>[</mo><mtable columnspacing="1em"><mtr><mtd><mi>A</mi></mtd><mtd><mi>B</mi></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mi>I</mi></mtd></mtr></mtable><mo>]</mo></mrow>
+  </mrow></math></div>
+  <p>右上ブロックに <math><mi>A</mi></math>・<math><mi>B</mi></math> が同時に出ます。デモの <code>c2d()</code> はこの拡大行列を作り、<code>expm()</code>（スケーリング＆スクエアリング＋テイラー級数）で一括計算しています。検算として<strong>二重積分系</strong> <math><mrow><msub><mi>A</mi><mi>c</mi></msub><mo>=</mo><mrow><mo>[</mo><mtable><mtr><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr></mtable><mo>]</mo></mrow></mrow></math>, <math><mrow><msub><mi>B</mi><mi>c</mi></msub><mo>=</mo><msup><mrow><mo>[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>]</mo></mrow><mi>⊤</mi></msup></mrow></math> を <math><mrow><mi>Δt</mi><mo>=</mo><mn>0.05</mn></mrow></math> で離散化すると、理論値と一致します：</p>
+  <div class="eq"><math display="block"><mrow>
+    <mi>A</mi><mo>=</mo><mrow><mo>[</mo><mtable columnspacing="1em"><mtr><mtd><mn>1</mn></mtd><mtd><mi>Δt</mi></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd></mtr></mtable><mo>]</mo></mrow>
+    <mo>,</mo><mspace width="1.4em"/>
+    <mi>B</mi><mo>=</mo><msup><mrow><mo>[</mo><mfrac><msup><mi>Δt</mi><mn>2</mn></msup><mn>2</mn></mfrac><mo>,</mo><mspace width="0.3em"/><mi>Δt</mi><mo>]</mo></mrow><mi>⊤</mi></msup>
+    <mo>=</mo><msup><mrow><mo>[</mo><mn>0.00125</mn><mo>,</mo><mspace width="0.2em"/><mn>0.05</mn><mo>]</mo></mrow><mi>⊤</mi></msup>
+  </mrow></math></div>
+
+  <h3 id="s6-2">6.2 近似離散化とサンプル時間</h3>
+  <p>厳密 ZOH の他に、軽い近似もよく使われます。</p>
+  <table>
+    <tr><th>方法</th><th><math><mi>A</mi></math> の近似</th><th>特徴</th></tr>
+    <tr><td>前進オイラー</td><td><math><mrow><mi>I</mi><mo>+</mo><msub><mi>A</mi><mi>c</mi></msub><mi>Δt</mi></mrow></math></td><td>最も単純。<math><mi>Δt</mi></math> が大きいと<strong>不安定化しうる</strong>（安定極が単位円外へ）</td></tr>
+    <tr><td>後退オイラー</td><td><math><msup><mrow><mo>(</mo><mi>I</mi><mo>−</mo><msub><mi>A</mi><mi>c</mi></msub><mi>Δt</mi><mo>)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup></math></td><td>過減衰寄り。安定だが応答が鈍る</td></tr>
+    <tr><td>双一次 (Tustin)</td><td><math><mrow><mo>(</mo><mi>I</mi><mo>+</mo><msub><mi>A</mi><mi>c</mi></msub><mi>Δt</mi><mo>/</mo><mn>2</mn><mo>)</mo><msup><mrow><mo>(</mo><mi>I</mi><mo>−</mo><msub><mi>A</mi><mi>c</mi></msub><mi>Δt</mi><mo>/</mo><mn>2</mn><mo>)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow></math></td><td>左半面↔単位円内を保つ。周波数歪み (warping) あり</td></tr>
+    <tr><td>厳密 ZOH</td><td><math><msup><mi>e</mi><mrow><msub><mi>A</mi><mi>c</mi></msub><mi>Δt</mi></mrow></msup></math></td><td>ZOH 入力に対して<strong>厳密</strong>。デモはこれ</td></tr>
+  </table>
+  <p>サンプル時間 <math><mi>Δt</mi></math> は「速すぎず遅すぎず」。目安は<strong>閉ループ帯域の 10〜20 倍のサンプリング周波数</strong>。遅すぎると、ナイキスト周波数を超える成分が折り返す<strong>エイリアシング</strong>でモデルが嘘をつき、速すぎると MPC のホライズン長（手数）が同じ時間幅で短くなり、また数値が悪条件化します。</p>
+
+  <!-- ===================== §7 failures ===================== -->
+  <h2 id="s7">7. モデル化の失敗と落とし穴</h2>
+  <p>ここまでの導出は「理想化された物理」です。現場ではモデルが外れます。MPC はモデルを信じて未来を予測するぶん、<strong>モデル誤差に正直に弱い</strong>。代表的な失敗を、症状と対処で並べます。</p>
+
+  <h3 id="s7-1">7.1 未モデル化ダイナミクスとむだ時間</h3>
+  <div class="fail">
+    <div class="f-label">失敗 — 速いダイナミクスを「無い」ことにした</div>
+    アクチュエータの応答、センサのフィルタ、構造の高周波振動モードを省くと、帯域を上げたとき省いた極・零点が顔を出し、<strong>位相が想定より遅れて発振</strong>します。§2.4 で <math><mi>L</mi></math> を捨てて 1 次にした DC モータは、まさに「電気ダイナミクスを未モデル化」した例で、高速サーボでは破綻します。
+    <div style="margin-top:6px;"><span class="fix">対処：</span>支配極だけ残し帯域を欲張らない／無視した分をロバスト余裕で吸収／効くなら次数を上げる。</div>
+  </div>
+  <div class="fail">
+    <div class="f-label">失敗 — むだ時間 (dead time) を無視した</div>
+    通信・計算・輸送遅れ <math><msup><mi>e</mi><mrow><mo>−</mo><mi>L</mi><mi>s</mi></mrow></msup></math> を入れ忘れると、制御は「もう効いているはず」と誤認して過剰入力 → 発振。むだ時間は位相を無限に食う、最も裏切りやすい未モデル化です。
+    <div style="margin-top:6px;"><span class="fix">対処：</span>遅れステップ <math><mrow><mi>u</mi><mo>(</mo><mi>k</mi><mo>−</mo><mi>d</mi><mo>)</mo></mrow></math> を状態に積んで<strong>予測モデルに織り込む</strong>。MPC はむだ時間補償（Smith 予測器）を自然に内包できる——<a href="../demos/acc.html">ACC</a> が前車の動きを先読みできるのはこの予測構造ゆえ。</div>
+  </div>
+
+  <h3 id="s7-2">7.2 非線形要素：摩擦・飽和・バックラッシュ</h3>
+  <p>「線形でなめらか」という仮定を破る、現実の意地悪な非線形たち。</p>
+  <table>
+    <tr><th>要素</th><th>症状</th><th>対処</th></tr>
+    <tr><td>クーロン摩擦・スティクション</td><td>静止付近で動かず、定常偏差・リミットサイクル</td><td>摩擦補償項を足す／積分動作で押し切る</td></tr>
+    <tr><td>入力飽和 (アクチュエータ上限)</td><td>指令が頭打ちで予測どおり効かない、ワインドアップ</td><td><strong>MPC は制約として陽に扱える</strong>（最大の強み）。<a href="../demos/mpc_constrained.html">制約デモ</a></td></tr>
+    <tr><td>デッドゾーン・バックラッシュ（ギアの遊び）</td><td>微小指令が伝わらない、極性反転で応答が飛ぶ</td><td>逆特性で補償／遊びを状態に入れる</td></tr>
+    <tr><td>ヒステリシス（磁気・圧電）</td><td>履歴依存で一価関数にならない</td><td>Preisach 等の履歴モデル／逆補償</td></tr>
+  </table>
+  <p>とくに<strong>飽和</strong>は、線形設計が暗黙に「入力は無限に出せる」と仮定して破れる最頻の失敗です。MPC が他手法に対して持つ決定的な利点は、これを<strong>不等式制約 <math><mrow><msub><mi>u</mi><mi>min</mi></msub><mo>≤</mo><mi>u</mi><mo>≤</mo><msub><mi>u</mi><mi>max</mi></msub></mrow></math> として最適化に組み込み、飽和を見越して計画</strong>できる点です（<a href="../demos/rocket.html">ロケット</a>の <math><mrow><msub><mi>T</mi><mi>min</mi></msub><mo>≤</mo><mi>T</mi><mo>≤</mo><msub><mi>T</mi><mi>max</mi></msub></mrow></math>）。</p>
+
+  <h3 id="s7-3">7.3 非最小位相と可制御・可観測性</h3>
+  <div class="fail">
+    <div class="f-label">失敗 — 右半面零点 (非最小位相) を見落とす</div>
+    入れると最初に<strong>逆へ動く</strong>系（飛行機の高度、ロケットの初期の横ずれ、ボイラ水位の逆応答）。素朴に追従ゲインを上げると不安定化します。零点は極と違いフィードバックで動かせないため、達成できる帯域に原理的な上限を課します。
+    <div style="margin-top:6px;"><span class="fix">対処：</span>帯域を零点より下に抑える／予測で「いったん逆へ」を織り込む（MPC 向き）。</div>
+  </div>
+  <div class="fail">
+    <div class="f-label">失敗 — 可制御でない／可観測でないモードを残す</div>
+    入力が届かないモード（可制御性の欠如）や、出力に現れないモード（可観測性の欠如）があると、そのモードは制御も推定もできません。とくに<strong>不安定かつ可制御でない</strong>モードがあると、その系は安定化不能（stabilizable でない）。
+    <div style="margin-top:6px;"><span class="fix">対処：</span>立式後に可制御性・可観測性行列の階数を確認する。センサ／アクチュエータ配置を見直す。状態を観測できないなら<strong>オブザーバ（カルマンフィルタ）</strong>で推定する。</div>
+  </div>
+
+  <h3 id="s7-4">7.4 数値とスケーリング</h3>
+  <div class="fail">
+    <div class="f-label">失敗 — 単位がバラバラで悪条件</div>
+    位置 [m] と角速度 [rad/s]、力 [N] が桁違いのまま行列に混ざると、<math><msub><mi>A</mi><mi>c</mi></msub></math> や QP の条件数が悪化し、<code>expm</code> や QP ソルバの精度・収束が落ちます（剛性比＝最速モードと最遅モードの比が大きい「stiff」な系も同様）。
+    <div style="margin-top:6px;"><span class="fix">対処：</span>状態・入力を無次元化／正規化してスケールを揃える。重み <math><mi>Q</mi></math>, <math><mi>R</mi></math> もスケーリングの一部とみなす。</div>
+  </div>
+  <p>離散化の <math><mi>Δt</mi></math> が粗すぎる場合の前進オイラー不安定化（§6.2）、テイラー級数の打ち切り段数不足なども、ここに属する数値的失敗です。</p>
+
+  <h3 id="s7-5">7.5 MPC 特有：モデル誤差と定常オフセット</h3>
+  <div class="fail">
+    <div class="f-label">失敗 — モデル誤差・定常外乱で目標に届かない</div>
+    予測モデルが少しでも実機とずれていたり、一定外乱（重力・傾き・風）があると、入力 <math><mi>u</mi></math> を直接コストに入れる素朴な MPC は<strong>定常偏差 (オフセット)</strong> を残します。予測が「届いた」と言っても実機は届いていない。
+    <div style="margin-top:6px;"><span class="fix">対処：</span>入力<strong>増分</strong> <math><mrow><mi>Δu</mi><mo>=</mo><mi>u</mi><mo>(</mo><mi>k</mi><mo>)</mo><mo>−</mo><mi>u</mi><mo>(</mo><mi>k</mi><mo>−</mo><mn>1</mn><mo>)</mo></mrow></math> で定式化し（積分動作が入りオフセットフリー）、必要なら<strong>外乱モデル</strong>を状態に拡張して推定・打ち消す。本教材のデモは全て Δu 形で、定常偏差ゼロを確認済み（<a href="lecture-notes.html#s2">講義ノート §2</a>）。</div>
+  </div>
+  <p>もう一つの MPC 特有の罠は、<strong>線形化モデルで非線形系を予測する誤差</strong>（§5.4）。平衡点から離れるほど予測が外れるため、毎周期の再線形化や、ホライズンを伸ばしすぎない運用で抑えます。</p>
+
+  <div class="note">
+    <div class="note-label">モデル化の失敗を一望</div>
+    未モデル化ダイナミクス・むだ時間・摩擦/飽和/バックラッシュ・非最小位相・可制御可観測性・数値悪条件・モデル誤差オフセット。これらは「モデルが現実を取りこぼす七つの入口」です。良いモデリングとは、<strong>どれを無視し、無視した代償をどこで（制約・ロバスト余裕・オブザーバ・Δu 形で）払うか</strong>を意識的に決めることに尽きます。
+  </div>
+
+  <!-- ===================== §8 ===================== -->
+  <h2 id="s8">8. まとめ — モデリングの作法</h2>
   <ol>
-    <li><strong>線形化</strong>：非線形 <math><mrow><mover><mi>x</mi><mo>˙</mo></mover><mo>=</mo><mi>f</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>u</mi><mo>)</mo></mrow></math> を平衡点 <math><mrow><mo>(</mo><msub><mi>x</mi><mi>e</mi></msub><mo>,</mo><msub><mi>u</mi><mi>e</mi></msub><mo>)</mo></mrow></math> まわりでヤコビアン展開 → 連続系 <math><mrow><msub><mi>A</mi><mi>c</mi></msub><mo>=</mo><mo>∂</mo><mi>f</mi><mo>/</mo><mo>∂</mo><mi>x</mi></mrow></math>, <math><mrow><msub><mi>B</mi><mi>c</mi></msub><mo>=</mo><mo>∂</mo><mi>f</mi><mo>/</mo><mo>∂</mo><mi>u</mi></mrow></math>。倒立振子・ドローン・ロケットはこれ（数値差分で計算）。</li>
-    <li><strong>離散化</strong>（ZOH）：<math><mrow><mi>A</mi><mo>=</mo><msup><mi>e</mi><mrow><msub><mi>A</mi><mi>c</mi></msub><mi>Δt</mi></mrow></msup></mrow></math>, <math><mrow><mi>B</mi><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>Δt</mi></msubsup><msup><mi>e</mi><mrow><msub><mi>A</mi><mi>c</mi></msub><mi>s</mi></mrow></msup><mi>d</mi><mi>s</mi><mo>·</mo><msub><mi>B</mi><mi>c</mi></msub></mrow></math>。デモは行列指数を<strong>拡大行列の <code>expm</code></strong> で一括計算（<code>c2d</code>）。</li>
+    <li><strong>立式</strong>は 6 ステップ（自由度→保存則→構成則→接続→1 階化→線形離散化）。力学はニュートン・オイラーかラグランジュ。</li>
+    <li><strong>接続方程式</strong>は双対なペア（力↔速度・電圧↔電流）で部分系を継ぐ。モータの <math><mrow><msub><mi>K</mi><mi>t</mi></msub><mo>=</mo><msub><mi>K</mi><mi>e</mi></msub></mrow></math>、慣性行列の非対角、推力方向の <math><mrow><mi>T</mi><mi>sin</mi><mi>θ</mi></mrow></math> がその姿。</li>
+    <li><strong>線形化</strong>は平衡点でのヤコビアン。解析でも数値（中心差分）でも、デモのように一致する。倒立振子の正固有値 +4.10 が不安定の正体。</li>
+    <li><strong>離散化</strong>は ZOH（拡大行列 expm で厳密）。<math><mi>Δt</mi></math> は帯域の 10〜20 倍で。</li>
+    <li><strong>失敗</strong>を先に知る。無視したダイナミクス・摩擦・飽和・むだ時間・モデル誤差は、制約・ロバスト余裕・オブザーバ・Δu 形で代償を払う。</li>
   </ol>
-  <p>2 重積分系（台車・クレーンの位置、姿勢の二重積分）は <math><mrow><msub><mi>A</mi><mi>c</mi></msub><mo>=</mo><mo>[</mo><mo>[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>]</mo><mo>,</mo><mo>[</mo><mn>0</mn><mo>,</mo><mn>0</mn><mo>]</mo><mo>]</mo></mrow></math> なので厳密に <math><mrow><mi>A</mi><mo>=</mo><mo>[</mo><mo>[</mo><mn>1</mn><mo>,</mo><mi>Δt</mi><mo>]</mo><mo>,</mo><mo>[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>]</mo><mo>]</mo></mrow></math>。</p>
+  <p>どの機体も「平衡点で線形化 → ZOH 離散化」で MPC の予測モデル <math><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mi>A</mi><mi>x</mi><mo>+</mo><mi>B</mi><mi>u</mi></mrow></math> になります。理論の続きは <a href="lecture-notes.html">講義ノート</a>、数値例は <a href="worked-examples.html">例題集</a>、手を動かすなら <a href="../demos/cartpole.html">倒立振子</a>・<a href="../demos/drone.html">2D ドローン</a>・<a href="../demos/rocket.html">ロケット</a>・<a href="../demos/mpc_vs_pid.html">制御として見る</a> へ。</p>
 
   <div class="note" style="margin-top:30px;">
-    <div class="note-label">まとめ</div>
-    モータ＝電気＋機械の 2 次系（普通は 1 次に縮約）、姿勢＝剛体回転の二重積分、機体＝並進と姿勢が推力方向で結合。どれも<strong>平衡点で線形化 → ZOH 離散化</strong>すれば MPC の予測モデル <math><mrow><mi>x</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mi>A</mi><mi>x</mi><mo>+</mo><mi>B</mi><mi>u</mi></mrow></math> になります。続きは <a href="lecture-notes.html">講義ノート</a>、手を動かすなら <a href="../demos/drone.html">2D ドローン</a>・<a href="../demos/rocket.html">ロケット</a>・<a href="../demos/mpc_vs_pid.html">制御として見る</a> へ。
+    <div class="note-label">前提知識への橋渡し</div>
+    本ノートは<strong>ラグランジュ力学・ラプラス変換・線形代数（固有値・逆行列）</strong>を既知としています。状態空間・伝達関数・極/零点・可制御可観測性の定義は <a href="lecture-notes.html">講義ノート</a> 側で扱います。
   </div>
 
 </div>
