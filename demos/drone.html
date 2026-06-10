@@ -64,7 +64,7 @@
   </nav>
   <header>
     <h1>2D ドローン — ホバリング＆飛行</h1>
-    <p class="subtitle">クリックした位置へ飛んで<strong>水平を保ってホバリング</strong> · 多入力 MPC（推力＋トルク）· 「突風」でも復帰</p>
+    <p class="subtitle">クリックした位置へ飛んで<strong>水平を保ってホバリング</strong> · <strong>未来を予測</strong>する多入力 MPC（推力＋トルク）· 「突風」でも復帰</p>
   </header>
 
   <section class="kpi">
@@ -119,8 +119,10 @@
       <div class="panel" style="margin-top:10px;">
         <div class="panel-hdr"><div class="panel-title">仕組み</div></div>
         <p class="explain" style="font-size:12px;">
-          状態は <math><mrow><mo>[</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>θ</mi></mrow></math> と各速度の 6 次元、入力は<strong>2 つ（総推力 δT・回転トルク u₂）</strong>。
-          これは<strong>多入力 (MIMO) の MPC</strong>です。水平移動は機体を<strong>傾けて</strong>推力の横成分で行うため、位置と姿勢を同時に最適化する必要があり、単純な個別ループでは難しい——MPC が一括で扱います。
+          状態は <math><mrow><mo>[</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>θ</mi></mrow></math> と各速度の 6 次元、入力は<strong>2 つ（総推力 δT・回転トルク u₂）</strong>。MPC の 3 つの柱が効いています：
+          <strong>①予測</strong>＝モデルで未来 N<sub>p</sub> ステップ先の運動を見通し、コスト最小の入力を毎ステップ算出して先頭だけ打つ（受け取り原理）。
+          <strong>②最適化</strong>＝水平移動は機体を<strong>傾けて</strong>推力の横成分で行うため位置と姿勢が連動し、両者を<strong>同時に</strong>最適化する多入力 (MIMO) が要る（個別ループでは破綻）。
+          <strong>③制約</strong>＝推力・トルクは上限で<strong>飽和</strong>（ここはクランプ。制約を最適化の中で<em>陽に</em>扱う様子は <a href="mpc_constrained.html">制約デモ</a>・<a href="rocket.html">ロケット</a>で）。
         </p>
       </div>
     </div>
