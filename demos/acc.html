@@ -110,15 +110,16 @@
   <div class="main-grid">
     <div class="col">
       <div class="panel">
-        <div class="panel-hdr"><div class="panel-title">道路（実時間）</div><div class="panel-hint">青＝自車（MPC）/ 黄＝前車。「前車ブレーキ」を押すと前車が急減速</div></div>
+        <div class="panel-hdr"><div class="panel-title">道路（実時間）</div><div class="panel-hint">青＝主役の自車 / 橙枠＝もう一方（ゴースト）/ 黄＝前車。「前車ブレーキ」で前車が急減速</div></div>
         <svg id="stage" class="stage" viewBox="0 0 760 230" style="width:100%;" role="img"></svg>
       </div>
       <div class="panel">
         <div class="panel-hdr"><div class="panel-title">時系列ロガー（直近 〜20 秒）</div><div class="panel-hint">上=車間誤差 (xl-xe)-d*（0=目標）/ 下=自車加速度 a（点線＝加減速上限）</div></div>
         <svg id="strip" viewBox="0 0 760 200" style="width:100%;" role="img"></svg>
         <div class="legend">
-          <span><i class="sw" style="border-top-color:var(--blue);"></i>車間誤差</span>
-          <span><i class="sw" style="border-top-color:var(--green);"></i>加速度 a</span>
+          <span><i class="sw" style="border-top-color:var(--blue);"></i>主役 車間誤差</span>
+          <span><i class="sw" style="border-top-color:var(--green);"></i>主役 加速度</span>
+          <span><i class="sw" style="border-top-color:var(--amber);border-top-style:dashed;"></i>もう一方（ゴースト比較）</span>
         </div>
       </div>
     </div>
@@ -130,9 +131,25 @@
           <button class="btn" id="b-acc2">前車 加速</button>
           <button class="btn" id="b-reset">リセット</button>
         </div>
+        <div style="display:flex;align-items:center;gap:10px;margin:0 0 8px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-2);cursor:pointer;"><input type="checkbox" id="c-pid" checked style="width:14px;height:14px;accent-color:var(--amber);">もう一方をゴースト比較</label>
+          <button class="btn" id="b-main" style="font-size:11px;padding:5px 11px;">主役: <b style="color:var(--blue)">MPC</b></button>
+        </div>
         <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">目標車間 d*</span><span class="ctrl-val" id="v-d">15 m</span></div><input type="range" id="s-d" min="8" max="30" step="1" value="15"></div>
         <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">減速の上限 |a<sub>min</sub>|</span><span class="ctrl-val" id="v-amin">4.0</span></div><input type="range" id="s-amin" min="2" max="8" step="0.5" value="4"></div>
         <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">加速の上限 a<sub>max</sub></span><span class="ctrl-val" id="v-amax">2.5</span></div><input type="range" id="s-amax" min="1" max="4" step="0.5" value="2.5"></div>
+        <details style="margin-top:2px;">
+          <summary style="font-size:11px;color:var(--text-3);cursor:pointer;user-select:none;">⚙ 制御パラメタを調整（PID ゲイン / MPC 重み）</summary>
+          <div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);">
+            <div style="font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">PID ゲイン</div>
+            <div class="ctrl" style="margin:8px 0;"><div class="ctrl-row"><span class="ctrl-name">比例 K<sub>p</sub>（車間誤差）</span><span class="ctrl-val" id="v-kp">0.90</span></div><input type="range" id="s-kp" min="0" max="2.5" step="0.05" value="0.9"></div>
+            <div class="ctrl" style="margin:8px 0;"><div class="ctrl-row"><span class="ctrl-name">微分 K<sub>d</sub>（相対速度）</span><span class="ctrl-val" id="v-kd">1.05</span></div><input type="range" id="s-kd" min="0" max="3" step="0.05" value="1.05"></div>
+            <div class="ctrl" style="margin:8px 0;"><div class="ctrl-row"><span class="ctrl-name">積分 K<sub>i</sub></span><span class="ctrl-val" id="v-ki">0.03</span></div><input type="range" id="s-ki" min="0" max="0.3" step="0.01" value="0.03"></div>
+            <div style="font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:0.06em;margin:12px 0 2px;">MPC 重み</div>
+            <div class="ctrl" style="margin:8px 0;"><div class="ctrl-row"><span class="ctrl-name">車間誤差の罰 Q<sub>e</sub>（俊敏さ）</span><span class="ctrl-val" id="v-qe">2.0</span></div><input type="range" id="s-qe" min="0.5" max="6" step="0.1" value="2"></div>
+            <p style="font-size:10.5px;color:var(--text-3);margin:6px 0 0;line-height:1.55;">PID を上げ過ぎると振動・追突、下げ過ぎると追従が鈍い。MPC の Q<sub>e</sub> は大きいほど機敏（ただし制約内）。</p>
+          </div>
+        </details>
       </div>
       <div class="panel" style="margin-top:10px;">
         <div class="panel-hdr"><div class="panel-title">状態量（ライブ）</div></div>
@@ -180,19 +197,24 @@
   const Ac=[[0,1,0],[0,0,-1],[0,0,-1/tau]],Bc=[[0],[0],[1/tau]];
   const{Ad,Bd}=c2d(Ac,Bc,dt);
   // 状態コストMPCゲイン（Kfb 1x3）
-  const Np=25,Nc=8,Qd=[2,3,0.3],Rw=0.5;
+  const Np=25,Nc=8,Rw=0.5;let Qd=[2,3,0.3];
   let Kfb=[0,0,0];
-  (function(){const Apow=[I(3)];for(let i=1;i<=Np;i++)Apow.push(mm(Apow[i-1],Ad));const Sx=zeros(Np*3,3),Su=zeros(Np*3,Nc);
+  // 状態コストMPCの固定フィードバックゲイン Kfb を Qd から計算（MPC重みスライダーで再計算）
+  function computeKfb(){const Apow=[I(3)];for(let i=1;i<=Np;i++)Apow.push(mm(Apow[i-1],Ad));const Sx=zeros(Np*3,3),Su=zeros(Np*3,Nc);
     for(let i=1;i<=Np;i++){const Ai=Apow[i];for(let r=0;r<3;r++)for(let c=0;c<3;c++)Sx[(i-1)*3+r][c]=Ai[r][c];for(let j=0;j<Nc;j++){if(j>i-1)break;const AB=mm(Apow[i-1-j],Bd);for(let r=0;r<3;r++)Su[(i-1)*3+r][j]=AB[r][0];}}
     const SuT=tp(Su);const SuTQ=SuT.map(row=>row.map((v,k)=>v*Qd[k%3]));const H=mm(SuTQ,Su);for(let i=0;i<Nc;i++)H[i][i]+=Rw;const Gain=mm(inv(H),SuTQ);const K1=Gain[0];
-    for(let i=0;i<Np*3;i++)for(let c=0;c<3;c++)Kfb[c]+=K1[i]*Sx[i][c];})();
+    Kfb=[0,0,0];for(let i=0;i<Np*3;i++)for(let c=0;c<3;c++)Kfb[c]+=K1[i]*Sx[i][c];}
+  computeKfb();
 
   // 車両状態
   let xe,ve,ae,xl,vl;
-  function reset(){xe=0;ve=20;ae=0;xl=30;vl=20;leadAcc=0;}
+  let xeP,veP,aeP,pidI=0,showPID=true,mainPID=false; // PID 並走 / mainPID=true で PID を主役に
+  function reset(){xe=0;ve=20;ae=0;xl=30;vl=20;leadAcc=0;xeP=0;veP=20;aeP=0;pidI=0;}
   let leadAcc=0,braking=false,accing=false;
   reset();
   function params(){return{dstar:+document.getElementById('s-d').value,aMin:-(+document.getElementById('s-amin').value),aMax:+document.getElementById('s-amax').value};}
+  // PID 比較器：車間誤差 e と相対速度 dv=de/dt に素直に反応（先読みなし）。同じ加減速上限でクランプ。
+  function pidAcc(P){const e=(xl-xeP)-P.dstar,dv=vl-veP;const kp=+$('s-kp').value,ki=+$('s-ki').value,kd=+$('s-kd').value;pidI+=e*dt;pidI=Math.max(-15,Math.min(15,pidI));let u=kp*e+kd*dv+ki*pidI;return Math.max(P.aMin,Math.min(P.aMax,u));}
 
   const NS='http://www.w3.org/2000/svg';const stage=document.getElementById('stage');
   const W=760,H=230,roadY=120,egoX=230,scale=6; // m→px
@@ -208,10 +230,14 @@
   const gapLine=el('line',{x1:0,y1:roadY+34,x2:0,y2:roadY+34,stroke:'#fff','stroke-width':1.5});const gapT=el('text',{x:0,y:roadY+50,'font-size':11,fill:'#fff','text-anchor':'middle'});stage.appendChild(gapLine);stage.appendChild(gapT);
   function carEl(col){const g=el('g',{});g.appendChild(el('rect',{x:-26,y:-12,width:52,height:22,rx:5,fill:col}));g.appendChild(el('rect',{x:-12,y:-22,width:26,height:12,rx:4,fill:col,opacity:0.85}));g.appendChild(el('circle',{cx:-15,cy:12,r:5,fill:'#222'}));g.appendChild(el('circle',{cx:15,cy:12,r:5,fill:'#222'}));return g;}
   const ego=carEl('var(--blue)'),lead=carEl('var(--amber)');stage.appendChild(ego);stage.appendChild(lead);
+  // PID 比較ゴースト（薄い橙のアウトライン自車・同じ前車に追従）
+  function carOutline(col){const g=el('g',{});g.appendChild(el('rect',{x:-26,y:-12,width:52,height:22,rx:5,fill:'none',stroke:col,'stroke-width':2}));g.appendChild(el('rect',{x:-12,y:-22,width:26,height:12,rx:4,fill:'none',stroke:col,'stroke-width':1.5}));return g;}
+  const egoP=el('g',{opacity:'0.7'});egoP.appendChild(carOutline('var(--amber)'));const egoPlabel=el('text',{'font-size':9,fill:'var(--amber)','text-anchor':'middle',y:-30});egoPlabel.textContent='PID';egoP.appendChild(egoPlabel);stage.appendChild(egoP);
+  const egoMainLabel=el('text',{'font-size':9,fill:'#bcd8ff','text-anchor':'middle','font-weight':'600'});egoMainLabel.textContent='MPC';stage.appendChild(egoMainLabel);
 
   // ===== 時系列ロガー =====
   const $=id=>document.getElementById(id);
-  const eHist=[],aHist=[];const HIST=200; // 〜20s @ dt=0.1
+  const eHist=[],aHist=[],ePHist=[],aPHist=[];const HIST=200; // 〜20s @ dt=0.1（P付き=PID並走）
   const strip=$('strip');
   function drawStrip(){
     const P=params();
@@ -219,18 +245,19 @@
     const n=eHist.length;const xAt=i=>m.l+(i/(HIST-1))*pw;
     let s='';
     // 上: 車間誤差 (xl-xe)-d* [m]、0=目標
-    const ty0=m.t,ty1=m.t+topH;const eMax=Math.max(10,...eHist.map(a=>Math.abs(a)));
+    const ty0=m.t,ty1=m.t+topH;const eMainArr=mainPID?ePHist:eHist,eSubArr=mainPID?eHist:ePHist;const eMax=Math.max(10,...eMainArr.map(a=>Math.abs(a)),...(showPID?eSubArr.map(a=>Math.abs(a)):[]));
     const eY=v=>ty0+(1-(v+eMax)/(2*eMax))*topH;
     s+=`<rect x="${m.l}" y="${ty0}" width="${pw}" height="${topH}" fill="var(--surface-2)" opacity="0.4"/>`;
     s+=`<line x1="${m.l}" y1="${eY(0)}" x2="${m.l+pw}" y2="${eY(0)}" stroke="var(--green)" stroke-width="0.8" stroke-dasharray="4,3" opacity="0.7"/>`;
     s+=`<text x="${m.l-5}" y="${ty0+9}" text-anchor="end" font-size="9" fill="var(--text-secondary)">+${eMax.toFixed(0)}m</text>`;
     s+=`<text x="${m.l-5}" y="${ty1}" text-anchor="end" font-size="9" fill="var(--text-secondary)">-${eMax.toFixed(0)}m</text>`;
     s+=`<text x="${m.l-5}" y="${eY(0)+3}" text-anchor="end" font-size="9" fill="var(--green)">0</text>`;
-    s+=`<text x="${m.l+4}" y="${ty0+10}" font-size="9" fill="var(--blue)">車間誤差 (xl-xe)-d*</text>`;
-    if(n>1){let p='';for(let i=0;i<n;i++)p+=`${xAt(i+HIST-n).toFixed(1)},${eY(Math.max(-eMax,Math.min(eMax,eHist[i]))).toFixed(1)} `;
-      s+=`<polyline points="${p}" fill="none" stroke="var(--blue)" stroke-width="1.6"/>`;}
+    s+=`<text x="${m.l+4}" y="${ty0+10}" font-size="9" fill="var(--text-2)">車間誤差　<tspan fill="var(--blue)">${mainPID?'PID':'MPC'}</tspan>${showPID?` / <tspan fill="var(--amber)">${mainPID?'MPC':'PID'}</tspan>`:''}</text>`;
+    if(n>1){let p='';for(let i=0;i<n;i++)p+=`${xAt(i+HIST-n).toFixed(1)},${eY(Math.max(-eMax,Math.min(eMax,eMainArr[i]))).toFixed(1)} `;
+      s+=`<polyline points="${p}" fill="none" stroke="var(--blue)" stroke-width="1.6"/>`;
+      if(showPID){let pp='';for(let i=0;i<n;i++){const v=eSubArr[i];if(v==null||isNaN(v))continue;pp+=`${xAt(i+HIST-n).toFixed(1)},${eY(Math.max(-eMax,Math.min(eMax,v))).toFixed(1)} `;}if(pp)s+=`<polyline points="${pp}" fill="none" stroke="var(--amber)" stroke-width="1.4" stroke-dasharray="4,3" opacity="0.9"/>`;}}
     // 下: 自車加速度 a [m/s²]、点線=加減速上限
-    const by0=ty1+m.gap,by1=by0+botH;const aLim=Math.max(P.aMax,-P.aMin,1);
+    const by0=ty1+m.gap,by1=by0+botH;const aLim=Math.max(P.aMax,-P.aMin,1);const aMainArr=mainPID?aPHist:aHist,aSubArr=mainPID?aHist:aPHist;
     const aY=v=>by0+(1-(v+aLim)/(2*aLim))*botH;
     s+=`<rect x="${m.l}" y="${by0}" width="${pw}" height="${botH}" fill="var(--surface-2)" opacity="0.4"/>`;
     s+=`<line x1="${m.l}" y1="${aY(0)}" x2="${m.l+pw}" y2="${aY(0)}" stroke="var(--border-strong)" stroke-width="0.5"/>`;
@@ -238,40 +265,46 @@
     s+=`<line x1="${m.l}" y1="${aY(P.aMin)}" x2="${m.l+pw}" y2="${aY(P.aMin)}" stroke="var(--red)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.6"/>`;
     s+=`<text x="${m.l-5}" y="${aY(P.aMax)+3}" text-anchor="end" font-size="9" fill="var(--text-secondary)">+${P.aMax.toFixed(1)}</text>`;
     s+=`<text x="${m.l-5}" y="${aY(P.aMin)+3}" text-anchor="end" font-size="9" fill="var(--text-secondary)">${P.aMin.toFixed(1)}</text>`;
-    s+=`<text x="${m.l+4}" y="${by0+10}" font-size="9" fill="var(--green)">a 自車加速度</text>`;
-    if(n>1){let p='';for(let i=0;i<n;i++)p+=`${xAt(i+HIST-n).toFixed(1)},${aY(Math.max(-aLim,Math.min(aLim,aHist[i]))).toFixed(1)} `;
-      s+=`<polyline points="${p}" fill="none" stroke="var(--green)" stroke-width="1.6"/>`;}
+    s+=`<text x="${m.l+4}" y="${by0+10}" font-size="9" fill="var(--text-2)">自車加速度 a　<tspan fill="var(--green)">${mainPID?'PID':'MPC'}</tspan>${showPID?` / <tspan fill="var(--amber)">${mainPID?'MPC':'PID'}</tspan>`:''}</text>`;
+    if(n>1){let p='';for(let i=0;i<n;i++)p+=`${xAt(i+HIST-n).toFixed(1)},${aY(Math.max(-aLim,Math.min(aLim,aMainArr[i]))).toFixed(1)} `;
+      s+=`<polyline points="${p}" fill="none" stroke="var(--green)" stroke-width="1.6"/>`;
+      if(showPID){let pp='';for(let i=0;i<n;i++){const v=aSubArr[i];if(v==null||isNaN(v))continue;pp+=`${xAt(i+HIST-n).toFixed(1)},${aY(Math.max(-aLim,Math.min(aLim,v))).toFixed(1)} `;}if(pp)s+=`<polyline points="${pp}" fill="none" stroke="var(--amber)" stroke-width="1.4" stroke-dasharray="4,3" opacity="0.9"/>`;}}
     s+=`<text x="${m.l+pw}" y="${by1+12}" text-anchor="end" font-size="9" fill="var(--text-3)">← 過去　時間　現在 →</text>`;
     strip.innerHTML=s;
   }
 
   let scroll=0;
   function render(){
-    const P=params();const gap=xl-xe;
+    const P=params();
+    const mx=mainPID?xeP:xe, gx=mainPID?xe:xeP, mv=mainPID?veP:ve, ma=mainPID?aeP:ae; // 主役/従の状態
+    const gap=xl-mx;
     ego.setAttribute('transform',`translate(${egoX},${roadY})`);
     const leadPx=egoX+gap*scale;lead.setAttribute('transform',`translate(${Math.min(W-20,leadPx)},${roadY})`);
+    egoMainLabel.setAttribute('x',egoX);egoMainLabel.setAttribute('y',roadY-28);egoMainLabel.textContent=mainPID?'PID':'MPC';
+    if(showPID){egoP.style.display='';const egoPx=egoX+(gx-mx)*scale;egoP.setAttribute('transform',`translate(${Math.max(44,Math.min(W-40,egoPx))},${roadY})`);egoPlabel.textContent=mainPID?'MPC':'PID';}else egoP.style.display='none';
     dstarMark.setAttribute('x1',egoX+P.dstar*scale);dstarMark.setAttribute('x2',egoX+P.dstar*scale);dstarT.setAttribute('x',egoX+P.dstar*scale);
     gapLine.setAttribute('x1',egoX+10);gapLine.setAttribute('x2',Math.min(W-20,leadPx)-26);gapLine.setAttribute('y1',roadY+34);gapLine.setAttribute('y2',roadY+34);
     gapT.setAttribute('x',(egoX+Math.min(W-20,leadPx))/2);gapT.textContent=gap.toFixed(1)+' m';
     gapT.setAttribute('fill',gap<5?'#ff8a8a':'#fff');
     // 車線スクロール
     for(let i=0;i<lanes.length;i++){let x=(i*44-scroll)%(lanes.length*44);if(x<-44)x+=lanes.length*44;lanes[i].setAttribute('x',x);}
+    const mainName=mainPID?'PID':'MPC';
     document.getElementById('k-gap').textContent=gap.toFixed(1)+' m';
-    document.getElementById('k-ve').textContent=Math.round(ve*3.6)+' km/h';
+    document.getElementById('k-ve').textContent=Math.round(mv*3.6)+' km/h';
     document.getElementById('k-vl').textContent=Math.round(Math.max(0,vl)*3.6)+' km/h';
-    const ael=document.getElementById('k-ae');ael.textContent=(ae>=0?'+':'')+ae.toFixed(1);ael.style.color=ae<-0.5?'var(--red)':(ae>0.5?'var(--green)':'');
+    const ael=document.getElementById('k-ae');ael.textContent=(ma>=0?'+':'')+ma.toFixed(1);ael.style.color=ma<-0.5?'var(--red)':(ma>0.5?'var(--green)':'');
     let msg;
-    if(braking)msg=`<b style="color:var(--red)">前車が急ブレーキ。</b>MPC は車間の詰まりを予測し、減速上限の範囲で<b>早めに減速</b>して追突を防いでいます。`;
-    else if(Math.abs(gap-P.dstar)>2)msg=gap<P.dstar?`車間が詰まっているので<b>減速して</b>目標 ${P.dstar}m へ戻します。`:`車間が空いているので<b>加速して</b>前車に追いつきます。`;
-    else msg=`目標車間 ${P.dstar}m を<b>維持・追従中</b>。「前車ブレーキ」を押すと前車が急減速します。`;
+    if(braking)msg=`<b style="color:var(--red)">前車が急ブレーキ。</b>${showPID?`<b style="color:var(--blue)">MPC</b> は先読みで滑らかに減速、<b style="color:var(--amber)">PID</b> は遅れて車間が詰まりやすい。いま主役は <b>${mainName}</b>。`:`主役 <b>${mainName}</b> が減速上限内で<b>早めに減速</b>中。`}`;
+    else if(Math.abs(gap-P.dstar)>2)msg=gap<P.dstar?`(${mainName}) 車間が詰まっているので<b>減速して</b>目標 ${P.dstar}m へ戻します。`:`(${mainName}) 車間が空いているので<b>加速して</b>前車に追いつきます。`;
+    else msg=`(${mainName}) 目標車間 ${P.dstar}m を<b>維持・追従中</b>。「前車ブレーキ」で前車が急減速します。`;
     document.getElementById('explain').innerHTML=msg;
-    // 状態量（ライブ）readout
+    // 状態量（ライブ）readout — 主役の値
     $('s-gap').textContent=gap.toFixed(1)+' m';
     $('s-egap').textContent=((gap-P.dstar>=0?'+':'')+(gap-P.dstar).toFixed(1))+' m';
-    $('s-ve').textContent=Math.round(ve*3.6)+' km/h';
+    $('s-ve').textContent=Math.round(mv*3.6)+' km/h';
     $('s-vl').textContent=Math.round(Math.max(0,vl)*3.6)+' km/h';
-    $('s-ae').textContent=(ae>=0?'+':'')+ae.toFixed(1)+' m/s²';
-    $('s-dv').textContent=((vl-ve)>=0?'+':'')+(vl-ve).toFixed(1)+' m/s';
+    $('s-ae').textContent=(ma>=0?'+':'')+ma.toFixed(1)+' m/s²';
+    $('s-dv').textContent=((vl-mv)>=0?'+':'')+(vl-mv).toFixed(1)+' m/s';
     drawStrip();
   }
 
@@ -283,9 +316,11 @@
       // 自車 MPC
       const e=(xl-xe)-P.dstar,dv=vl-ve;let u=-(Kfb[0]*e+Kfb[1]*dv+Kfb[2]*ae);u=Math.max(P.aMin,Math.min(P.aMax,u));
       ae+=dt*(u-ae)/tau;ve+=dt*ae;if(ve<0)ve=0;xe+=dt*ve;
-      scroll+=ve*scale*dt;
-      // 時系列ロガーへ記録（物理更新と同ステップ）
-      eHist.push((xl-xe)-P.dstar);aHist.push(ae);if(eHist.length>HIST){eHist.shift();aHist.shift();}
+      // PID 並走（常時計算：主役切替に即応・同じ前車/同じ加減速上限でクランプ）
+      const uP=pidAcc(P);aeP+=dt*(uP-aeP)/tau;veP+=dt*aeP;if(veP<0)veP=0;xeP+=dt*veP;
+      scroll+=(mainPID?veP:ve)*scale*dt; // 路面スクロールは主役の速度
+      // 時系列ロガーへ記録（両制御を常時記録・従の表示は drawStrip 側で制御）
+      eHist.push((xl-xe)-P.dstar);aHist.push(ae);ePHist.push((xl-xeP)-P.dstar);aPHist.push(aeP);if(eHist.length>HIST){eHist.shift();aHist.shift();ePHist.shift();aPHist.shift();}
       acc-=dt;guard++;
     }
     render();requestAnimationFrame(loop);}
@@ -295,10 +330,16 @@
   bb.addEventListener('pointerdown',()=>{braking=true;});bb.addEventListener('pointerup',()=>{braking=false;});bb.addEventListener('pointerleave',()=>{braking=false;});
   const ba=document.getElementById('b-acc2');
   ba.addEventListener('pointerdown',()=>{accing=true;});ba.addEventListener('pointerup',()=>{accing=false;});ba.addEventListener('pointerleave',()=>{accing=false;});
-  document.getElementById('b-reset').addEventListener('click',()=>{reset();eHist.length=0;aHist.length=0;});
+  document.getElementById('b-reset').addEventListener('click',()=>{reset();eHist.length=0;aHist.length=0;ePHist.length=0;aPHist.length=0;});
+  document.getElementById('c-pid').addEventListener('change',e=>{showPID=e.target.checked;});
+  document.getElementById('b-main').addEventListener('click',e=>{mainPID=!mainPID;e.currentTarget.innerHTML=`主役: <b style="color:${mainPID?'var(--amber)':'var(--blue)'}">${mainPID?'PID':'MPC'}</b>`;});
   document.getElementById('s-d').addEventListener('input',e=>document.getElementById('v-d').textContent=e.target.value+' m');
   document.getElementById('s-amin').addEventListener('input',e=>document.getElementById('v-amin').textContent=(+e.target.value).toFixed(1));
   document.getElementById('s-amax').addEventListener('input',e=>document.getElementById('v-amax').textContent=(+e.target.value).toFixed(1));
+  $('s-kp').addEventListener('input',e=>$('v-kp').textContent=(+e.target.value).toFixed(2));
+  $('s-kd').addEventListener('input',e=>$('v-kd').textContent=(+e.target.value).toFixed(2));
+  $('s-ki').addEventListener('input',e=>$('v-ki').textContent=(+e.target.value).toFixed(2));
+  $('s-qe').addEventListener('input',e=>{$('v-qe').textContent=(+e.target.value).toFixed(1);Qd[0]=+e.target.value;computeKfb();});
 })();
 </script>
 </body>
