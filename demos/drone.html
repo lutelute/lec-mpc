@@ -74,6 +74,34 @@
     <div class="kpi-card"><div class="kpi-label">総推力 T</div><div class="kpi-val" id="k-t">4.9 N</div></div>
   </section>
 
+  <div class="panel" style="margin-bottom:10px;">
+    <div class="panel-hdr"><div class="panel-title">ブロック線図（多入力 MIMO 制御ループ）</div><div class="panel-hint">推力とトルクの 2 入力で位置・姿勢を同時制御</div></div>
+    <svg viewBox="0 0 720 170" style="width:100%;max-height:185px;" role="img" aria-label="2Dドローンの制御ブロック線図">
+      <defs><marker id="dah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--text-3)"/></marker></defs>
+      <g font-size="12" fill="var(--text-1)">
+        <text x="10" y="58" font-size="12" fill="var(--text-2)">r = [x*, y*]</text>
+        <circle cx="96" cy="54" r="13" fill="var(--surface)" stroke="var(--border-2)" stroke-width="1"/><text x="96" y="59" text-anchor="middle" font-size="15">⊕</text>
+        <text x="80" y="82" font-size="13" fill="var(--red)">−</text>
+        <rect x="168" y="31" width="184" height="46" rx="8" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="1"/>
+        <text x="260" y="50" text-anchor="middle" font-weight="600" fill="var(--info-text)">多入力 MPC</text>
+        <text x="260" y="67" text-anchor="middle" font-size="10.5" fill="var(--info-text)">未来予測 ＋ 同時最適化</text>
+        <rect x="486" y="31" width="184" height="46" rx="8" fill="var(--surface-2)" stroke="var(--border-2)" stroke-width="0.5"/>
+        <text x="578" y="50" text-anchor="middle" font-weight="600">平面ドローン</text>
+        <text x="578" y="67" text-anchor="middle" font-size="10.5" fill="var(--text-2)">x, y, θ（6 状態）</text>
+        <text x="688" y="50" font-size="12" fill="var(--text-2)">y</text>
+      </g>
+      <g stroke="var(--text-3)" stroke-width="1.4" fill="none">
+        <line x1="70" y1="54" x2="81" y2="54" marker-end="url(#dah)"/>
+        <line x1="109" y1="54" x2="164" y2="54" marker-end="url(#dah)"/><text x="136" y="48" font-size="10" fill="var(--text-3)" stroke="none">e</text>
+        <line x1="352" y1="45" x2="482" y2="45" marker-end="url(#dah)"/><text x="417" y="40" font-size="10" fill="var(--text-3)" stroke="none">δT 推力</text>
+        <line x1="352" y1="64" x2="482" y2="64" marker-end="url(#dah)"/><text x="417" y="79" font-size="10" fill="var(--text-3)" stroke="none">u₂ トルク</text>
+        <line x1="670" y1="54" x2="710" y2="54"/>
+        <path d="M695,57 L695,132 L96,132 L96,69" marker-end="url(#dah)"/>
+      </g>
+      <text x="360" y="156" text-anchor="middle" font-size="10.5" fill="var(--text-3)">u₂→θ（傾き）→推力の横成分で水平移動 ＝ 位置と姿勢が連動するため、2 入力をまとめて最適化（これが MIMO の MPC）</text>
+    </svg>
+  </div>
+
   <div class="main-grid">
     <div class="col">
       <div class="panel">
