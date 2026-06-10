@@ -393,7 +393,7 @@
   <div class="fail">
     <div class="f-label">失敗 — 可制御でない／可観測でないモードを残す</div>
     入力が届かないモード（可制御性の欠如）や、出力に現れないモード（可観測性の欠如）があると、そのモードは制御も推定もできません。とくに<strong>不安定かつ可制御でない</strong>モードがあると、その系は安定化不能（stabilizable でない）。
-    <div style="margin-top:6px;"><span class="fix">対処：</span>立式後に可制御性・可観測性行列の階数を確認する。センサ／アクチュエータ配置を見直す。状態を観測できないなら<strong>オブザーバ（カルマンフィルタ）</strong>で推定する。</div>
+    <div style="margin-top:6px;"><span class="fix">対処：</span>立式後に可制御性・可観測性行列の階数を確認する。センサ／アクチュエータ配置を見直す。状態を観測できないなら<strong>オブザーバ（カルマンフィルタ）</strong>で推定する（<a href="lecture-notes.html#s7">講義ノート §7 状態推定</a>・<a href="../demos/observer.html">オブザーバ デモ</a>）。</div>
   </div>
 
   <h3 id="s7-4">7.4 数値とスケーリング</h3>

@@ -119,7 +119,8 @@
       <li><a href="#s4">受け取りホライズン原理</a></li>
       <li><a href="#s5">制約と二次計画 (QP)</a></li>
       <li><a href="#s6">古典・現代制御との接続</a></li>
-      <li><a href="#s7">演習問題</a></li>
+      <li><a href="#s7">状態推定とオブザーバ</a></li>
+      <li><a href="#s8">演習問題</a></li>
     </ol>
   </div>
 
@@ -364,8 +365,39 @@
     有限ホライズン MPC の閉ループ安定性は自明でなく、<strong>終端コスト</strong>（LQR コストを終端に付加）と<strong>終端制約集合</strong>を課すのが標準的な保証法である。また、制約付き MPC の解は状態空間を区分けした<strong>区分線形（piecewise-affine）</strong>則になり、これを前計算しておくのが<strong>明示的 MPC (Explicit MPC)</strong> である（応用ショーケース参照）。
   </div>
 
-  <!-- ===================== §7 ===================== -->
-  <h2 id="s7">7. 演習問題</h2>
+  <!-- ===================== §7 観測器 ===================== -->
+  <h2 id="s7">7. 状態推定とオブザーバ</h2>
+  <p>ここまでのデモは状態 <math><mi>x</mi></math> をすべて知っている前提（<strong>全状態フィードバック</strong>）だった。だが現実に測れるのは出力 <math><mrow><mi>y</mi><mo>=</mo><mi>C</mi><mi>x</mi></mrow></math> だけのことが多い——倒立振子は角度を測れても角速度センサが無い、台車は位置を測れても速度は測れない。測れない状態を<strong>推定</strong>するのが<strong>オブザーバ（状態推定器）</strong>である。</p>
+
+  <h3 id="s7-1">7.1 ルーエンバーガ・オブザーバ</h3>
+  <p>モデルで状態を「並走シミュレーション」し、実測 <math><mi>y</mi></math> とモデル出力 <math><mrow><mi>C</mi><mover><mi>x</mi><mo>^</mo></mover></mrow></math> のズレで補正する：</p>
+  <div class="eq"><math display="block"><mrow><mover><mi>x</mi><mo>^</mo></mover><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mi>A</mi><mover><mi>x</mi><mo>^</mo></mover><mo>(</mo><mi>k</mi><mo>)</mo><mo>+</mo><mi>B</mi><mi>u</mi><mo>(</mo><mi>k</mi><mo>)</mo><mo>+</mo><mi>L</mi><mrow><mo>(</mo><mi>y</mi><mo>(</mo><mi>k</mi><mo>)</mo><mo>−</mo><mi>C</mi><mover><mi>x</mi><mo>^</mo></mover><mo>(</mo><mi>k</mi><mo>)</mo><mo>)</mo></mrow></mrow></math></div>
+  <p>第 3 項が<strong>補正（イノベーション）</strong>。推定誤差 <math><mrow><mi>e</mi><mo>=</mo><mi>x</mi><mo>−</mo><mover><mi>x</mi><mo>^</mo></mover></mrow></math> のダイナミクスは、引き算すると入力 <math><mi>u</mi></math> が消えて</p>
+  <div class="eq"><math display="block"><mrow><mi>e</mi><mo>(</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mo>(</mo><mi>A</mi><mo>−</mo><mi>L</mi><mi>C</mi><mo>)</mo><mi>e</mi><mo>(</mo><mi>k</mi><mo>)</mo></mrow></math></div>
+  <p><strong><math><mrow><mo>(</mo><mi>A</mi><mo>−</mo><mi>L</mi><mi>C</mi><mo>)</mo></mrow></math> の固有値（観測器極）をすべて単位円内に置けば、推定誤差はゼロへ収束</strong>する。二重積分系（位置のみ測定）なら、観測器極を <math><mi>α</mi></math>（二重）に置く利得は閉じた形 <math><mrow><mi>L</mi><mo>=</mo><msup><mrow><mo>[</mo><mn>2</mn><mo>(</mo><mn>1</mn><mo>−</mo><mi>α</mi><mo>)</mo><mo>,</mo><mo>(</mo><mn>1</mn><mo>−</mo><mi>α</mi><msup><mo>)</mo><mn>2</mn></msup><mo>/</mo><mi>Δt</mi><mo>]</mo></mrow><mi>⊤</mi></msup></mrow></math> になる。</p>
+
+  <h3 id="s7-2">7.2 可観測性</h3>
+  <p><math><mrow><mo>(</mo><mi>A</mi><mo>,</mo><mi>C</mi><mo>)</mo></mrow></math> が<strong>可観測</strong>——出力の履歴から初期状態を一意に復元できる——なら、観測器極を自由に配置できる。条件は<strong>可観測性行列がフルランク</strong>：</p>
+  <div class="eq"><math display="block"><mrow><mi>rank</mi><mrow><mo>[</mo><mtable><mtr><mtd><mi>C</mi></mtd></mtr><mtr><mtd><mi>C</mi><mi>A</mi></mtd></mtr><mtr><mtd><mo>⋮</mo></mtd></mtr><mtr><mtd><mi>C</mi><msup><mi>A</mi><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></msup></mtd></mtr></mtable><mo>]</mo></mrow><mo>=</mo><mi>n</mi></mrow></math></div>
+  <p>可観測でないモードは出力に痕跡を残さず、推定できない。<a href="modeling-notes.html#s7-3">技術ノート モデリング §7.3</a> の「可観測でないモードを残す失敗」はこれである。</p>
+
+  <h3 id="s7-3">7.3 カルマンフィルタ — 最適な L</h3>
+  <p>プロセス雑音（モデルの不確かさ、共分散 <math><mi>Q</mi></math>）と測定雑音（<math><mi>R</mi></math>）があるとき、推定誤差の分散を最小化する <math><mi>L</mi></math> が<strong>カルマンゲイン</strong>。直感は明快で、<strong>測定が正確（<math><mi>R</mi></math> 小）なら <math><mi>L</mi></math> を大きく（測定を信じる）、モデルが正確（<math><mi>Q</mi></math> 小）なら <math><mi>L</mi></math> を小さく（モデルを信じる）</strong>。カルマンフィルタはこの重みを最適化した<strong>モデルと測定の融合器</strong>である。</p>
+  <div class="note">
+    <div class="note-label">デモと対応</div>
+    <a href="../demos/observer.html">状態オブザーバ デモ</a>は、位置だけを雑音込みで測り、隠れた<strong>速度</strong>を推定する。下段のグラフで、<strong style="color:var(--red)">測定をそのまま微分した速度（赤）はギザギザで使えない</strong>のに、<strong style="color:var(--green)">オブザーバの推定（緑破線）は真値にぴたり重なる</strong>（誤差はナイーブ微分の約 1/12）。「信頼度」スライダがカルマンゲインの直感——上げると速いが雑音に敏感、下げると滑らかだが遅れる。
+  </div>
+
+  <h3 id="s7-4">7.4 分離原理と出力フィードバック MPC</h3>
+  <p>状態フィードバック則 <math><mrow><mi>u</mi><mo>=</mo><mo>−</mo><mi>K</mi><mover><mi>x</mi><mo>^</mo></mover></mrow></math> を、真の <math><mi>x</mi></math> でなく推定 <math><mover><mi>x</mi><mo>^</mo></mover></math> で実行する。<strong>分離原理</strong>：コントローラ <math><mi>K</mi></math> とオブザーバ <math><mi>L</mi></math> は<strong>独立に設計でき、組み合わせた閉ループの極は両者の極の合併</strong>になる（線形系・LQG＝LQR＋カルマン）。したがって MPC も、<strong>予測に使う状態を <math><mover><mi>x</mi><mo>^</mo></mover></math> に差し替えるだけ</strong>で出力フィードバックになる。</p>
+  <p>さらに、一定外乱やモデル定常誤差を消すには<strong>外乱を状態に拡張して推定</strong>する（<strong>オフセットフリー MPC</strong>）。これは <a href="#s2">§2</a> の <math><mi>Δu</mi></math> 定式化（積分動作）と同じ目的を推定の側から達成する方法で、<a href="worked-examples.html">例題集 例題 6</a> のオフセット除去に対応する。</p>
+  <div class="sidenote">
+    <div class="sn-label">サイドノート — 双対性（レギュレータ↔オブザーバ）</div>
+    可制御性と可観測性、極配置レギュレータとオブザーバは<strong>双対</strong>の関係にある。<math><mrow><mo>(</mo><mi>A</mi><mo>,</mo><mi>B</mi><mo>)</mo></mrow></math> の可制御性は <math><mrow><mo>(</mo><msup><mi>A</mi><mi>⊤</mi></msup><mo>,</mo><msup><mi>B</mi><mi>⊤</mi></msup><mo>)</mo></mrow></math> の可観測性に等しく、オブザーバ利得 <math><mi>L</mi></math> の設計は双対系のレギュレータ利得の設計と<strong>鏡写し</strong>。だから「制御が解ける系は、推定も（双対的に）解ける」。
+  </div>
+
+  <!-- ===================== §8 演習 ===================== -->
+  <h2 id="s8">8. 演習問題</h2>
   <p>「手計算 → デモで答え合わせ」を勧める。デモのパラメータを問題の値に合わせれば、数値を直接確認できる。</p>
 
   <div class="exercise">

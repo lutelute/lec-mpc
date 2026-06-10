@@ -110,7 +110,7 @@
     <p>台車（2 重積分系, <math><mrow><mi>Δt</mi><mo>=</mo><mn>0.2</mn></mrow></math>）で <math><mrow><msub><mi>N</mi><mi>p</mi></msub><mo>=</mo><mn>3</mn></mrow></math>, <math><mrow><msub><mi>N</mi><mi>c</mi></msub><mo>=</mo><mn>2</mn></mrow></math>, <math><mrow><mi>λ</mi><mo>=</mo><mn>0.1</mn></mrow></math> のとき、無制約 MPC が等価的にどんな状態フィードバック <math><mrow><mi>u</mi><mo>=</mo><mo>−</mo><msub><mi>K</mi><mi>fb</mi></msub><mi>x</mi></mrow></math> になるか求めよ（規制形・入力 <math><mi>u</mi></math> に罰）。</p>
     <div class="sol">
       <div class="sol-label">解</div>
-      <p>予測行列（<a href="lecture-notes.html#s7">講義ノート 演習 1</a>）は
+      <p>予測行列（<a href="lecture-notes.html#s8">講義ノート 演習 1</a>）は
       <math><mrow><msub><mi>S</mi><mi>x</mi></msub><mo>=</mo><mo>[</mo><mo>[</mo><mn>1</mn><mo>,</mo><mn>0.2</mn><mo>]</mo><mo>;</mo><mo>[</mo><mn>1</mn><mo>,</mo><mn>0.4</mn><mo>]</mo><mo>;</mo><mo>[</mo><mn>1</mn><mo>,</mo><mn>0.6</mn><mo>]</mo><mo>]</mo></mrow></math>,
       <math><mrow><msub><mi>S</mi><mi>u</mi></msub><mo>=</mo><mo>[</mo><mo>[</mo><mn>0.02</mn><mo>,</mo><mn>0</mn><mo>]</mo><mo>;</mo><mo>[</mo><mn>0.06</mn><mo>,</mo><mn>0.02</mn><mo>]</mo><mo>;</mo><mo>[</mo><mn>0.10</mn><mo>,</mo><mn>0.06</mn><mo>]</mo><mo>]</mo></mrow></math>。</p>
       <p>ゲイン行列 <math><mrow><mi>K</mi><mo>=</mo><msup><mrow><mo>(</mo><msubsup><mi>S</mi><mi>u</mi><mi>⊤</mi></msubsup><msub><mi>S</mi><mi>u</mi></msub><mo>+</mo><mn>0.1</mn><mi>I</mi><mo>)</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup><msubsup><mi>S</mi><mi>u</mi><mi>⊤</mi></msubsup></mrow></math> の先頭行 <math><mrow><msub><mi>K</mi><mn>1</mn></msub><mo>≈</mo><mo>[</mo><mn>0.176</mn><mo>,</mo><mn>0.516</mn><mo>,</mo><mn>0.844</mn><mo>]</mo></mrow></math>、状態フィードバックは <math><mrow><msub><mi>K</mi><mi>fb</mi></msub><mo>=</mo><msub><mi>K</mi><mn>1</mn></msub><msub><mi>S</mi><mi>x</mi></msub></mrow></math>：</p>
@@ -200,7 +200,7 @@
   <h2 id="e6">例題 6：オフセットフリーと外乱除去</h2>
   <div class="ex">
     <div class="ex-label">例題<span class="tag">積分動作・外乱</span></div>
-    <p>入力 <math><mi>u</mi></math> に罰を与える「規制形」MPC では 1 次系・振動系などで<strong>定常偏差</strong>が残る（<a href="lecture-notes.html#s7">講義ノート 演習 2</a> では 0.926）。これを消し、さらに一定外乱も除去するにはどうするか。</p>
+    <p>入力 <math><mi>u</mi></math> に罰を与える「規制形」MPC では 1 次系・振動系などで<strong>定常偏差</strong>が残る（<a href="lecture-notes.html#s8">講義ノート 演習 2</a> では 0.926）。これを消し、さらに一定外乱も除去するにはどうするか。</p>
     <div class="sol">
       <div class="sol-label">解</div>
       <p>決定変数を入力<strong>増分</strong> <math><mrow><mi>Δu</mi><mo>=</mo><mi>u</mi><mo>(</mo><mi>k</mi><mo>)</mo><mo>−</mo><mi>u</mi><mo>(</mo><mi>k</mi><mo>−</mo><mn>1</mn><mo>)</mo></mrow></math> にとり、状態を <math><mrow><mo>[</mo><mi>Δ</mi><msub><mi>x</mi><mi>m</mi></msub><mo>;</mo><mi>y</mi><mo>]</mo></mrow></math> に拡大する（<strong>Δu 定式化</strong>）。<math><mi>y</mi></math> を状態に含めることで<strong>積分動作</strong>が内蔵され、定常偏差が消える。</p>

@@ -206,6 +206,12 @@
         <span class="step-desc">高所から落下する機体を MPC が誘導し、<strong>推力を絞りながら直立・低速でパッドに軟着陸</strong>。エンジンは完全には切れない（推力下限）制約つき。SpaceX 的な<strong>凸最適化誘導</strong>の縮図です。</span>
         <span class="step-go">ロケット着陸を開く →</span>
       </a>
+      <a class="step" href="demos/observer.html" style="border-color: var(--blue);">
+        <span class="step-num">▶ 動く · 推定</span>
+        <span class="step-title">状態オブザーバ（隠れ状態の復元）</span>
+        <span class="step-desc">測れるのは<strong>雑音まじりの位置だけ</strong>。隠れた<strong>速度</strong>をオブザーバが推定し、その推定で制御する（出力フィードバック）。測定をそのまま微分した速度はギザギザで使えないのに、<strong>オブザーバは真値にぴたり重なる</strong>——モデルと測定の融合（カルマンの直感）。</span>
+        <span class="step-go">状態オブザーバを開く →</span>
+      </a>
     </div>
   </section>
 
@@ -403,6 +409,13 @@
         <span>
           <span class="file-name">rocket.html</span>
           <span class="file-desc">動くデモ：ロケット着陸（動力降下誘導・推力制約）</span>
+        </span>
+      </a>
+      <a class="file" href="demos/observer.html">
+        <span class="file-ico">x̂</span>
+        <span>
+          <span class="file-name">observer.html</span>
+          <span class="file-desc">動くデモ：状態オブザーバ（雑音から速度を推定・出力フィードバック）</span>
         </span>
       </a>
       <a class="file" href="demos/mpc_receding_horizon.html">

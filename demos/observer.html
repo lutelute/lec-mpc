@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>状態オブザーバ — 雑音の中から隠れ状態を復元</title>
+<style>
+  :root{
+    --bg:#f6f4ee;--surface:#fff;--surface-2:#efece4;--text-1:#1a1a1a;--text-2:#5f5e5a;--text-3:#888780;
+    --border:rgba(0,0,0,0.10);--border-2:rgba(0,0,0,0.22);--info-bg:#E6F1FB;--info-text:#0C447C;
+    --blue:#378ADD;--blue-deep:#0C447C;--amber:#EF9F27;--red:#E24B4A;--green:#3DA35D;--radius:10px;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    --font-mono:"SF Mono","Menlo","Consolas",monospace;
+    --text-primary:var(--text-1);--text-secondary:var(--text-2);--border-strong:var(--border-2);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#161614;--surface:#1f1f1d;--surface-2:#2a2a27;--text-1:#f0eee8;--text-2:#b4b2a9;--text-3:#888780;
+    --border:rgba(255,255,255,0.10);--border-2:rgba(255,255,255,0.22);--info-bg:#0C447C;--info-text:#B5D4F4;--blue:#5BA0E8;--blue-deep:#B5D4F4;
+  }}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text-1);font-family:var(--font-sans);font-size:14px;line-height:1.5;}
+  .app{max-width:1180px;margin:0 auto;padding:16px 18px 28px;}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  h1{font-size:17px;font-weight:600;margin:0;} .subtitle{font-size:11px;color:var(--text-3);margin:0;}
+  svg{display:block;}
+  .lec-nav{display:flex;gap:14px;margin-bottom:10px;padding:2px 4px;font-size:11px;flex-wrap:wrap;align-items:center;}
+  .lec-nav a{color:var(--text-3);text-decoration:none;border-bottom:1px solid transparent;padding-bottom:1px;}
+  .lec-nav a:hover{color:var(--text-1);border-bottom-color:var(--border-2);} .lec-nav a.home{color:var(--text-2);font-weight:500;} .lec-nav .sep{color:var(--text-3);opacity:0.5;}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
+  .kpi-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 14px;}
+  .kpi-card.accent{background:var(--info-bg);border-color:transparent;}
+  .kpi-label{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;font-weight:500;} .kpi-card.accent .kpi-label{color:var(--info-text);opacity:0.85;}
+  .kpi-val{font-size:19px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:5px;} .kpi-card.accent .kpi-val{color:var(--info-text);}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
+  .main-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:10px;align-items:start;}
+  .panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;}
+  .panel-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap;}
+  .panel-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;} .panel-hint{font-size:10px;color:var(--text-3);}
+  .stage{border-radius:8px;cursor:crosshair;background:linear-gradient(var(--surface),var(--surface-2));}
+  .btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .btn{font-size:12px;padding:8px 13px;background:transparent;border:0.5px solid var(--border-2);border-radius:7px;cursor:pointer;color:var(--text-2);font-family:inherit;transition:all .1s;}
+  .btn:hover{background:var(--surface-2);color:var(--text-1);} .btn:active{transform:scale(0.97);}
+  .btn.primary{background:var(--blue);color:#fff;border-color:transparent;} .btn.primary:hover{background:var(--blue-deep);}
+  .btn.go{background:var(--green);color:#fff;border-color:transparent;}
+  .ctrl{margin:11px 0;} .ctrl-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .ctrl-name{font-size:12px;color:var(--text-2);} .ctrl-val{font-size:12px;color:var(--text-1);font-weight:500;font-variant-numeric:tabular-nums;}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;background:transparent;}
+  input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-moz-range-track{height:3px;background:var(--border-2);border-radius:2px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--blue-deep);border-radius:50%;margin-top:-5.5px;cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;background:var(--blue-deep);border:none;border-radius:50%;cursor:pointer;}
+  .states{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:12.5px;}
+  .states .s-row{display:flex;justify-content:space-between;border-bottom:0.5px dotted var(--border);padding:2px 0;}
+  .states .s-k{color:var(--text-2);} .states .s-v{font-variant-numeric:tabular-nums;font-weight:500;}
+  .explain{font-size:12.5px;color:var(--text-2);line-height:1.7;} .explain b{color:var(--text-1);}
+  .footer{font-size:10px;color:var(--text-3);text-align:center;margin-top:14px;line-height:1.7;}
+  @media (max-width:980px){.main-grid{grid-template-columns:1fr;}.kpi{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="lec-nav">
+    <a class="home" href="../index.html">← 教材トップ</a><span class="sep">·</span>
+    <a href="../content/lecture-notes.html">講義ノート</a><a href="../content/modeling-notes.html">モデリング</a>
+    <a href="cartpole.html">倒立振子</a>
+    <a href="track_race.html">台車レース</a>
+    <a href="mpc_vs_pid.html">制御として見る</a>
+    <span class="sep">·</span><span style="color:var(--text-3)">動くデモ — 状態オブザーバ</span>
+  </nav>
+  <header>
+    <h1>状態オブザーバ — 隠れ状態を復元する</h1>
+    <p class="subtitle">測れるのは雑音まじりの<strong>位置</strong>だけ。隠れた<strong>速度</strong>をオブザーバが推定し、その推定値で制御する（出力フィードバック）· ナイーブ微分との対決つき</p>
+  </header>
+
+  <section class="kpi">
+    <div class="kpi-card"><div class="kpi-label"><span class="dot" style="background:var(--green)"></span>真の速度 v</div><div class="kpi-val" id="k-vt">0.00 m/s</div></div>
+    <div class="kpi-card accent"><div class="kpi-label"><span class="dot" style="background:var(--green)"></span>推定速度 v̂</div><div class="kpi-val" id="k-ve">0.00 m/s</div></div>
+    <div class="kpi-card"><div class="kpi-label">推定誤差 |v−v̂|</div><div class="kpi-val" id="k-er">0.00</div></div>
+    <div class="kpi-card"><div class="kpi-label">ナイーブ微分の誤差</div><div class="kpi-val" id="k-nv" style="color:var(--red)">0.00</div></div>
+  </section>
+
+  <div class="panel" style="margin-bottom:10px;">
+    <div class="panel-hdr"><div class="panel-title">ブロック線図（出力フィードバック ＝ オブザーバ＋制御）</div><div class="panel-hint">コントローラは真の状態でなく<strong>推定 x̂</strong> を使う</div></div>
+    <svg viewBox="0 0 720 196" style="width:100%;max-height:210px;" role="img" aria-label="オブザーバを含む出力フィードバックのブロック線図">
+      <defs><marker id="obah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--text-3)"/></marker>
+        <marker id="obah-r" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--red)"/></marker></defs>
+      <g font-size="12" fill="var(--text-1)">
+        <text x="10" y="46" font-size="12" fill="var(--text-2)">r = 目標</text>
+        <circle cx="96" cy="42" r="13" fill="var(--surface)" stroke="var(--border-2)" stroke-width="1"/><text x="96" y="47" text-anchor="middle" font-size="15">⊕</text>
+        <text x="80" y="70" font-size="13" fill="var(--red)">−</text>
+        <rect x="150" y="19" width="150" height="46" rx="8" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="1"/>
+        <text x="225" y="38" text-anchor="middle" font-weight="600" fill="var(--info-text)">コントローラ</text>
+        <text x="225" y="55" text-anchor="middle" font-size="10.5" fill="var(--info-text)">u = −K x̂</text>
+        <rect x="430" y="19" width="160" height="46" rx="8" fill="var(--surface-2)" stroke="var(--border-2)" stroke-width="0.5"/>
+        <text x="510" y="38" text-anchor="middle" font-weight="600">プラント（真の状態 x）</text>
+        <text x="510" y="55" text-anchor="middle" font-size="10.5" fill="var(--text-2)">位置 p, 速度 v</text>
+        <text x="612" y="38" font-size="11" fill="var(--text-2)">y = p</text>
+        <text x="612" y="52" font-size="9.5" fill="var(--red)">＋ 測定雑音</text>
+        <rect x="210" y="120" width="270" height="50" rx="8" fill="var(--info-bg)" stroke="var(--blue)" stroke-width="1"/>
+        <text x="345" y="140" text-anchor="middle" font-weight="600" fill="var(--info-text)">オブザーバ</text>
+        <text x="345" y="157" text-anchor="middle" font-size="10.5" fill="var(--info-text)">x̂(k+1)=A x̂+B u + L( y − C x̂ )</text>
+      </g>
+      <g stroke="var(--text-3)" stroke-width="1.4" fill="none">
+        <line x1="70" y1="42" x2="146" y2="42" marker-end="url(#obah)"/><text x="118" y="36" font-size="10" fill="var(--text-3)" stroke="none">e</text>
+        <line x1="300" y1="42" x2="426" y2="42" marker-end="url(#obah)"/><text x="355" y="36" font-size="10" fill="var(--text-3)" stroke="none">u 制御力</text>
+        <line x1="590" y1="42" x2="650" y2="42"/>
+        <!-- y down to observer -->
+        <path d="M650,45 L650,145 L482,145" marker-end="url(#obah)"/>
+        <!-- u branch down to observer -->
+        <path d="M345,65 L345,116" marker-end="url(#obah)" stroke-dasharray="0"/>
+        <!-- xhat up to controller -->
+        <path d="M210,145 L150,145 L150,55 L196,55" marker-end="url(#obah)"/>
+        <text x="120" y="158" font-size="10" fill="var(--blue-deep)" stroke="none">x̂ 推定状態</text>
+        <text x="352" y="112" font-size="9.5" fill="var(--text-3)" stroke="none">u</text>
+        <text x="500" y="138" font-size="9.5" fill="var(--text-3)" stroke="none">y（雑音込み）</text>
+      </g>
+      <text x="360" y="188" text-anchor="middle" font-size="10.5" fill="var(--text-3)">測れない速度を <tspan font-weight="600" fill="var(--text-2)">L( y − C x̂ )</tspan> の補正で推定 ＝ モデルと測定の融合。<tspan font-weight="600" fill="var(--text-2)">分離原理</tspan>で制御 K と観測 L は別々に設計できる</text>
+    </svg>
+  </div>
+
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-hdr"><div class="panel-title">ステージ（実時間）</div><div class="panel-hint">クリックで目標移動 / 灰＝雑音まじりの測定・青＝真値・破線＝推定</div></div>
+      <svg id="stage" class="stage" viewBox="0 0 760 250" style="width:100%;" role="img"></svg>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title">操作</div></div>
+        <div class="btn-row">
+          <button class="btn go" id="b-auto">▶ オート上映</button>
+          <button class="btn" id="b-reset">リセット</button>
+        </div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">測定雑音 σ</span><span class="ctrl-val" id="v-sig">0.05 m</span></div><input type="range" id="s-sig" min="0" max="0.2" step="0.005" value="0.05"></div>
+        <div class="ctrl"><div class="ctrl-row"><span class="ctrl-name">観測器の信頼度（測定↔モデル）</span><span class="ctrl-val" id="v-tr">0.55</span></div><input type="range" id="s-tr" min="0.05" max="0.95" step="0.05" value="0.55"></div>
+        <p class="explain" style="font-size:11px;margin:8px 0 0;">信頼度 大＝測定を信じて<strong>速いが雑音に敏感</strong>／小＝モデルを信じて<strong>滑らかだが遅い</strong>（カルマンゲインの本質）。</p>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">状態量（ライブ）</div></div>
+        <div class="states">
+          <div class="s-row"><span class="s-k">真の位置 p</span><span class="s-v" id="s-pt">0.00</span></div>
+          <div class="s-row"><span class="s-k">測定 y</span><span class="s-v" id="s-y" style="color:var(--text-3)">0.00</span></div>
+          <div class="s-row"><span class="s-k">推定位置 p̂</span><span class="s-v" id="s-pe">0.00</span></div>
+          <div class="s-row"><span class="s-k">推定極 α</span><span class="s-v" id="s-al">0.70</span></div>
+          <div class="s-row"><span class="s-k">真の速度 v</span><span class="s-v" id="s-vt">0.00</span></div>
+          <div class="s-row"><span class="s-k">推定速度 v̂</span><span class="s-v" id="s-ve">0.00</span></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="panel-hdr"><div class="panel-title">いま何が起きているか</div></div>
+        <p class="explain" id="explain">「オート上映」で目標が動き、台車が追従します。位置しか測れないのに、オブザーバが速度を当てます。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:10px;">
+    <div class="panel-hdr"><div class="panel-title">時系列ロガー（観測器の実力）</div><div class="panel-hint">上＝位置（<span style="color:var(--text-3)">灰 測定</span>・<span style="color:var(--blue)">青 真値</span>・<span style="color:var(--blue)">┈ 推定</span>）／下＝速度（<span style="color:var(--green)">緑 真値</span>・<span style="color:var(--green)">┈ 推定</span>・<span style="color:var(--red)">赤 ナイーブ微分</span>）</div></div>
+    <svg id="logger" viewBox="0 0 720 250" style="width:100%;max-height:262px;" role="img" aria-label="位置と速度の推定の時系列"></svg>
+    <p class="explain" style="font-size:12px;margin:6px 0 0;">下段が見どころ：雑音まじりの位置を<strong style="color:var(--red)">そのまま微分すると速度は使い物にならない</strong>（赤のギザギザ）のに、<strong style="color:var(--green)">オブザーバの推定（緑破線）は真の速度（緑）にぴたりと重なる</strong>。モデル（二重積分）と測定を融合しているからです。</p>
+  </div>
+
+  <div class="footer">
+    プラント＝二重積分系 [位置, 速度]、測定は位置のみ（ガウス雑音）· オブザーバ＝Luenberger（誤差極を α に配置、L=[2(1−α), (1−α)²/Δt]）· コントローラ＝推定状態フィードバック u=−K x̂（分離原理）<br>
+    σ を上げる／信頼度を上げると測定の雑音が推定に漏れ、信頼度を下げると滑らかになる代わり追従が遅れます。
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const dt=0.1;
+  const A=[[1,dt],[0,1]], B=[0.5*dt*dt, dt]; // C=[1,0]
+  const K=[4.0,3.8]; // 推定状態フィードバック（閉ループ極≈0.8二重）
+  const Fmax=4.0, X0=-2.2, TH=3.0;
+
+  // ガウス雑音（Box-Muller）
+  function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+  function Lof(a){return [2*(1-a),(1-a)*(1-a)/dt];}
+  function trustToAlpha(tr){return 0.96-0.5*tr;} // 信頼度大→α小（速い観測器）
+
+  // 状態
+  let xt=[X0,0], xh=[X0+0.4,0], target=1.2, y=X0, naiveV=0, prevY=null, running=false, t=0;
+  function params(){return{sig:+document.getElementById('s-sig').value, tr:+document.getElementById('s-tr').value};}
+
+  // ステップ
+  function tick(){
+    const P=params(); const a=trustToAlpha(P.tr); const L=Lof(a);
+    // 制御（推定状態フィードバック）
+    let u=-(K[0]*(xh[0]-target)+K[1]*xh[1]); u=Math.max(-Fmax,Math.min(Fmax,u));
+    // 測定（位置＋雑音）
+    y=xt[0]+P.sig*gauss();
+    // ナイーブ速度（測定の差分）
+    naiveV = prevY===null?0:(y-prevY)/dt; prevY=y;
+    // オブザーバ：x̂(k+1)=A x̂+B u + L(y − C x̂)
+    const inn=y-xh[0];
+    const xp=[A[0][0]*xh[0]+A[0][1]*xh[1]+B[0]*u, A[1][0]*xh[0]+A[1][1]*xh[1]+B[1]*u];
+    xh=[xp[0]+L[0]*inn, xp[1]+L[1]*inn];
+    // 真のプラント
+    xt=[A[0][0]*xt[0]+A[0][1]*xt[1]+B[0]*u, A[1][0]*xt[0]+A[1][1]*xt[1]+B[1]*u];
+    t+=dt;
+    hist.push({t, pt:xt[0], pe:xh[0], y, vt:xt[1], ve:xh[1], nv:naiveV}); if(hist.length>600)hist.shift();
+  }
+
+  // ===== 描画：ステージ =====
+  const NS='http://www.w3.org/2000/svg', stage=document.getElementById('stage');
+  const W=760,H=250,scale=95,cx=W/2,trackY=150;
+  const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  stage.appendChild(el('line',{x1:40,y1:trackY+22,x2:W-40,y2:trackY+22,stroke:'var(--border-strong)','stroke-width':2}));
+  for(let m=-3;m<=3;m++){const gx=cx+m*scale;stage.appendChild(el('line',{x1:gx,y1:trackY+18,x2:gx,y2:trackY+26,stroke:'var(--border)','stroke-width':1}));const tl=el('text',{x:gx,y:trackY+40,'font-size':9,fill:'var(--text-3)','text-anchor':'middle'});tl.textContent=m+'m';stage.appendChild(tl);}
+  const tgt=el('line',{x1:0,y1:trackY-58,x2:0,y2:trackY+22,stroke:'var(--red)','stroke-width':1.5,'stroke-dasharray':'5,4'});stage.appendChild(tgt);
+  const tgtT=el('text',{x:0,y:trackY-64,'font-size':10,fill:'var(--red)','text-anchor':'middle'});tgtT.textContent='目標';stage.appendChild(tgtT);
+  // 推定（破線アウトライン）
+  const ghost=el('rect',{x:0,y:0,width:54,height:30,rx:5,fill:'none',stroke:'var(--blue)','stroke-width':1.5,'stroke-dasharray':'4,3'});stage.appendChild(ghost);
+  // 真値（塗り）
+  const cartG=el('g',{});cartG.appendChild(el('rect',{x:-27,y:-15,width:54,height:30,rx:5,fill:'var(--blue)'}));
+  cartG.appendChild(el('circle',{cx:-15,cy:15,r:6,fill:'var(--blue-deep)'}));cartG.appendChild(el('circle',{cx:15,cy:15,r:6,fill:'var(--blue-deep)'}));stage.appendChild(cartG);
+  // 測定マーカー（雑音）
+  const meas=el('circle',{cx:0,cy:trackY,r:5,fill:'var(--text-3)','fill-opacity':0.65});stage.appendChild(meas);
+  const measT=el('text',{x:0,y:trackY+58,'font-size':9,fill:'var(--text-3)','text-anchor':'middle'});measT.textContent='測定 y';stage.appendChild(measT);
+  // 速度ベクトル（真＝緑実線、推定＝緑破線）
+  const vTrue=el('line',{x1:0,y1:trackY-30,x2:0,y2:trackY-30,stroke:'var(--green)','stroke-width':3,'stroke-linecap':'round'});
+  const vEst=el('line',{x1:0,y1:trackY-30,x2:0,y2:trackY-30,stroke:'var(--green)','stroke-width':1.6,'stroke-dasharray':'4,3'});
+  stage.insertBefore(vTrue,cartG);stage.insertBefore(vEst,cartG);
+  const X=xm=>cx+xm*scale;
+
+  function render(){
+    tgt.setAttribute('x1',X(target));tgt.setAttribute('x2',X(target));tgtT.setAttribute('x',X(target));
+    cartG.setAttribute('transform',`translate(${X(xt[0])},${trackY})`);
+    ghost.setAttribute('x',X(xh[0])-27);ghost.setAttribute('y',trackY-15);
+    meas.setAttribute('cx',X(y));measT.setAttribute('x',X(y));
+    // 速度ベクトル（位置を起点に水平、長さ∝速度）
+    const vx=X(xt[0]),ex=X(xt[0]);
+    vTrue.setAttribute('x1',vx);vTrue.setAttribute('x2',vx+xt[1]*60);vTrue.setAttribute('y1',trackY-30);vTrue.setAttribute('y2',trackY-30);
+    vEst.setAttribute('x1',ex);vEst.setAttribute('x2',ex+xh[1]*60);vEst.setAttribute('y1',trackY-38);vEst.setAttribute('y2',trackY-38);
+    // KPI
+    const P=params(),a=trustToAlpha(P.tr);
+    document.getElementById('k-vt').textContent=xt[1].toFixed(2)+' m/s';
+    document.getElementById('k-ve').textContent=xh[1].toFixed(2)+' m/s';
+    document.getElementById('k-er').textContent=Math.abs(xt[1]-xh[1]).toFixed(3);
+    document.getElementById('k-nv').textContent=Math.abs(naiveV-xt[1]).toFixed(3);
+    document.getElementById('s-pt').textContent=xt[0].toFixed(2);
+    document.getElementById('s-y').textContent=y.toFixed(2);
+    document.getElementById('s-pe').textContent=xh[0].toFixed(2);
+    document.getElementById('s-al').textContent=a.toFixed(2);
+    document.getElementById('s-vt').textContent=xt[1].toFixed(2);
+    document.getElementById('s-ve').textContent=xh[1].toFixed(2);
+  }
+
+  // ===== 描画：ロガー =====
+  let hist=[];
+  const logger=document.getElementById('logger');
+  const plotL=46,plotR=712,topY0=14,topY1=112,botY0=142,botY1=234;
+  function drawLog(){
+    const tmax=Math.max(6,hist.length?hist[hist.length-1].t:0), twin=10;
+    const t0=Math.max(0,tmax-twin);
+    const xAt=tt=>plotL+((tt-t0)/Math.max(twin,tmax-t0))*(plotR-plotL);
+    const pyMin=-2.6,pyMax=2.6,pyAt=v=>topY1-((v-pyMin)/(pyMax-pyMin))*(topY1-topY0);
+    const vLim=2.6,vmid=(botY0+botY1)/2,vyAt=v=>vmid-(v/vLim)*((botY1-botY0)/2);
+    const cp=v=>Math.max(pyMin,Math.min(pyMax,v)),cv=v=>Math.max(-vLim,Math.min(vLim,v));
+    let s='';
+    s+=`<rect x="${plotL}" y="${topY0}" width="${plotR-plotL}" height="${topY1-topY0}" fill="none" stroke="var(--border)" stroke-width="0.5"/>`;
+    s+=`<rect x="${plotL}" y="${botY0}" width="${plotR-plotL}" height="${botY1-botY0}" fill="none" stroke="var(--border)" stroke-width="0.5"/>`;
+    s+=`<text x="${plotL-3}" y="${topY0+10}" font-size="9" fill="var(--text-3)" text-anchor="end">位置 m</text>`;
+    s+=`<text x="${plotL-3}" y="${botY0+10}" font-size="9" fill="var(--text-3)" text-anchor="end">速度 m/s</text>`;
+    s+=`<text x="${plotR}" y="${botY1+13}" font-size="9" fill="var(--text-3)" text-anchor="end">時間 →</text>`;
+    s+=`<line x1="${plotL}" y1="${vyAt(0)}" x2="${plotR}" y2="${vyAt(0)}" stroke="var(--border-2)" stroke-width="0.5"/>`;
+    s+=`<line x1="${plotL}" y1="${pyAt(target)}" x2="${plotR}" y2="${pyAt(target)}" stroke="var(--red)" stroke-width="0.8" stroke-dasharray="4,4"/>`;
+    s+=`<text x="${plotR-3}" y="${pyAt(target)-3}" font-size="9" fill="var(--red)" text-anchor="end">目標</text>`;
+    if(hist.length>1){
+      const poly=(val,ymap,col,w,dash)=>{let p='';for(const h of hist)p+=`${xAt(h.t).toFixed(1)},${ymap(val(h)).toFixed(1)} `;return `<polyline points="${p.trim()}" fill="none" stroke="${col}" stroke-width="${w}"${dash?` stroke-dasharray="${dash}"`:''} stroke-linejoin="round"/>`;};
+      const dots=(val,ymap,col)=>{let p='';for(let i=0;i<hist.length;i+=1){const h=hist[i];p+=`<circle cx="${xAt(h.t).toFixed(1)}" cy="${ymap(val(h)).toFixed(1)}" r="1.1" fill="${col}" fill-opacity="0.5"/>`;}return p;};
+      // 上：測定（灰点）→真値（青）→推定（青破線）
+      s+=dots(h=>cp(h.y),pyAt,'var(--text-3)');
+      s+=poly(h=>cp(h.pt),pyAt,'var(--blue)',1.8);
+      s+=poly(h=>cp(h.pe),pyAt,'var(--blue-deep)',1.4,'5,3');
+      // 下：ナイーブ微分（赤）→真値（緑）→推定（緑破線）
+      s+=poly(h=>cv(h.nv),vyAt,'var(--red)',1,'');
+      s+=poly(h=>cv(h.vt),vyAt,'var(--green)',2);
+      s+=poly(h=>cv(h.ve),vyAt,'var(--green)',1.5,'5,3');
+    }
+    logger.innerHTML=s;
+  }
+
+  // ===== ループ =====
+  let acc=0,prev=performance.now(),auto=false,autoAcc=0;
+  function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;
+    if(running){acc+=dtr;let guard=0;while(acc>=dt&&guard<6){tick();acc-=dt;guard++;}}
+    if(auto){autoAcc+=dtr;if(autoAcc>3.2){autoAcc=0;target=Math.round((Math.random()*4-2)*10)/10;}}
+    render();drawLog();requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // 操作
+  function clientToX(clientX){const r=stage.getBoundingClientRect();const vx=(clientX-r.left)*(W/r.width);return Math.max(-TH,Math.min(TH,(vx-cx)/scale));}
+  stage.addEventListener('pointerdown',e=>{target=Math.round(clientToX(e.clientX)*10)/10;});
+  function reset(){xt=[X0,0];xh=[X0+0.4,0];y=X0;prevY=null;naiveV=0;t=0;hist=[];running=true;document.getElementById('explain').textContent='追従中。位置だけ測ってオブザーバが速度を推定しています。';}
+  document.getElementById('b-reset').addEventListener('click',()=>{auto=false;document.getElementById('b-auto').textContent='▶ オート上映';reset();});
+  document.getElementById('b-auto').addEventListener('click',()=>{auto=!auto;document.getElementById('b-auto').textContent=auto?'■ 停止':'▶ オート上映';if(auto&&!running)reset();});
+  document.getElementById('s-sig').addEventListener('input',e=>{document.getElementById('v-sig').textContent=(+e.target.value).toFixed(3)+' m';});
+  document.getElementById('s-tr').addEventListener('input',e=>{document.getElementById('v-tr').textContent=(+e.target.value).toFixed(2);});
+  running=true; reset(); render(); drawLog();
+  if(location.search.indexOf('show')>=0||location.search.indexOf('reel')>=0){auto=true;document.getElementById('b-auto').textContent='■ 停止';}
+})();
+</script>
+</body>
+</html>
