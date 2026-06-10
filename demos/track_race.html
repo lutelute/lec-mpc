@@ -107,6 +107,13 @@
       </div>
     </div>
   </div>
+
+  <div class="panel" style="margin-top:10px;">
+    <div class="panel-hdr"><div class="panel-title">時系列ロガー（位置と制御力）</div><div class="panel-hint">上＝位置 x（<span style="color:var(--blue)">■ MPC</span> / <span style="color:var(--amber)">■ PID</span>・<span style="color:var(--red)">━ 壁</span>・<span style="color:var(--green)">┈ 目標</span>）／下＝制御力 F（点線＝±F<sub>max</sub>）</div></div>
+    <svg id="logger" viewBox="0 0 720 250" style="width:100%;max-height:262px;" role="img" aria-label="位置と制御力の時系列グラフ"></svg>
+    <p class="explain" style="font-size:12px;margin:6px 0 0;">位置のグラフで <b style="color:var(--amber)">PID</b> が<strong>目標を行き過ぎ／壁を越える</strong>のに対し、<b style="color:var(--blue)">MPC</b> は<strong>滑らかに目標・壁の手前で整定</strong>。力のグラフは両者が ±F<sub>max</sub> で<strong>飽和</strong>する様子（MPC は壁が近いと早めに減力）を映します。</p>
+  </div>
+
   <div class="footer">
     2 重積分系（力→加速度）· MPC＝制約付き QP（Hildreth, |F|≤F<sub>max</sub> かつ 位置≤壁）を毎ステップ求解 · PID＝PD制御＋力クランプ（壁は未認識）<br>
     力上限を下げる／壁を目標に近づけると、PID の行き過ぎと制約違反が顕著になります。
@@ -174,6 +181,45 @@
     document.getElementById('k-tw').textContent=target.toFixed(1)+' / '+(isFinite(P.wall)?P.wall.toFixed(1):'—');
   }
 
+  // ===== 時系列ロガー =====
+  let hist=[]; // {t,mx,px,mu,pu}
+  const logger=document.getElementById('logger');
+  const plotL=46,plotR=712,topY0=14,topY1=112,botY0=142,botY1=234;
+  function drawLog(){
+    const P=params(),Fm=P.Fmax;
+    const tmax=Math.max(4,hist.length?hist[hist.length-1].t:0);
+    const xAt=tt=>plotL+(tt/tmax)*(plotR-plotL);
+    const pyMin=-2.4,pyMax=Math.max(2.6,(isFinite(P.wall)?P.wall:target)+0.4);
+    const pyAt=v=>topY1-((v-pyMin)/(pyMax-pyMin))*(topY1-topY0);
+    const fLim=Fm*1.3,fmid=(botY0+botY1)/2,fyAt=v=>fmid-(v/fLim)*((botY1-botY0)/2);
+    const cp=v=>Math.max(pyMin,Math.min(pyMax,v)),cf=v=>Math.max(-fLim,Math.min(fLim,v));
+    let s='';
+    s+=`<rect x="${plotL}" y="${topY0}" width="${plotR-plotL}" height="${topY1-topY0}" fill="none" stroke="var(--border)" stroke-width="0.5"/>`;
+    s+=`<rect x="${plotL}" y="${botY0}" width="${plotR-plotL}" height="${botY1-botY0}" fill="none" stroke="var(--border)" stroke-width="0.5"/>`;
+    s+=`<text x="${plotL-3}" y="${topY0+10}" font-size="9" fill="var(--text-3)" text-anchor="end">位置 m</text>`;
+    s+=`<text x="${plotL-3}" y="${botY0+10}" font-size="9" fill="var(--text-3)" text-anchor="end">力 N</text>`;
+    s+=`<text x="${plotR}" y="${botY1+13}" font-size="9" fill="var(--text-3)" text-anchor="end">時間 →</text>`;
+    // 位置: 目標(緑破線)・壁(赤)・初期(灰)
+    s+=`<line x1="${plotL}" y1="${pyAt(target)}" x2="${plotR}" y2="${pyAt(target)}" stroke="var(--green)" stroke-width="1" stroke-dasharray="5,4"/>`;
+    s+=`<text x="${plotR-3}" y="${pyAt(target)-3}" font-size="9" fill="var(--green)" text-anchor="end">目標 ${target.toFixed(1)}</text>`;
+    if(isFinite(P.wall)){s+=`<line x1="${plotL}" y1="${pyAt(P.wall)}" x2="${plotR}" y2="${pyAt(P.wall)}" stroke="var(--red)" stroke-width="1.2"/>`;
+      s+=`<text x="${plotR-3}" y="${pyAt(P.wall)+11}" font-size="9" fill="var(--red)" text-anchor="end">壁 ${P.wall.toFixed(1)}</text>`;}
+    // 力: 0線・±Fmax(点線)
+    s+=`<line x1="${plotL}" y1="${fyAt(0)}" x2="${plotR}" y2="${fyAt(0)}" stroke="var(--border-2)" stroke-width="0.5"/>`;
+    s+=`<line x1="${plotL}" y1="${fyAt(Fm)}" x2="${plotR}" y2="${fyAt(Fm)}" stroke="var(--text-3)" stroke-width="0.8" stroke-dasharray="3,3"/>`;
+    s+=`<line x1="${plotL}" y1="${fyAt(-Fm)}" x2="${plotR}" y2="${fyAt(-Fm)}" stroke="var(--text-3)" stroke-width="0.8" stroke-dasharray="3,3"/>`;
+    s+=`<text x="${plotL+4}" y="${fyAt(Fm)+11}" font-size="8.5" fill="var(--text-3)">+F_max</text>`;
+    s+=`<text x="${plotL+4}" y="${fyAt(-Fm)-3}" font-size="8.5" fill="var(--text-3)">−F_max</text>`;
+    if(hist.length>1){
+      const poly=(val,ymap,col,w)=>{let p='';for(const h of hist)p+=`${xAt(h.t).toFixed(1)},${ymap(val(h)).toFixed(1)} `;return `<polyline points="${p.trim()}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round"/>`;};
+      s+=poly(h=>cf(h.pu),fyAt,'var(--amber)',1.3);
+      s+=poly(h=>cf(h.mu),fyAt,'var(--blue)',1.6);
+      s+=poly(h=>cp(h.px),pyAt,'var(--amber)',1.6);
+      s+=poly(h=>cp(h.mx),pyAt,'var(--blue)',2);
+    }
+    logger.innerHTML=s;
+  }
+
   let acc=0,prev=performance.now(),showLoop=false,finishT=0;
   function loop(now){const dtr=Math.min(0.1,(now-prev)/1000);prev=now;const P=params();
     if(showLoop&&!running){finishT+=dtr;if(finishT>2.8){finishT=0;startRace();}}
@@ -182,6 +228,7 @@
       pid.u=pidForce(pid.s,target,P.Fmax);pid.s=step(pid.s,pid.u);
       if(isFinite(P.wall)&&pid.s[0]>P.wall+0.01)pidViol=true;
       t+=dt;acc-=dt;guard++;
+      hist.push({t,mx:mpc.s[0],px:pid.s[0],mu:mpc.u,pu:pid.u});if(hist.length>600)hist.shift();
       const goalM=isFinite(P.wall)?Math.min(target,P.wall):target;
       if(!mpcSettled&&Math.abs(mpc.s[0]-goalM)<0.05&&Math.abs(mpc.s[1])<0.05)mpcSettled=t;
       if(!pidSettled&&Math.abs(pid.s[0]-target)<0.05&&Math.abs(pid.s[1])<0.05)pidSettled=t;
@@ -189,7 +236,7 @@
       // 終了判定
       if(t>14||(mpcSettled&&pidSettled)){running=false;finishMsg();}
     }
-    render();requestAnimationFrame(loop);
+    render();drawLog();requestAnimationFrame(loop);
   }
   function finishMsg(){const res=document.getElementById('k-res');
     res.innerHTML=pidViol?'<span style="color:var(--red)">PID 壁越え</span>':'両者 目標到達';
@@ -202,13 +249,13 @@
 
   function clientToX(clientX){const r=stage.getBoundingClientRect();const vx=(clientX-r.left)*(W/r.width);return Math.max(-TH,Math.min(TH,(vx-cx)/scale));}
   stage.addEventListener('pointerdown',e=>{target=Math.round(clientToX(e.clientX)*10)/10;render();});
-  function startRace(){mpc={s:[X0,0],u:0};pid={s:[X0,0],u:0};t=0;mpcSettled=0;pidSettled=0;pidViol=false;document.getElementById('k-res').textContent='レース中…';running=true;prev=performance.now();acc=0;}
+  function startRace(){mpc={s:[X0,0],u:0};pid={s:[X0,0],u:0};t=0;mpcSettled=0;pidSettled=0;pidViol=false;hist=[];document.getElementById('k-res').textContent='レース中…';running=true;prev=performance.now();acc=0;}
   document.getElementById('b-start').addEventListener('click',startRace);
-  document.getElementById('b-reset').addEventListener('click',()=>{running=false;mpc={s:[X0,0],u:0};pid={s:[X0,0],u:0};t=0;mpcSettled=0;pidSettled=0;pidViol=false;document.getElementById('k-res').textContent='—';document.getElementById('explain').textContent='「スタート」で 2 台が同時発進します。';render();});
+  document.getElementById('b-reset').addEventListener('click',()=>{running=false;mpc={s:[X0,0],u:0};pid={s:[X0,0],u:0};t=0;mpcSettled=0;pidSettled=0;pidViol=false;hist=[];document.getElementById('k-res').textContent='—';document.getElementById('explain').textContent='「スタート」で 2 台が同時発進します。';render();drawLog();});
   document.getElementById('s-fmax').addEventListener('input',e=>{document.getElementById('v-fmax').textContent=(+e.target.value).toFixed(1);});
   document.getElementById('c-wall').addEventListener('change',render);
   document.getElementById('s-wall').addEventListener('input',e=>{document.getElementById('v-wall').textContent=(+e.target.value).toFixed(1)+' m';render();});
-  render();
+  render();drawLog();
   if(location.search.indexOf('show')>=0){showLoop=true;startRace();}
 })();
 </script>
