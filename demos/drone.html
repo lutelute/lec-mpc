@@ -404,10 +404,16 @@
           <div class="eq-cap">制約（アクチュエータの上限）</div>
           <div class="eqline">\(0.3 \le T \le 2mg \qquad |u_2| \le 0.6\)<span class="eqnote">T≈0.3〜14.7N／ |u₂|≤0.6 N·m</span></div>
         </div>
+        <div class="eq">
+          <div class="eq-cap">比較対象：カスケード PID</div>
+          \[\begin{aligned}\delta T &= K_p(y^*-y) - K_d\,\dot{y}\\ \theta^* &= K_x(x^*-x) - K_v\,\dot{x}\\ u_2 &= K_\theta(\theta^*-\theta) - K_{\dot\theta}\,\dot{\theta}\end{aligned}\]
+          <div class="eqnote">MIMO を階層的 PID で分離制御（高度ループ＋ x→傾き目標 θ*→トルク）。<b>MPCのような多変数同時最適化はしない</b>（③で挙動を比較）。</div>
+        </div>
         <ul class="bul">
           <li><b>未来 N<sub>p</sub>=35 ステップ</b>を予測し最適入力列を計算、先頭だけ実行（受け取り原理）</li>
           <li>位置と姿勢が<b>連動</b>するため 2 入力を<b>同時</b>最適化（個別ループでは破綻）</li>
           <li><b>PIDとの違い</b>：PIDは各軸を別ループで追い相互干渉に弱い。MPCは6状態2入力を一括最適化</li>
+          <li><b>状態の入手</b>：MPCは状態 x が必要。出力しか測れない実機では<b>カルマンフィルタ／オブザーバ</b>で推定して −K に渡す</li>
         </ul>
       </section>
       <!-- ③ 制御の効果 -->
@@ -651,26 +657,31 @@ DEMOS.drone=function(){
   const mpc=simulate('mpc'),pid=simulate('pid');
   const M={l:34,r:8,t:7,b:15};const xPx=(tk,pw)=>M.l+(tk/Ttot)*pw;
   const poly=(arr,t,yfn,pw)=>{let p='';for(let i=0;i<arr.length;i++)p+=`${xPx(t[i],pw).toFixed(1)},${yfn(arr[i]).toFixed(1)} `;return p;};
-  const gustBand=(pw,ph)=>`<rect x="${xPx(gustT0,pw)}" y="${M.t}" width="${(xPx(gustT1,pw)-xPx(gustT0,pw)).toFixed(1)}" height="${ph}" fill="#D8423F" opacity="0.10"/>`;
+  const gustBand=(pw,ph)=>`<rect x="${xPx(gustT0,pw)}" y="${M.t}" width="${(xPx(gustT1,pw)-xPx(gustT0,pw)).toFixed(1)}" height="${ph}" fill="#D8423F" opacity="0.08"/>`;
+  const vgrid=(pw,ph)=>{let g='';for(let tk=2;tk<Ttot;tk+=2){const x=xPx(tk,pw);g+=`<line x1="${x.toFixed(1)}" y1="${M.t}" x2="${x.toFixed(1)}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}return g;};
+  const axes=(W,ph)=>`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
   // 上段：水平位置 x
   (function(){const W=380,H=92,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const xmax=Math.max(tx+0.4,...mpc.x,...pid.x),xmin=Math.min(0,...mpc.x,...pid.x);
-    const yhi=Math.ceil(xmax*2)/2,ylo=Math.floor(xmin*2)/2;const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s=gustBand(pw,ph);
-    for(let gg=Math.ceil(ylo/0.5)*0.5;gg<=yhi+1e-9;gg+=0.5){const y=yPx(gg);s+=`<line x1="${M.l}" y1="${y.toFixed(1)}" x2="${W-M.r}" y2="${y.toFixed(1)}" stroke="rgba(0,0,0,.07)"/><text x="${M.l-4}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#8c8b84">${gg.toFixed(1)}</text>`;}
+    const yhi=Math.ceil(xmax*2)/2,ylo=Math.floor(xmin*2)/2;const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s=gustBand(pw,ph)+vgrid(pw,ph);
+    for(let gg=Math.ceil(ylo/0.5)*0.5;gg<=yhi+1e-9;gg+=0.5){const y=yPx(gg);s+=`<line x1="${M.l}" y1="${y.toFixed(1)}" x2="${W-M.r}" y2="${y.toFixed(1)}" stroke="rgba(0,0,0,.06)"/><text x="${M.l-5}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="8.5" fill="#9a988e">${gg.toFixed(1)}</text>`;}
+    s+=axes(W,ph);
     s+=`<line x1="${M.l}" y1="${yPx(tx)}" x2="${W-M.r}" y2="${yPx(tx)}" stroke="#D8423F" stroke-width="1" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${(yPx(tx)-3).toFixed(1)}" text-anchor="end" font-size="9" fill="#D8423F">目標 x*=${tx}</text>`;
     s+=`<polyline points="${poly(pid.x,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
     s+=`<polyline points="${poly(mpc.x,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;el('dr_x').innerHTML=s;})();
   // 中段：傾き θ
   (function(){const W=380,H=82,pw=W-M.l-M.r,ph=H-M.t-M.b;
-    const aMax=Math.max(15,...mpc.th.map(Math.abs),...pid.th.map(Math.abs));const yhi=Math.ceil(aMax/15)*15,ylo=-yhi;const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s=gustBand(pw,ph);
+    const aMax=Math.max(15,...mpc.th.map(Math.abs),...pid.th.map(Math.abs));const yhi=Math.ceil(aMax/15)*15,ylo=-yhi;const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s=gustBand(pw,ph)+vgrid(pw,ph);
+    s+=axes(W,ph);
     s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="rgba(0,0,0,.25)"/>`;
-    for(let gg=-yhi;gg<=yhi+1e-9;gg+=yhi/2){if(gg===0)continue;const y=yPx(gg);s+=`<text x="${M.l-4}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#8c8b84">${gg.toFixed(0)}</text>`;}
+    for(let gg=-yhi;gg<=yhi+1e-9;gg+=yhi/2){if(gg===0)continue;const y=yPx(gg);s+=`<text x="${M.l-5}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="8.5" fill="#9a988e">${gg.toFixed(0)}</text>`;}
     s+=`<polyline points="${poly(pid.th,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
     s+=`<polyline points="${poly(mpc.th,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;el('dr_th').innerHTML=s;})();
   // 下段：総推力 T
   (function(){const W=380,H=84,pw=W-M.l-M.r,ph=H-M.t-M.b;
-    const Thi_c=u0max+m*g;const yhi=Math.ceil(Thi_c+0.5),ylo=0;const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s=gustBand(pw,ph);
-    for(let gg=0;gg<=yhi+1e-9;gg+=5){const y=yPx(gg);s+=`<line x1="${M.l}" y1="${y.toFixed(1)}" x2="${W-M.r}" y2="${y.toFixed(1)}" stroke="rgba(0,0,0,.07)"/><text x="${M.l-4}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#8c8b84">${gg}</text>`;}
+    const Thi_c=u0max+m*g;const yhi=Math.ceil(Thi_c+0.5),ylo=0;const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s=gustBand(pw,ph)+vgrid(pw,ph);
+    for(let gg=0;gg<=yhi+1e-9;gg+=5){const y=yPx(gg);s+=`<line x1="${M.l}" y1="${y.toFixed(1)}" x2="${W-M.r}" y2="${y.toFixed(1)}" stroke="rgba(0,0,0,.06)"/><text x="${M.l-5}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="8.5" fill="#9a988e">${gg}</text>`;}
+    s+=axes(W,ph);
     s+=`<line x1="${M.l}" y1="${yPx(m*g)}" x2="${W-M.r}" y2="${yPx(m*g)}" stroke="#8c8b84" stroke-width="1" stroke-dasharray="2,2" opacity=".6"/><text x="${M.l+2}" y="${(yPx(m*g)-3).toFixed(1)}" font-size="8.5" fill="#8c8b84">mg=${(m*g).toFixed(1)}</text>`;
     s+=`<line x1="${M.l}" y1="${yPx(Thi_c)}" x2="${W-M.r}" y2="${yPx(Thi_c)}" stroke="#2E9457" stroke-width="1" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${(yPx(Thi_c)+10).toFixed(1)}" text-anchor="end" font-size="9" fill="#2E9457">T_max ${Thi_c.toFixed(1)}</text>`;
     s+=`<polyline points="${poly(pid.T,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;

@@ -362,10 +362,16 @@
           \[\min_{F}\ \sum_{k=1}^{N_p}\left(Q_\theta\,\theta_k^2 + Q_x (x_k-x^*)^2 + R\,F_k^2\right)\quad \text{s.t. } |F|\le 15\,\text{N}\]
           <div class="eqnote">Q = diag(8, 1, <b style="color:#b9760f">60</b>, 6) → <b>角度 θ を最も重く罰する</b>（R=0.02）</div>
         </div>
+        <div class="eq">
+          <div class="eq-cap">比較対象：PID（PD）制御則</div>
+          \[F_{\text{PID}} = 70\,\theta + 14\,\dot{\theta} + 0.9\,(x-x^*) + 1.3\,\dot{x}\]
+          <div class="eqnote">角度と位置の比例・微分のみ（固定ゲインのPD）。<b>未来予測も制約も持たない</b>（③で挙動を比較）。</div>
+        </div>
         <ul class="bul">
           <li><b>4状態すべて</b>を重み付き評価し、姿勢と台車位置を<b>同時に</b>整える</li>
           <li>未来 <b>N<sub>p</sub>=40</b>（≒2秒）を予測・N<sub>c</sub>=12 で力の列を最適化し先頭だけ実行（線形なので事前計算ゲイン <b>\(F = K_r x^* - K x\)</b>）</li>
           <li><b>PIDとの違い</b>：PID は今の角度・位置に反応するだけ。MPCは未来を予測し制約内で先回りする（N<sub>p</sub> 過小は不安定化）</li>
+          <li><b>状態の入手</b>：MPCは4状態 x が必要。角速度などが測れない実機では<b>カルマンフィルタ／オブザーバ</b>で推定して −K に渡す</li>
         </ul>
       </section>
       <!-- ③ 制御の効果 -->
@@ -620,21 +626,27 @@ DEMOS.cartpole=function(){
   // 上段：振れ角 θ
   (function(){const W=380,H=95,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const lim=Math.max(10,...mpc.th.map(Math.abs),...pid.th.map(Math.abs));const hi=Math.ceil(lim/5)*5;const yPx=v=>M.t+(1-(v+hi)/(2*hi))*ph;let s=brake(pw,ph);
-    for(let gv=-hi;gv<=hi;gv+=hi){const y=yPx(gv);s+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="rgba(0,0,0,.07)"/><text x="${M.l-4}" y="${y+3}" text-anchor="end" font-size="9" fill="#8c8b84">${gv>0?'+':''}${gv}</text>`;}
+    for(let tk=1;tk<T;tk+=1){const x=xPx(tk,pw);s+=`<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}
+    for(let gv=-hi;gv<=hi;gv+=hi){const y=yPx(gv);s+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="rgba(0,0,0,.06)"/><text x="${M.l-4}" y="${y+3}" text-anchor="end" font-size="8.5" fill="#9a988e">${gv>0?'+':''}${gv}</text>`;}
     s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="rgba(0,0,0,.25)"/>`;
+    s+=`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
     s+=`<polyline points="${poly(pid.th,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
     s+=`<polyline points="${poly(mpc.th,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;el('cp_th').innerHTML=s;})();
   // 中段：台車位置 x
   (function(){const W=380,H=88,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const lim=Math.max(1,...mpc.x.map(Math.abs),...pid.x.map(Math.abs));const hi=Math.ceil(lim*2)/2;const yPx=v=>M.t+(1-(v+hi)/(2*hi))*ph;let s=brake(pw,ph);
+    for(let tk=1;tk<T;tk+=1){const x=xPx(tk,pw);s+=`<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}
     s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${yPx(0)-3}" text-anchor="end" font-size="9" fill="#D8423F">目標 x*=0</text>`;
-    s+=`<text x="${M.l-4}" y="${yPx(hi)+3}" text-anchor="end" font-size="9" fill="#8c8b84">+${hi}</text>`;
-    s+=`<text x="${M.l-4}" y="${yPx(-hi)+3}" text-anchor="end" font-size="9" fill="#8c8b84">-${hi}</text>`;
+    s+=`<text x="${M.l-4}" y="${yPx(hi)+3}" text-anchor="end" font-size="8.5" fill="#9a988e">+${hi}</text>`;
+    s+=`<text x="${M.l-4}" y="${yPx(-hi)+3}" text-anchor="end" font-size="8.5" fill="#9a988e">-${hi}</text>`;
+    s+=`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
     s+=`<polyline points="${poly(pid.x,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
     s+=`<polyline points="${poly(mpc.x,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;el('cp_x').innerHTML=s;})();
   // 下段：制御力 F
   (function(){const W=380,H=85,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const hi=Fmax*1.12;const yPx=v=>M.t+(1-(v+hi)/(2*hi))*ph;let s=brake(pw,ph);
+    for(let tk=1;tk<T;tk+=1){const x=xPx(tk,pw);s+=`<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}
+    s+=`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
     s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="rgba(0,0,0,.25)"/>`;
     s+=`<line x1="${M.l}" y1="${yPx(Fmax)}" x2="${W-M.r}" y2="${yPx(Fmax)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${yPx(Fmax)-3}" text-anchor="end" font-size="9" fill="#D8423F">+F_max ${Fmax}</text>`;
     s+=`<line x1="${M.l}" y1="${yPx(-Fmax)}" x2="${W-M.r}" y2="${yPx(-Fmax)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${yPx(-Fmax)+10}" text-anchor="end" font-size="9" fill="#D8423F">−F_max</text>`;

@@ -348,10 +348,16 @@
           \[\min_{F}\ \sum_{k=1}^{N_p}\Big((x_k-r)^\top Q\,(x_k-r) + r\,F_k^2\Big)\quad \text{s.t. } |F|\le 8\,\text{N}\]
           <div class="eqnote">Q = diag(10, 1, <b style="color:#b9760f">40</b>, 4) → <b>振れ角 φ を最も重く罰する</b></div>
         </div>
+        <div class="eq">
+          <div class="eq-cap">比較対象：PD 制御則（位置のみ）</div>
+          \[F_{\text{PD}} = 3.0\,(x_{\text{ref}}-x) - 2.0\,\dot{x}\]
+          <div class="eqnote">位置誤差の比例と速度の微分だけ。<b>位置だけ見て振れ角 φ を考えない＝揺れを置き去り</b>（③で挙動を比較）。</div>
+        </div>
         <ul class="bul">
           <li><b>未来 N<sub>p</sub>=40 ステップ</b>（≒2秒）を予測、N<sub>c</sub>=12 で力の列を最適化し先頭だけ実行</li>
           <li>到着時に振れが消えるよう加減速のタイミングを<b>整形</b>（1入力で2目的）</li>
           <li><b>PIDとの違い</b>：PD は位置だけ追い振れは置き去り。MPCは φ も予測して能動的に消す</li>
+          <li><b>状態の入手</b>：MPCは状態 x が必要。出力しか測れない実機では<b>カルマンフィルタ／オブザーバ</b>で推定して −K に渡す</li>
         </ul>
       </section>
       <!-- ③ 制御の効果 -->
@@ -585,19 +591,25 @@ DEMOS.crane=function(){
   const poly=(arr,t,yfn,pw)=>{let p='';for(let i=0;i<arr.length;i++)p+=`${xPx(t[i],pw).toFixed(1)},${yfn(arr[i]).toFixed(1)} `;return p;};
   (function(){const W=380,H=110,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const aMax=Math.max(10,...mpc.ph.map(Math.abs),...pid.ph.map(Math.abs));const yhi=Math.ceil(aMax/10)*10,ylo=-yhi;const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s='';
-    for(let gd=ylo;gd<=yhi;gd+=10){const y=yPx(gd);s+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="rgba(0,0,0,.07)"/><text x="${M.l-4}" y="${y+3}" text-anchor="end" font-size="9" fill="#8c8b84">${gd}</text>`;}
+    const tA=4.0;s+=`<rect x="${xPx(tA,pw)}" y="${M.t}" width="${(W-M.r)-xPx(tA,pw)}" height="${ph}" fill="#2E9457" opacity="0.08"/><text x="${xPx(tA,pw)+3}" y="${M.t+10}" font-size="8.5" fill="#2E9457">到着域</text>`;
+    for(let tk=1;tk<T;tk+=1){const x=xPx(tk,pw);s+=`<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}
+    for(let gd=ylo;gd<=yhi;gd+=10){const y=yPx(gd);s+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="rgba(0,0,0,.06)"/><text x="${M.l-4}" y="${y+3}" text-anchor="end" font-size="8.5" fill="#9a988e">${gd}</text>`;}
+    s+=`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
     s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="rgba(0,0,0,.28)"/>`;
-    const tA=4.0;s+=`<rect x="${xPx(tA,pw)}" y="${M.t}" width="${(W-M.r)-xPx(tA,pw)}" height="${ph}" fill="#2E9457" opacity="0.06"/><text x="${xPx(tA,pw)+3}" y="${M.t+10}" font-size="8.5" fill="#2E9457">到着域</text>`;
     s+=`<polyline points="${poly(pid.ph,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
     s+=`<polyline points="${poly(mpc.ph,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;el('cr_phi').innerHTML=s;})();
   (function(){const W=380,H=92,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const xMax=Math.max(target+0.4,...mpc.x,...pid.x);const yhi=Math.ceil(xMax*2)/2,ylo=0;const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s='';
-    for(let gx=0;gx<=yhi+1e-9;gx+=0.5){const y=yPx(gx);s+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="rgba(0,0,0,.07)"/><text x="${M.l-4}" y="${y+3}" text-anchor="end" font-size="9" fill="#8c8b84">${gx.toFixed(1)}</text>`;}
+    for(let tk=1;tk<T;tk+=1){const x=xPx(tk,pw);s+=`<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}
+    for(let gx=0;gx<=yhi+1e-9;gx+=0.5){const y=yPx(gx);s+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="rgba(0,0,0,.06)"/><text x="${M.l-4}" y="${y+3}" text-anchor="end" font-size="8.5" fill="#9a988e">${gx.toFixed(1)}</text>`;}
+    s+=`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
     s+=`<line x1="${M.l}" y1="${yPx(target)}" x2="${W-M.r}" y2="${yPx(target)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".75"/><text x="${W-M.r}" y="${yPx(target)-3}" text-anchor="end" font-size="9" fill="#D8423F">目標 2m</text>`;
     s+=`<polyline points="${poly(pid.x,pid.t,yPx,pw)}" fill="none" stroke="#DD901C" stroke-width="2" stroke-dasharray="5,3"/>`;
     s+=`<polyline points="${poly(mpc.x,mpc.t,yPx,pw)}" fill="none" stroke="#2F7DD1" stroke-width="2.2"/>`;el('cr_pos').innerHTML=s;})();
   (function(){const W=380,H=88,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const fHi=Fmax+1.5,fLo=-Fmax-1.5;const yPx=v=>M.t+(1-(v-fLo)/(fHi-fLo))*ph;let s='';
+    for(let tk=1;tk<T;tk+=1){const x=xPx(tk,pw);s+=`<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}
+    s+=`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
     s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="rgba(0,0,0,.25)"/>`;
     s+=`<line x1="${M.l}" y1="${yPx(Fmax)}" x2="${W-M.r}" y2="${yPx(Fmax)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${yPx(Fmax)-3}" text-anchor="end" font-size="9" fill="#D8423F">+F_max ${Fmax}</text>`;
     s+=`<line x1="${M.l}" y1="${yPx(-Fmax)}" x2="${W-M.r}" y2="${yPx(-Fmax)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".7"/><text x="${W-M.r}" y="${yPx(-Fmax)+10}" text-anchor="end" font-size="9" fill="#D8423F">−F_max ${-Fmax}</text>`;

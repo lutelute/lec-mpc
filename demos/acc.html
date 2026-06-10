@@ -355,10 +355,16 @@
           \[\min_{u}\ \sum_{k=1}^{N_p}\left(q\,e_{\text{gap}}^2 + r\,u^2\right)\quad \text{s.t. } a_{\min}\le u\le a_{\max}\]
           <div class="eqnote">＝車間誤差 e<sub>gap</sub> を小さく、かつ加減速 u を穏やかに。<b>上限は制約として内蔵</b>。</div>
         </div>
+        <div class="eq">
+          <div class="eq-cap">比較対象：PID 制御則</div>
+          \[u_{\text{PID}} = K_p\,e + K_d\,\dot{e} + K_i\!\!\int\! e\,dt\]
+          <div class="eqnote">誤差 e の比例・微分・積分のみ。<b>未来予測も制約も持たない</b>（③で挙動を比較）。</div>
+        </div>
         <ul class="bul">
           <li><b>未来 N<sub>p</sub>=25 ステップ</b>を予測して最適加速度列を計算、先頭だけ実行</li>
           <li>前車の急減速を<b>先読み</b>し、上限内で<b>早めに</b>減速</li>
           <li><b>PIDとの違い</b>：PIDは今の誤差にしか反応せず制約も知らない。MPCは未来と上限を同時に考える</li>
+          <li><b>状態の入手</b>：MPCは状態 x が必要。出力しか測れない実機では<b>カルマンフィルタ／オブザーバ</b>で推定して −K に渡す</li>
         </ul>
       </section>
       <!-- ③ 制御の効果 -->
@@ -600,8 +606,10 @@ DEMOS.acc=function(){
   (function(){const W=380,H=132,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const gMax=Math.max(22,...mpc.gap,...pid.gap),gMin=Math.min(0,...pid.gap);
     const yhi=Math.ceil(gMax/5)*5,ylo=Math.min(0,Math.floor(gMin/5)*5);const yPx=v=>M.t+(1-(v-ylo)/(yhi-ylo))*ph;let s='';
-    s+=`<rect x="${xPx(brakeT0,pw)}" y="${M.t}" width="${xPx(brakeT1,pw)-xPx(brakeT0,pw)}" height="${ph}" fill="#D8423F" opacity="0.09"/>`;
-    for(let g=ylo;g<=yhi;g+=5){const y=yPx(g);s+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="rgba(0,0,0,.07)"/>`;s+=`<text x="${M.l-4}" y="${y+3}" text-anchor="end" font-size="9" fill="#8c8b84">${g}</text>`;}
+    s+=`<rect x="${xPx(brakeT0,pw)}" y="${M.t}" width="${xPx(brakeT1,pw)-xPx(brakeT0,pw)}" height="${ph}" fill="#D8423F" opacity="0.08"/>`;
+    for(let tk=3;tk<T;tk+=3){const x=xPx(tk,pw);s+=`<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}
+    for(let g=ylo;g<=yhi;g+=5){const y=yPx(g);s+=`<line x1="${M.l}" y1="${y}" x2="${W-M.r}" y2="${y}" stroke="rgba(0,0,0,.06)"/>`;s+=`<text x="${M.l-5}" y="${y+3}" text-anchor="end" font-size="8.5" fill="#9a988e">${g}</text>`;}
+    s+=`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
     s+=`<line x1="${M.l}" y1="${yPx(dstar)}" x2="${W-M.r}" y2="${yPx(dstar)}" stroke="#D8423F" stroke-width="1" stroke-dasharray="3,3" opacity=".7"/>`;
     s+=`<text x="${W-M.r}" y="${yPx(dstar)-3}" text-anchor="end" font-size="9" fill="#D8423F">目標 d*=${dstar}</text>`;
     if(ylo<0){s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="#D8423F" opacity=".5"/>`;s+=`<text x="${M.l+2}" y="${yPx(0)-3}" font-size="8.5" fill="#D8423F">追突</text>`;}
@@ -611,8 +619,10 @@ DEMOS.acc=function(){
   // 下段：加速度
   (function(){const W=380,H=110,pw=W-M.l-M.r,ph=H-M.t-M.b;
     const aHi=Math.max(aMax,1)+0.6,aLo=Math.min(aMin,-1)-0.6;const yPx=v=>M.t+(1-(v-aLo)/(aHi-aLo))*ph;let s='';
-    s+=`<rect x="${xPx(brakeT0,pw)}" y="${M.t}" width="${xPx(brakeT1,pw)-xPx(brakeT0,pw)}" height="${ph}" fill="#D8423F" opacity="0.09"/>`;
-    s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="rgba(0,0,0,.25)"/>`;
+    s+=`<rect x="${xPx(brakeT0,pw)}" y="${M.t}" width="${xPx(brakeT1,pw)-xPx(brakeT0,pw)}" height="${ph}" fill="#D8423F" opacity="0.08"/>`;
+    for(let tk=3;tk<T;tk+=3){const x=xPx(tk,pw);s+=`<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t+ph}" stroke="rgba(0,0,0,.045)"/>`;}
+    s+=`<line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/><line x1="${M.l}" y1="${M.t+ph}" x2="${W-M.r}" y2="${M.t+ph}" stroke="#cdc7b9" stroke-width="1"/>`;
+    s+=`<line x1="${M.l}" y1="${yPx(0)}" x2="${W-M.r}" y2="${yPx(0)}" stroke="rgba(0,0,0,.22)"/>`;
     s+=`<line x1="${M.l}" y1="${yPx(aMax)}" x2="${W-M.r}" y2="${yPx(aMax)}" stroke="#2E9457" stroke-dasharray="3,3" opacity=".7"/>`;
     s+=`<text x="${W-M.r}" y="${yPx(aMax)-3}" text-anchor="end" font-size="9" fill="#2E9457">a_max ${aMax}</text>`;
     s+=`<line x1="${M.l}" y1="${yPx(aMin)}" x2="${W-M.r}" y2="${yPx(aMin)}" stroke="#D8423F" stroke-dasharray="3,3" opacity=".7"/>`;
