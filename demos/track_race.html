@@ -95,6 +95,12 @@
   .infographic .c3 .bul li::before{color:var(--green);}
   .infographic .bul b{color:var(--ink);}
   .infographic .takeaway{margin-top:11px;background:#ecf6f1;border:1px solid #cfe6d8;border-radius:4px;padding:8px 12px;font-size:11px;color:#1c6b41;line-height:1.55;}
+  .infographic .trynext{margin-top:10px;background:var(--bg);border:1px dashed var(--line-2);border-radius:4px;padding:8px 12px;}
+  .infographic .trynext .tn-cap{display:block;font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.06em;margin-bottom:4px;}
+  .infographic .trynext ol{margin:0;padding-left:17px;font-size:10.5px;line-height:1.62;color:var(--muted);}
+  .infographic .trynext li{margin:2px 0;}
+  .infographic .trynext b{color:var(--ink);font-weight:600;}
+  .infographic .kpinote{margin-top:6px;font-size:9.5px;color:var(--faint);line-height:1.5;}
   .infographic .takeaway b{color:#13502f;}
   .infographic .kpis{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px;}
   .infographic .kpi{padding:8px 12px;border:1px solid var(--line);border-radius:4px;white-space:nowrap;}
@@ -358,6 +364,11 @@
           <div class="kpi pid"><div class="k">PID 壁越え量（制約違反）</div><div class="v" id="tr_kpid">– m</div></div>
         </div>
         <div class="takeaway"><b>結論</b>：MPC は壁を制約として知り、手前で早めに減力して滑らかに停止する。PID は壁を知らず目標へ突進し、壁を越えて制約違反になる。これが制約を陽に扱える MPC の最大の利点。</div>
+        <div class="trynext"><span class="tn-cap">▶ 上のデモで試す</span><ol>
+          <li><b>スタート</b>——MPC は壁手前で減速、PD は突っ込む様子を上のコースで見る</li>
+          <li><b>壁の位置</b>を目標より先へ動かす——制約に当たらなければ両者とも目標に着く</li>
+          <li><b>力の上限 F</b> を下げる——MPC はより手前から減速を始める</li>
+        </ol></div>
       </section>
     </main>
     <footer class="pfoot">

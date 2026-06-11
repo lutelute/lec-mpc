@@ -95,6 +95,12 @@
   .infographic .c3 .bul li::before{color:var(--green);}
   .infographic .bul b{color:var(--ink);}
   .infographic .takeaway{margin-top:11px;background:#ecf6f1;border:1px solid #cfe6d8;border-radius:4px;padding:8px 12px;font-size:11px;color:#1c6b41;line-height:1.55;}
+  .infographic .trynext{margin-top:10px;background:var(--bg);border:1px dashed var(--line-2);border-radius:4px;padding:8px 12px;}
+  .infographic .trynext .tn-cap{display:block;font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.06em;margin-bottom:4px;}
+  .infographic .trynext ol{margin:0;padding-left:17px;font-size:10.5px;line-height:1.62;color:var(--muted);}
+  .infographic .trynext li{margin:2px 0;}
+  .infographic .trynext b{color:var(--ink);font-weight:600;}
+  .infographic .kpinote{margin-top:6px;font-size:9.5px;color:var(--faint);line-height:1.5;}
   .infographic .takeaway b{color:#13502f;}
   .infographic .kpis{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px;}
   .infographic .kpi{padding:8px 12px;border:1px solid var(--line);border-radius:4px;white-space:nowrap;}
@@ -387,6 +393,11 @@
           <div class="kpi pid"><div class="k">PID 最小車間</div><div class="v" id="acc_kpid">– m</div></div>
         </div>
         <div class="takeaway"><b>結論</b>：MPC は前車ブレーキを先読みして早めに減速し車間を保つ。PID は反応が遅れて車間が詰まる（最小車間が小さい＝追突に近い）。</div>
+        <div class="trynext"><span class="tn-cap">▶ 上のデモで試す</span><ol>
+          <li><b>前車ブレーキ（押す）</b>——MPC が先読みで早めに減速し、車間を保つ流れを実時間で見る</li>
+          <li><b>減速の上限 |a<sub>min</sub>|</b> を小さくする——制約がきつくなり、MPC はより早くから減速を始める</li>
+          <li><b>比例 K<sub>p</sub></b> を上げて PID を速くする——振動的になり、加速度の上限にも当たりやすくなる</li>
+        </ol></div>
       </section>
     </main>
     <footer class="pfoot">

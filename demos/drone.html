@@ -95,6 +95,12 @@
   .infographic .c3 .bul li::before{color:var(--green);}
   .infographic .bul b{color:var(--ink);}
   .infographic .takeaway{margin-top:11px;background:#ecf6f1;border:1px solid #cfe6d8;border-radius:4px;padding:8px 12px;font-size:11px;color:#1c6b41;line-height:1.55;}
+  .infographic .trynext{margin-top:10px;background:var(--bg);border:1px dashed var(--line-2);border-radius:4px;padding:8px 12px;}
+  .infographic .trynext .tn-cap{display:block;font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.06em;margin-bottom:4px;}
+  .infographic .trynext ol{margin:0;padding-left:17px;font-size:10.5px;line-height:1.62;color:var(--muted);}
+  .infographic .trynext li{margin:2px 0;}
+  .infographic .trynext b{color:var(--ink);font-weight:600;}
+  .infographic .kpinote{margin-top:6px;font-size:9.5px;color:var(--faint);line-height:1.5;}
   .infographic .takeaway b{color:#13502f;}
   .infographic .kpis{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px;}
   .infographic .kpi{padding:8px 12px;border:1px solid var(--line);border-radius:4px;white-space:nowrap;}
@@ -437,7 +443,13 @@
           <div class="kpi mpc"><div class="k">MPC 整定時間 x</div><div class="v" id="dr_kmpc">– s</div></div>
           <div class="kpi pid"><div class="k">PID 整定時間 x</div><div class="v" id="dr_kpid">– s</div></div>
         </div>
+        <div class="kpinote">整定時間＝突風後に x が目標 ±5 cm へ収まり、以降留まるまでの時間</div>
         <div class="takeaway"><b>結論</b>：MPC は 6 状態 2 入力を一括最適化するため、突風で姿勢が乱れても位置・高度・姿勢を素早く立て直す。各軸を別ループで追う PID は相互干渉で整定が遅れ、姿勢の振れも大きい。</div>
+        <div class="trynext"><span class="tn-cap">▶ 上のデモで試す</span><ol>
+          <li><b>突風（外乱）</b>——位置・高度・姿勢を同時に立て直す様子を見る</li>
+          <li><b>機敏さ（位置の重み）</b>を上げる——速くなるが姿勢の振れが増える（Q のトレードオフ）</li>
+          <li><b>突風の強さ</b>を最大にする——推力が上限に当たり、②の制約が効く瞬間が見える</li>
+        </ol></div>
       </section>
     </main>
     <footer class="pfoot">
