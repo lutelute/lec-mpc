@@ -56,7 +56,7 @@
   /* ===== 埋め込みインフォグラフ（技術書スタイル・洗練版） ===== */
   .infographic{--ink:#1a1a18;--muted:#57564f;--faint:#918f86;--blue:#2F7DD1;--blue-deep:#0C447C;--amber:#C57A12;--red:#C0392B;--green:#1f7a47;--line:#e6e1d6;--line-2:#d3cdbf;--bg:#fff;background:#f7f6f2;border:1px solid var(--line-2);border-radius:5px;margin-top:18px;color:var(--ink);font-family:"Noto Sans JP",var(--font-sans);font-feature-settings:"palt";overflow:hidden;}
   .infographic *{box-sizing:border-box;margin:0;padding:0;}
-  .infographic .ig-hd{font-size:10px;color:#8a887e;text-transform:uppercase;letter-spacing:.16em;font-weight:600;padding:9px 24px;border-bottom:1px solid var(--line);background:#f3f1ea;}
+  .infographic .ig-hd{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:10px;color:#8a887e;text-transform:uppercase;letter-spacing:.16em;font-weight:600;padding:9px 24px;border-bottom:1px solid var(--line);background:#f3f1ea;}
   .infographic .poster{width:100%;background:var(--bg);display:flex;flex-direction:column;}
   .infographic .phead{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:16px 24px 13px;border-bottom:2px solid var(--ink);}
   .infographic .phead h1{font-size:22px;font-weight:700;letter-spacing:-.01em;line-height:1.2;}
@@ -97,6 +97,8 @@
   .infographic .c3 .bul li::before{color:var(--green);}
   .infographic .bul b{color:var(--ink);}
   .infographic .takeaway{margin-top:11px;background:#ecf6f1;border:1px solid #cfe6d8;border-radius:4px;padding:8px 12px;font-size:11px;color:#1c6b41;line-height:1.55;}
+  .infographic .ig-print{font-size:9.5px;color:#57564f;text-decoration:none;border:1px solid var(--line-2);background:var(--bg);padding:3px 10px;border-radius:3px;letter-spacing:.06em;font-weight:600;white-space:nowrap;text-transform:none;}
+  .infographic .ig-print:hover{border-color:#a39f92;color:#1a1a18;}
   .infographic .trynext{margin-top:10px;background:var(--bg);border:1px dashed var(--line-2);border-radius:4px;padding:8px 12px;}
   .infographic .trynext .tn-cap{display:block;font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.06em;margin-bottom:4px;}
   .infographic .trynext ol{margin:0;padding-left:17px;font-size:10.5px;line-height:1.62;color:var(--muted);}
@@ -125,6 +127,7 @@
     html,body{background:#fff;}
     .infographic{margin:0;border:none;border-radius:0;zoom:.62;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .infographic .col{break-inside:avoid;}
+    .infographic .ig-print{display:none;}
   }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -269,7 +272,7 @@
   </div>
 
   <section class="infographic">
-    <div class="ig-hd">体系まとめ — ① モデル化 → ② 制御ロジック → ③ 制御の効果</div>
+    <div class="ig-hd"><span>体系まとめ — ① モデル化 → ② 制御ロジック → ③ 制御の効果</span><a class="ig-print" href="#" onclick="window.print();return false;">⎙ PDFに保存（A4横1枚）</a></div>
 <div class="poster" data-demo="cartpole">
     <header class="phead">
       <div>
@@ -394,7 +397,7 @@
       <!-- ③ 制御の効果 -->
       <section class="col c3">
         <div class="ctitle"><div class="cnum">3</div><div><h2>制御の効果</h2><div class="sub">外乱キック：MPC vs PID</div></div></div>
-        <div class="lead"><b>読み方</b>：青＝MPC、橙破線＝PID（同じ力上限）。t=1.5s で振子に<b>横蹴り</b>（赤帯）を入れたとき、姿勢の立て直しと台車の戻りを比較——<b>MPC は素早く整定し台車もほぼ中央、PID は整定が遅く台車が大きく流れる</b>。</div>
+        <div class="lead"><b>読み方</b>：t=1.5s で振子に<b>横蹴り</b>（赤帯）を入れたとき、姿勢の立て直しと台車の戻りを MPC と PID（同じ力上限）で比較——<b>MPC は素早く整定し台車もほぼ中央、PID は整定が遅く台車が大きく流れる</b>。</div>
         <div class="leg">
           <span><i style="border-top-color:#2F7DD1;"></i>MPC</span>
           <span><i style="border-top-color:#DD901C;border-top-style:dashed;"></i>PID</span>
