@@ -58,6 +58,7 @@
   .infographic .ig-hd{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:10px;color:#8a887e;text-transform:uppercase;letter-spacing:.16em;font-weight:600;padding:9px 24px;border-bottom:1px solid var(--line);background:#f3f1ea;}
   .infographic .poster{width:100%;background:var(--bg);display:flex;flex-direction:column;}
   .infographic .phead{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:16px 24px 13px;border-bottom:2px solid var(--ink);}
+  @media screen{.infographic .phead{display:none;}}
   .infographic .phead h1{font-size:22px;font-weight:700;letter-spacing:-.01em;line-height:1.2;}
   .infographic .phead h1 span{font-weight:400;color:var(--muted);font-size:16px;letter-spacing:0;}
   .infographic .phead p{font-size:12px;color:var(--muted);margin-top:4px;max-width:840px;line-height:1.5;}
@@ -432,7 +433,6 @@
         <ul class="bul">
           <li><b>未来 N<sub>p</sub>=35 ステップ</b>を予測し最適入力列を計算、先頭だけ実行（後退ホライズン方式）</li>
           <li>位置と姿勢が<b>連動</b>するため 2 入力を<b>同時</b>最適化（個別ループでは破綻）</li>
-          <li><b>PIDとの違い</b>：PIDは各軸を別ループで追い相互干渉に弱い。MPCは6状態2入力を一括最適化</li>
           <li><b>状態の入手</b>：MPCは状態 x が必要。出力しか測れない実機では<b>カルマンフィルタ／オブザーバ</b>で推定して −K に渡す</li>
         </ul>
       </section>

@@ -59,6 +59,7 @@
   .infographic .ig-hd{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:10px;color:#8a887e;text-transform:uppercase;letter-spacing:.16em;font-weight:600;padding:9px 24px;border-bottom:1px solid var(--line);background:#f3f1ea;}
   .infographic .poster{width:100%;background:var(--bg);display:flex;flex-direction:column;}
   .infographic .phead{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;padding:16px 24px 13px;border-bottom:2px solid var(--ink);}
+  @media screen{.infographic .phead{display:none;}}
   .infographic .phead h1{font-size:22px;font-weight:700;letter-spacing:-.01em;line-height:1.2;}
   .infographic .phead h1 span{font-weight:400;color:var(--muted);font-size:16px;letter-spacing:0;}
   .infographic .phead p{font-size:12px;color:var(--muted);margin-top:4px;max-width:840px;line-height:1.5;}
@@ -390,7 +391,7 @@
         <ul class="bul">
           <li><b>4状態すべて</b>を重み付き評価し、姿勢と台車位置を<b>同時に</b>整える</li>
           <li>未来 <b>N<sub>p</sub>=40</b>（≒2秒）を予測・N<sub>c</sub>=12 で力の列を最適化し先頭だけ実行（線形なので事前計算ゲイン <b>\(F = K_r x^* - K x\)</b>）</li>
-          <li><b>PIDとの違い</b>：PID は今の角度・位置に反応するだけ。MPCは未来を予測し制約内で先回りする（N<sub>p</sub> 過小は不安定化）</li>
+          <li><b>N<sub>p</sub> 過小は不安定化</b>：予測が振子の倒れ込みより短いと立て直せない</li>
           <li><b>状態の入手</b>：MPCは4状態 x が必要。角速度などが測れない実機では<b>カルマンフィルタ／オブザーバ</b>で推定して −K に渡す</li>
         </ul>
       </section>
