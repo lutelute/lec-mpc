@@ -53,7 +53,7 @@
   .footer{font-size:10px;color:var(--text-3);text-align:center;margin-top:14px;line-height:1.7;}
   @media (max-width:980px){.main-grid{grid-template-columns:1fr;}.kpi{grid-template-columns:1fr 1fr;}}
   /* ===== 埋め込みインフォグラフ（技術書スタイル・洗練版） ===== */
-  .infographic{--ink:#1a1a18;--muted:#57564f;--faint:#918f86;--blue:#2F7DD1;--blue-deep:#0C447C;--amber:#C57A12;--red:#C0392B;--green:#1f7a47;--line:#e6e1d6;--line-2:#d3cdbf;--bg:#fff;background:#f7f6f2;border:1px solid var(--line-2);border-radius:5px;margin-top:18px;color:var(--ink);font-family:var(--font-sans);overflow:hidden;}
+  .infographic{--ink:#1a1a18;--muted:#57564f;--faint:#918f86;--blue:#2F7DD1;--blue-deep:#0C447C;--amber:#C57A12;--red:#C0392B;--green:#1f7a47;--line:#e6e1d6;--line-2:#d3cdbf;--bg:#fff;background:#f7f6f2;border:1px solid var(--line-2);border-radius:5px;margin-top:18px;color:var(--ink);font-family:"Noto Sans JP",var(--font-sans);font-feature-settings:"palt";overflow:hidden;}
   .infographic *{box-sizing:border-box;margin:0;padding:0;}
   .infographic .ig-hd{font-size:10px;color:#8a887e;text-transform:uppercase;letter-spacing:.16em;font-weight:600;padding:9px 24px;border-bottom:1px solid var(--line);background:#f3f1ea;}
   .infographic .poster{width:100%;background:var(--bg);display:flex;flex-direction:column;}
@@ -65,7 +65,8 @@
   .infographic .badge b{font-size:13px;display:block;color:var(--blue-deep);letter-spacing:0;}
   .infographic .cols{display:grid;grid-template-columns:1fr 1fr 1.06fr;}
   .infographic .col{padding:16px 22px 18px;display:flex;flex-direction:column;min-width:0;}
-  .infographic .col+.col{border-left:1px solid var(--line);}
+  .infographic .col+.col{border-left:1px solid var(--line);position:relative;}
+  .infographic .col+.col::before{content:"▶";position:absolute;left:-8px;top:21px;width:15px;height:15px;line-height:15px;text-align:center;font-size:7px;color:#a39f92;background:#f7f6f2;border:1px solid var(--line-2);border-radius:50%;z-index:1;}
   .infographic .ctitle{display:flex;align-items:center;gap:9px;margin-bottom:11px;padding-bottom:8px;border-bottom:1px solid var(--line);}
   .infographic .cnum{flex:none;width:21px;height:21px;border-radius:3px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;}
   .infographic .ctitle h2{font-size:15.5px;font-weight:700;letter-spacing:.01em;}
@@ -103,9 +104,9 @@
   .infographic .kpinote{margin-top:6px;font-size:9.5px;color:var(--faint);line-height:1.5;}
   .infographic .takeaway b{color:#13502f;}
   .infographic .kpis{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px;}
-  .infographic .kpi{padding:8px 12px;border:1px solid var(--line);border-radius:4px;white-space:nowrap;}
+  .infographic .kpi{display:block;margin:0;padding:8px 12px;border:1px solid var(--line);border-radius:4px;min-width:0;}
   .infographic .kpi .k{font-size:9px;color:var(--faint);letter-spacing:.06em;}
-  .infographic .kpi .v{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:3px;letter-spacing:-.01em;}
+  .infographic .kpi .v{font-size:19px;white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums;margin-top:3px;letter-spacing:-.01em;}
   .infographic .kpi.mpc{background:#eef5fc;border-color:#d2e2f3;} .infographic .kpi.mpc .v{color:var(--blue-deep);}
   .infographic .kpi.pid{background:#fcf4e9;border-color:#eedfc6;} .infographic .kpi.pid .v{color:#9a6410;}
   .infographic .leg{display:flex;gap:16px;justify-content:center;font-size:10px;color:var(--muted);margin:0 0 8px;}
@@ -116,8 +117,18 @@
   .infographic .katex{font-size:1.03em;}
   .infographic .katex-display{margin:7px 0 5px;text-align:left;overflow-x:auto;overflow-y:hidden;padding-bottom:2px;}
   .infographic .eqline .katex{flex:none;}
-  @media (max-width:980px){.infographic .cols{grid-template-columns:1fr;}.infographic .col+.col{border-left:none;border-top:1px solid var(--line);}}
+  @media (max-width:980px){.infographic .cols{grid-template-columns:1fr;}.infographic .col+.col{border-left:none;border-top:1px solid var(--line);}.infographic .col+.col::before{content:none;}}
+  @media print{
+    @page{size:A4 landscape;margin:8mm;}
+    .app{padding:0;margin:0;max-width:none;}.app>*:not(.infographic){display:none;}
+    html,body{background:#fff;}
+    .infographic{margin:0;border:none;border-radius:0;zoom:.62;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .infographic .col{break-inside:avoid;}
+  }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
 <script defer src="vendor/katex/katex.min.js"></script>
 <script defer src="vendor/katex/contrib/auto-render.min.js" onload="renderMathInElement(document.querySelector('.infographic'),{delimiters:[{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
@@ -225,7 +236,7 @@
   </div>
 
   <section class="infographic">
-    <div class="ig-hd">体系まとめ — モデル化・制御ロジック・制御の効果</div>
+    <div class="ig-hd">体系まとめ — ① モデル化 → ② 制御ロジック → ③ 制御の効果</div>
 <div class="poster" data-demo="track">
     <header class="phead">
       <div>
