@@ -121,6 +121,21 @@
   .infographic .katex-display{margin:7px 0 5px;text-align:left;overflow-x:auto;overflow-y:hidden;padding-bottom:2px;}
   .infographic .eqline .katex{flex:none;}
   @media (max-width:980px){.infographic .cols{grid-template-columns:1fr;}.infographic .col+.col{border-left:none;border-top:1px solid var(--line);}.infographic .col+.col::before{content:none;}}
+  .exercise{margin-top:14px;font-family:"Noto Sans JP",var(--font-sans);}
+  .exercise details{background:var(--surface);border:1px solid var(--border-2);border-radius:5px;}
+  .exercise summary{cursor:pointer;padding:10px 16px;font-size:12.5px;color:var(--text-1);user-select:none;}
+  .exercise summary:hover{background:var(--surface-2);}
+  .exercise .ex-q{padding:10px 18px 14px;border-top:1px solid var(--border);}
+  .exercise .ex-t{margin:0 0 8px;font-size:12px;line-height:1.6;color:var(--text-1);}
+  .exercise .ex-opts{display:flex;gap:8px;flex-wrap:wrap;}
+  .exercise .ex-opts button{font:inherit;font-size:11.5px;padding:5px 12px;border:1px solid var(--border-2);background:var(--surface);border-radius:4px;cursor:pointer;color:var(--text-1);}
+  .exercise .ex-opts button:hover{border-color:var(--text-3);}
+  .exercise .ex-opts button.ok{border-color:var(--green);color:var(--green);font-weight:600;}
+  .exercise .ex-opts button.ng{border-color:var(--red);color:var(--red);font-weight:600;}
+  .exercise .ex-fb{margin-top:9px;font-size:11.5px;line-height:1.65;color:var(--text-2);background:var(--surface-2);border-left:3px solid var(--border-2);padding:7px 12px;border-radius:0 4px 4px 0;}
+  .exercise .ex-fb b{color:var(--text-1);}
+  .exercise .ex-try{display:block;margin-top:4px;color:var(--blue);}
+  @media print{.exercise{display:none;}}
   @media print{
     @page{size:A4 landscape;margin:8mm;}
     .app{padding:0;margin:0;max-width:none;}.app>*:not(.infographic){display:none;}
@@ -391,6 +406,40 @@
     </footer>
   </div>
   </section>
+  <section class="exercise">
+    <details>
+      <summary><b>✏️ 演習</b> — 答えを予想してから、上のデモで確かめよう（3問）</summary>
+      <div class="ex-q" data-ans="b">
+        <p class="ex-t"><b>Q1.</b> 「壁の位置」を目標 (1.5 m) より手前の 1.0 m にしてスタート。MPC はどう動く？</p>
+        <div class="ex-opts"><button data-k="a">壁を少し越えてでも目標に着く</button><button data-k="b">壁ぴったりで止まり、目標は諦める</button><button data-k="c">壁の手前で行ったり来たりする</button></div>
+        <div class="ex-fb" hidden><b>正解: b。</b>実測では 1.00 m ちょうどで停止（PID は 1.45 m まで壁越え）。MPC の中で、目標は「なるべく近づく」<b>コスト</b>、壁は「絶対に守る」<b>制約</b>として別物に扱われる。この優先順位が式の構造で保証されるのが制約付き最適化。<span class="ex-try">▶ デモで確認: 「壁の位置」を 1.0 m にして「スタート」</span></div>
+      </div>
+      <div class="ex-q" data-ans="c">
+        <p class="ex-t"><b>Q2.</b> 壁 1.0 m のまま、力の上限を最小 (0.3) まで弱めると MPC は？</p>
+        <div class="ex-opts"><button data-k="a">止まりきれず壁を越える</button><button data-k="b">怖くて動けなくなる</button><button data-k="c">それでも壁ぴったりで止まる</button></div>
+        <div class="ex-fb" hidden><b>正解: c。</b>実測では変わらず 1.00 m で停止（PID は越え幅が 0.45 → 0.55 m に拡大）。N<sub>p</sub>=20 手先まで予測しているので、<b>弱い力でも止まれるように早くから減速を始める</b>。ブレーキが弱いほど開始が早まるだけ——「予測してから動く」ことの価値が一番よく見える瞬間。<span class="ex-try">▶ デモで確認: 「力の上限 F」を 0.3 にして「スタート」</span></div>
+      </div>
+      <div class="ex-q" data-ans="a">
+        <p class="ex-t"><b>Q3.</b> 「壁（位置の上限）を有効化」のチェックを外すと、MPC は？</p>
+        <div class="ex-opts"><button data-k="a">PID と同じく壁を素通りして目標へ</button><button data-k="b">それでも壁の手前で止まる</button><button data-k="c">スタートしなくなる</button></div>
+        <div class="ex-fb" hidden><b>正解: a。</b>実測では壁位置 1.0 m を素通りして 1.51 m へ。守られるのは<b>最適化問題に式として書いた制約だけ</b>。MPC だから安全なのではなく、安全条件を式で与えたから安全——制約の定義は設計者の責任であり、安全設計の出発点。<span class="ex-try">▶ デモで確認: チェックを外して「スタート」→ 戻してもう一度</span></div>
+      </div>
+    </details>
+  </section>
+  <script>
+  (function(){
+    document.querySelectorAll('.exercise .ex-q').forEach(function(q){
+      var fb=q.querySelector('.ex-fb');
+      q.querySelectorAll('.ex-opts button').forEach(function(b){
+        b.addEventListener('click',function(){
+          q.querySelectorAll('.ex-opts button').forEach(function(x){x.classList.remove('ok','ng');});
+          b.classList.add(b.dataset.k===q.dataset.ans?'ok':'ng');
+          fb.hidden=false;
+        });
+      });
+    });
+  })();
+  </script>
   <div class="footer">
     2 重積分系（力→加速度）· MPC＝制約付き QP（Hildreth, |F|≤F<sub>max</sub> かつ 位置≤壁）を毎ステップ求解 · PID＝PD制御＋力クランプ（壁は未認識）<br>
     力上限を下げる／壁を目標に近づけると、PID の行き過ぎと制約違反が顕著になります。
