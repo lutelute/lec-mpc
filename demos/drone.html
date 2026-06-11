@@ -25,13 +25,13 @@
   .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
   .kpi-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 14px;}
   .kpi-card.accent{background:var(--info-bg);border-color:transparent;}
-  .kpi-label{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;font-weight:500;} .kpi-card.accent .kpi-label{color:var(--info-text);opacity:0.85;}
+  .kpi-label{font-size:10px;color:var(--text-2);letter-spacing:0.08em;font-weight:500;} .kpi-card.accent .kpi-label{color:var(--info-text);opacity:0.85;}
   .kpi-val{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:5px;} .kpi-card.accent .kpi-val{color:var(--info-text);}
   .main-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:10px;align-items:start;}
   .col{display:flex;flex-direction:column;gap:10px;}
   .panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;}
   .panel-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap;}
-  .panel-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;} .panel-hint{font-size:10px;color:var(--text-3);}
+  .panel-title{font-size:11px;font-weight:500;letter-spacing:0.08em;} .panel-hint{font-size:10px;color:var(--text-3);}
   .stage{border-radius:8px;cursor:crosshair;background:linear-gradient(#cfe6f7,#eaf4fb);}
   @media (prefers-color-scheme:dark){.stage{background:linear-gradient(#1a2733,#141b22);}}
   .btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
@@ -80,7 +80,7 @@
   .infographic svg{display:block;width:100%;}
   .infographic .lbl{font-size:10px;color:var(--faint);margin:0 0 4px;text-align:center;}
   .infographic .eq{background:#faf9f6;border:1px solid var(--line);border-left:3px solid #b9c6d6;border-radius:0 4px 4px 0;padding:8px 12px;margin-bottom:11px;}
-  .infographic .eq-cap{font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px;}
+  .infographic .eq-cap{font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.06em;margin-bottom:5px;}
   .infographic math{font-size:14px;}
   .infographic .eqline{display:flex;align-items:baseline;gap:10px;margin:5px 0;flex-wrap:wrap;}
   .infographic .eqline math{font-size:13.5px;flex:none;}
@@ -98,7 +98,7 @@
   .infographic .takeaway b{color:#13502f;}
   .infographic .kpis{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px;}
   .infographic .kpi{padding:8px 12px;border:1px solid var(--line);border-radius:4px;white-space:nowrap;}
-  .infographic .kpi .k{font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;}
+  .infographic .kpi .k{font-size:9px;color:var(--faint);letter-spacing:.06em;}
   .infographic .kpi .v{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:3px;letter-spacing:-.01em;}
   .infographic .kpi.mpc{background:#eef5fc;border-color:#d2e2f3;} .infographic .kpi.mpc .v{color:var(--blue-deep);}
   .infographic .kpi.pid{background:#fcf4e9;border-color:#eedfc6;} .infographic .kpi.pid .v{color:#9a6410;}
@@ -253,7 +253,7 @@
         <div class="panel-hdr"><div class="panel-title">仕組み</div></div>
         <p class="explain" style="font-size:12px;">
           状態は <math><mrow><mo>[</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>θ</mi></mrow></math> と各速度の 6 次元、入力は<strong>2 つ（総推力 δT・回転トルク u₂）</strong>。MPC の 3 つの柱が効いています：
-          <strong>①予測</strong>＝モデルで未来 N<sub>p</sub> ステップ先の運動を見通し、コスト最小の入力を毎ステップ算出して先頭だけ打つ（受け取り原理）。
+          <strong>①予測</strong>＝モデルで未来 N<sub>p</sub> ステップ先の運動を見通し、コスト最小の入力を毎ステップ算出して先頭だけ打つ（後退ホライズン方式）。
           <strong>②最適化</strong>＝水平移動は機体を<strong>傾けて</strong>推力の横成分で行うため位置と姿勢が連動し、両者を<strong>同時に</strong>最適化する多入力 (MIMO) が要る（個別ループでは破綻）。
           <strong>③制約</strong>＝推力・トルクは上限で<strong>飽和</strong>（ここはクランプ。制約を最適化の中で<em>陽に</em>扱う様子は <a href="mpc_constrained.html">制約デモ</a>・<a href="rocket.html">ロケット</a>で）。
         </p>
@@ -410,7 +410,7 @@
           <div class="eqnote">MIMO を階層的 PID で分離制御（高度ループ＋ x→傾き目標 θ*→トルク）。<b>MPCのような多変数同時最適化はしない</b>（③で挙動を比較）。</div>
         </div>
         <ul class="bul">
-          <li><b>未来 N<sub>p</sub>=35 ステップ</b>を予測し最適入力列を計算、先頭だけ実行（受け取り原理）</li>
+          <li><b>未来 N<sub>p</sub>=35 ステップ</b>を予測し最適入力列を計算、先頭だけ実行（後退ホライズン方式）</li>
           <li>位置と姿勢が<b>連動</b>するため 2 入力を<b>同時</b>最適化（個別ループでは破綻）</li>
           <li><b>PIDとの違い</b>：PIDは各軸を別ループで追い相互干渉に弱い。MPCは6状態2入力を一括最適化</li>
           <li><b>状態の入手</b>：MPCは状態 x が必要。出力しか測れない実機では<b>カルマンフィルタ／オブザーバ</b>で推定して −K に渡す</li>

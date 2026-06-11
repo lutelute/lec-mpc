@@ -25,13 +25,13 @@
   .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;}
   .kpi-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:9px 14px;}
   .kpi-card.accent{background:var(--info-bg);border-color:transparent;}
-  .kpi-label{font-size:10px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.08em;font-weight:500;} .kpi-card.accent .kpi-label{color:var(--info-text);opacity:0.85;}
+  .kpi-label{font-size:10px;color:var(--text-2);letter-spacing:0.08em;font-weight:500;} .kpi-card.accent .kpi-label{color:var(--info-text);opacity:0.85;}
   .kpi-val{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:5px;} .kpi-card.accent .kpi-val{color:var(--info-text);}
   .main-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:10px;align-items:start;}
   .col{display:flex;flex-direction:column;gap:10px;}
   .panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;}
   .panel-hdr{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap;}
-  .panel-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;} .panel-hint{font-size:10px;color:var(--text-3);}
+  .panel-title{font-size:11px;font-weight:500;letter-spacing:0.08em;} .panel-hint{font-size:10px;color:var(--text-3);}
   .stage{border-radius:8px;background:#3a3a38;}
   .btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
   .btn{font-size:12px;padding:8px 13px;background:transparent;border:0.5px solid var(--border-2);border-radius:7px;cursor:pointer;color:var(--text-2);font-family:inherit;transition:all .1s;}
@@ -80,7 +80,7 @@
   .infographic svg{display:block;width:100%;}
   .infographic .lbl{font-size:10px;color:var(--faint);margin:0 0 4px;text-align:center;}
   .infographic .eq{background:#faf9f6;border:1px solid var(--line);border-left:3px solid #b9c6d6;border-radius:0 4px 4px 0;padding:8px 12px;margin-bottom:11px;}
-  .infographic .eq-cap{font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px;}
+  .infographic .eq-cap{font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.06em;margin-bottom:5px;}
   .infographic math{font-size:14px;}
   .infographic .eqline{display:flex;align-items:baseline;gap:10px;margin:5px 0;flex-wrap:wrap;}
   .infographic .eqline math{font-size:13.5px;flex:none;}
@@ -98,7 +98,7 @@
   .infographic .takeaway b{color:#13502f;}
   .infographic .kpis{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px;}
   .infographic .kpi{padding:8px 12px;border:1px solid var(--line);border-radius:4px;white-space:nowrap;}
-  .infographic .kpi .k{font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;}
+  .infographic .kpi .k{font-size:9px;color:var(--faint);letter-spacing:.06em;}
   .infographic .kpi .v{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:3px;letter-spacing:-.01em;}
   .infographic .kpi.mpc{background:#eef5fc;border-color:#d2e2f3;} .infographic .kpi.mpc .v{color:var(--blue-deep);}
   .infographic .kpi.pid{background:#fcf4e9;border-color:#eedfc6;} .infographic .kpi.pid .v{color:#9a6410;}
@@ -212,11 +212,11 @@
         <details style="margin-top:2px;">
           <summary style="font-size:11px;color:var(--text-3);cursor:pointer;user-select:none;">⚙ 制御パラメタを調整（PID ゲイン / MPC 重み）</summary>
           <div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);">
-            <div style="font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">PID ゲイン</div>
+            <div style="font-size:10px;color:var(--amber);letter-spacing:0.06em;margin-bottom:2px;">PID ゲイン</div>
             <div class="ctrl" style="margin:8px 0;"><div class="ctrl-row"><span class="ctrl-name">比例 K<sub>p</sub>（車間誤差）</span><span class="ctrl-val" id="v-kp">0.90</span></div><input type="range" id="s-kp" min="0" max="2.5" step="0.05" value="0.9"></div>
             <div class="ctrl" style="margin:8px 0;"><div class="ctrl-row"><span class="ctrl-name">微分 K<sub>d</sub>（相対速度）</span><span class="ctrl-val" id="v-kd">1.05</span></div><input type="range" id="s-kd" min="0" max="3" step="0.05" value="1.05"></div>
             <div class="ctrl" style="margin:8px 0;"><div class="ctrl-row"><span class="ctrl-name">積分 K<sub>i</sub></span><span class="ctrl-val" id="v-ki">0.03</span></div><input type="range" id="s-ki" min="0" max="0.3" step="0.01" value="0.03"></div>
-            <div style="font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:0.06em;margin:12px 0 2px;">MPC 重み</div>
+            <div style="font-size:10px;color:var(--blue);letter-spacing:0.06em;margin:12px 0 2px;">MPC 重み</div>
             <div class="ctrl" style="margin:8px 0;"><div class="ctrl-row"><span class="ctrl-name">車間誤差の罰 Q<sub>e</sub>（俊敏さ）</span><span class="ctrl-val" id="v-qe">2.0</span></div><input type="range" id="s-qe" min="0.5" max="6" step="0.1" value="2"></div>
             <p style="font-size:10.5px;color:var(--text-3);margin:6px 0 0;line-height:1.55;">PID を上げ過ぎると振動・追突、下げ過ぎると追従が鈍い。MPC の Q<sub>e</sub> は大きいほど機敏（ただし制約内）。</p>
           </div>
@@ -301,7 +301,7 @@
         <div class="eq">
           <div class="eq-cap">状態空間　ẋ = A x + B u + E a<sub>l</sub></div>
           \[\begin{bmatrix}\dot{e}_{\text{gap}}\\\dot{\Delta v}\\\dot{a}_e\end{bmatrix}=\begin{bmatrix}0&1&0\\0&0&\textcolor{#b9760f}{-1}\\0&0&\textcolor{#b9760f}{-1/\tau}\end{bmatrix}\begin{bmatrix}e_{\text{gap}}\\\Delta v\\a_e\end{bmatrix}+\begin{bmatrix}0\\0\\\textcolor{#2F7DD1}{1/\tau}\end{bmatrix}u\]
-          <div class="eqnote"><b style="color:#b9760f">橙</b> ＝ 自車加速度の効き、<b style="color:#2F7DD1">青</b> ＝ 指令 \(u\) の効き。外乱 \(E=[0,1,0]^\top\)。</div>
+          <div class="eqnote"><b style="color:#b9760f">橙</b> ＝ 自車加速度の効き、<b style="color:#2F7DD1">青</b> ＝ 指令 \(u\) の効き。外乱 \(E=[0,1,0]^\top\)</div>
         </div>
         <div class="eq" style="padding:5px 10px;">
           <div class="eq-cap">離散化（ZOH・dt = 0.1 s）</div>

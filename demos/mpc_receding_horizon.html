@@ -125,11 +125,11 @@
     <a href="mpc_constrained.html">制約付き MPC デモ</a>
     <a href="mpc_vs_pid.html">制御として見る</a>
     <span class="sep">·</span>
-    <span style="color:var(--text-3)">Step 1 / 2 — 受け取りホライズン</span>
+    <span style="color:var(--text-3)">Step 1 / 2 — 後退ホライズン</span>
   </nav>
 
   <header>
-    <h1>受け取りホライズン — 予測して最初の一手だけ打つ</h1>
+    <h1>後退ホライズン（Receding Horizon）— 予測して最初の一手だけ打つ</h1>
     <p class="subtitle">無制約 MPC · 2 重積分系（質点の位置制御）· 二次コスト最小化（解析解）</p>
   </header>
 
@@ -153,8 +153,8 @@
   </section>
 
   <div class="panel" style="margin-bottom:10px;">
-    <div class="panel-hdr"><div class="panel-title">ブロック線図（受け取りホライズン制御ループ）</div><div class="panel-hint">最適入力列 U* のうち先頭 u(k) だけ打ち、次周期に再計画</div></div>
-    <svg viewBox="0 0 720 172" style="width:100%;max-height:188px;" role="img" aria-label="受け取りホライズンの制御ブロック線図">
+    <div class="panel-hdr"><div class="panel-title">ブロック線図（後退ホライズン制御ループ）</div><div class="panel-hint">最適入力列 U* のうち先頭 u(k) だけ打ち、次周期に再計画</div></div>
+    <svg viewBox="0 0 720 172" style="width:100%;max-height:188px;" role="img" aria-label="後退ホライズンの制御ブロック線図">
       <defs><marker id="rhah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--text-3)"/></marker></defs>
       <g font-size="12" fill="var(--text-1)">
         <text x="10" y="58" font-size="12" fill="var(--text-2)">r = 目標</text>
@@ -176,7 +176,7 @@
         <path d="M697,57 L697,134 L110,134 L110,67" marker-end="url(#rhah)"/>
         <text x="404" y="130" font-size="10" fill="var(--text-3)" stroke="none">y を観測して次周期へ</text>
       </g>
-      <text x="360" y="162" text-anchor="middle" font-size="10.5" fill="var(--text-3)">毎周期「予測 → 最適化 → U* の先頭だけ打つ → 再観測」を繰り返す ＝ <tspan font-weight="600" fill="var(--text-2)">受け取りホライズン</tspan></text>
+      <text x="360" y="162" text-anchor="middle" font-size="10.5" fill="var(--text-3)">毎周期「予測 → 最適化 → U* の先頭だけ打つ → 再観測」を繰り返す ＝ <tspan font-weight="600" fill="var(--text-2)">後退ホライズン</tspan></text>
     </svg>
     <p class="explain" style="font-size:12px;margin:6px 0 0;">右の <strong>予測 y(k+i)</strong> と <strong>最適入力列 U*</strong> のグラフは、この MPC ブロックの中身。<strong>U* の先頭だけ実行</strong>し、1 ステップ進んでまた解き直す——だから外乱やモデル誤差に追従できる。</p>
   </div>
@@ -185,7 +185,7 @@
     <div class="col">
       <div class="panel">
         <div class="panel-hdr">
-          <div class="panel-title">予測と受け取り — 出力 y(k+i)</div>
+          <div class="panel-title">予測と再計画 — 出力 y(k+i)</div>
           <div class="panel-hint">実線=過去の実績 / 破線=いまの予測 / 縦線=現在時刻</div>
         </div>
         <svg id="plot-y" viewBox="0 0 720 340" style="width: 100%;" role="img"></svg>
